@@ -8,12 +8,18 @@ echo "=== Test du comportement des Static Pods ==="
 echo ""
 
 # Identifier le nom complet du pod (static pod sur le node où le manifest existe)
-# Le manifest est déployé sur le master via 02-deploy-static-pod.sh
-# → le pod s'appelle disk-monitor-<hostname-du-master>
-NODE_NAME=$(kubectl get nodes --no-headers | grep 'control-plane' | head -1 | awk '{print $1}')
-POD_NAME="disk-monitor-${NODE_NAME}"
+# Le pod s'appelle disk-monitor-<hostname-du-nœud-qui-a-le-manifest>
+POD_NAME=$(kubectl get pods -n kube-system --no-headers | awk '/^disk-monitor/{print $1}' | head -1)
 
-echo "1. Recherche du static pod sur le nœud: $NODE_NAME (master)"
+if [ -z "$POD_NAME" ]; then
+    echo "❌ Static pod disk-monitor introuvable dans kube-system."
+    echo "   Vérifiez que le script 02-deploy-static-pod.sh a bien été exécuté."
+    exit 1
+fi
+
+NODE_NAME=$(kubectl get pod -n kube-system "$POD_NAME" -o jsonpath='{.spec.nodeName}')
+
+echo "1. Recherche du static pod: $POD_NAME (nœud: $NODE_NAME)"
 kubectl get pods -n kube-system | grep disk-monitor
 echo ""
 
