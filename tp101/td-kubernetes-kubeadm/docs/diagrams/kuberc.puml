@@ -1,0 +1,73 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+
+title kubectl kuberc - Configuration utilisateur (K8s 1.33 Alpha)
+
+skinparam rectangle {
+  BackgroundColor<<kubeconfig>> #FFB6C1
+  BackgroundColor<<kuberc>> #90EE90
+  BackgroundColor<<kubectl>> #87CEEB
+}
+
+rectangle "Avant: Tout dans kubeconfig" as before {
+  rectangle "~/.kube/config" as kc1 <<kubeconfig>> {
+    note as n1
+      clusters:
+      - cluster: ...
+      users:
+      - user: ...
+      contexts:
+      - context: ...
+      **preferences:**
+      **  colors: true**
+      **  output: yaml**
+    end note
+  }
+}
+
+rectangle "Apres: Separation des concerns" as after {
+  rectangle "~/.kube/config\n(Credentials cluster)" as kc2 <<kubeconfig>> {
+    note as n2
+      clusters:
+      - cluster: prod-cluster
+      users:
+      - user: admin
+      contexts:
+      - context: prod
+    end note
+  }
+
+  rectangle "~/.kube/kuberc\n(Preferences utilisateur)" as rc <<kuberc>> {
+    note as n3
+      aliases:
+        kgp: get pods
+        kgn: get nodes
+      defaults:
+        serverSideApply: true
+        output: yaml
+      overrides:
+        namespace: my-ns
+    end note
+  }
+
+  rectangle "kubectl" as kubectl <<kubectl>>
+
+  kc2 -down-> kubectl
+  rc -down-> kubectl
+}
+
+note bottom of after
+  **Activation:**
+  export KUBECTL_KUBERC=true
+
+  **Avantages:**
+  - Preferences partagees entre clusters
+  - Separation credentials / preferences
+  - Aliases personnalises
+end note
+
+footer **KEP-3104:** Preferences kubectl separees de kubeconfig
+@enduml

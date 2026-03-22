@@ -1,0 +1,63 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title User Namespaces - Isolation de sécurité (K8s 1.30 Beta)
+
+package "Sans User Namespaces" as without #FFB6C1 {
+  rectangle "Container" as c1 {
+    component "Process\nUID 0 (root)" as p1 #FF6B6B
+  }
+  rectangle "Host" as h1 {
+    component "Process\nUID 0 (root)" as hp1 #FF6B6B
+  }
+  c1 -down-> h1 : UID 0 = UID 0\n⚠️ DANGEREUX
+
+  note bottom of h1
+    Container escape =
+    Accès root sur l'hôte
+    CVE-2024-21626
+  end note
+}
+
+package "Avec User Namespaces" as with #90EE90 {
+  rectangle "Container" as c2 {
+    component "Process\nUID 0 (root)" as p2 #FFD700
+  }
+  rectangle "Host" as h2 {
+    component "Process\nUID 65534 (nobody)" as hp2 #90EE90
+  }
+  c2 -down-> h2 : UID 0 → UID 65534\n✅ SÉCURISÉ
+
+  note bottom of h2
+    Container escape =
+    Utilisateur non privilégié
+    Impact limité
+  end note
+}
+
+note bottom
+  **Configuration Pod:**
+  ```yaml
+  spec:
+    hostUsers: false  # Active user namespaces
+    containers:
+    - name: app
+      securityContext:
+        runAsUser: 0  # root DANS le container
+  ```
+
+  **Mapping réel:**
+  Container UID 0    → Host UID 65534
+  Container UID 1000 → Host UID 66534
+end note
+
+legend right
+  |= Mode |= Risque |
+  | hostUsers: true | Élevé (défaut) |
+  | hostUsers: false | Faible ✅ |
+endlegend
+
+@enduml

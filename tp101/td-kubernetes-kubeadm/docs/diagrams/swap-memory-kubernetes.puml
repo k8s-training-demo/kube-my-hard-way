@@ -1,0 +1,71 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title Support du Swap dans Kubernetes 1.30+
+
+package "Node Configuration" {
+  rectangle "Kubelet Config" as kubelet #87CEEB {
+    component "memorySwap:" as swap
+    component "  swapBehavior: LimitedSwap" as behavior
+  }
+}
+
+package "Pod QoS Classes" {
+  rectangle "Guaranteed" as guaranteed #90EE90 {
+    note right
+      requests = limits
+      **Pas de swap**
+    end note
+  }
+
+  rectangle "Burstable" as burstable #FFD700 {
+    note right
+      requests < limits
+      **Swap autorisé**
+      jusqu'à memory.swap
+    end note
+  }
+
+  rectangle "BestEffort" as besteffort #FF6B6B {
+    note right
+      Pas de requests/limits
+      **Swap limité**
+    end note
+  }
+}
+
+package "Memory Allocation" {
+  rectangle "Physical RAM" as ram #4169E1 {
+    storage "8 GB" as ram_size
+  }
+
+  rectangle "Swap Space" as swap_space #9370DB {
+    storage "4 GB" as swap_size
+  }
+}
+
+kubelet -down-> guaranteed
+kubelet -down-> burstable
+kubelet -down-> besteffort
+
+burstable -down-> ram : utilise d'abord
+burstable -down-> swap_space : puis swap si besoin
+
+note bottom of swap_space
+  **LimitedSwap Mode:**
+  - Garantit les performances critiques
+  - Évite les OOM pour pics temporaires
+  - Respecte les limites configurées
+end note
+
+legend right
+  |= Mode |= Comportement |
+  | NoSwap | Pas de swap (défaut) |
+  | LimitedSwap | Swap contrôlé (recommandé) |
+  | UnlimitedSwap | Swap libre (⚠️) |
+endlegend
+
+@enduml

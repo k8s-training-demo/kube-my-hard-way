@@ -1,0 +1,69 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title Sleep Action PreStop Hook (K8s 1.30)
+
+rectangle "Processus de terminaison" {
+
+  rectangle "1. Trigger" as step1 #87CEEB {
+    component "kubectl delete pod\nou rolling update" as trigger
+  }
+
+  rectangle "2. PreStop Hook" as step2 #FFD700 {
+    component "sleep: 10s\n(action native)" as sleep
+  }
+
+  rectangle "3. Load Balancer" as step3 #E6E6FA {
+    component "Retire le pod\ndu backend" as lb
+  }
+
+  rectangle "4. SIGTERM" as step4 #FFB6C1 {
+    component "Signal envoyé\nà application" as sigterm
+  }
+
+  rectangle "5. Graceful Shutdown" as step5 #90EE90 {
+    component "Connexions terminées\nproprement" as shutdown
+  }
+
+  rectangle "6. Pod terminé" as step6 #90EE90 {
+    component "Ressources\nlibérées" as terminated
+  }
+
+  step1 -down-> step2
+  step2 -down-> step3 : en parallèle
+  step3 -down-> step4
+  step4 -down-> step5
+  step5 -down-> step6
+}
+
+note right of step2
+  **Nouveau en K8s 1.30:**
+  Action sleep native
+  Plus besoin de script
+  Fonctionne avec distroless
+end note
+
+note bottom
+  **Configuration Pod:**
+  lifecycle:
+    preStop:
+      sleep:
+        seconds: 10
+
+  **Ancienne methode:**
+  preStop:
+    exec:
+      command: ["sleep", "10"]
+end note
+
+legend right
+  |= Phase |= Durée |
+  | PreStop sleep | 10s |
+  | SIGTERM | 0s |
+  | Grace period | 30s max |
+endlegend
+
+@enduml

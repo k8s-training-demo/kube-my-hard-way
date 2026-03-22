@@ -1,0 +1,58 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title Taints et Tolerations - Contrôle du Scheduling
+
+package "Cluster Nodes" {
+  rectangle "Master Node" as master #326CE5 {
+    component "Taint:\nnode-role=master\nNoSchedule" as master_taint #FF6B6B
+  }
+
+  rectangle "Worker1" as worker1 #90EE90 {
+    component "Taint:\nmaintenance=true\nNoSchedule" as w1_taint #FFD700
+  }
+
+  rectangle "Worker2" as worker2 #90EE90 {
+    note right
+      Pas de taint
+    end note
+  }
+}
+
+package "Pods à scheduler" {
+  rectangle "Pod Normal" as pod_normal #87CEEB {
+    component "Pas de toleration" as no_tol
+  }
+
+  rectangle "Pod Système" as pod_system #FFD700 {
+    component "Toleration:\nnode-role=master" as sys_tol
+  }
+
+  rectangle "Pod avec Toleration" as pod_tol #90EE90 {
+    component "Toleration:\nmaintenance=true" as maint_tol
+  }
+}
+
+pod_system -down-> master : ✓ Peut scheduler
+pod_normal -[#FF0000]down-> master : ✗ Rejeté
+pod_normal -[#FF0000]down-> worker1 : ✗ Rejeté
+pod_tol -down-> worker1 : ✓ Peut scheduler
+pod_normal -down-> worker2 : ✓ Peut scheduler
+
+note bottom of master
+  **Taint Effects:**
+  - NoSchedule: bloque nouveaux pods
+  - PreferNoSchedule: soft constraint
+  - NoExecute: évacue pods existants
+end note
+
+legend right
+  |= Symbole |= Signification |
+  | ✓ | Scheduling autorisé |
+  | ✗ | Scheduling bloqué |
+endlegend
+
+@enduml

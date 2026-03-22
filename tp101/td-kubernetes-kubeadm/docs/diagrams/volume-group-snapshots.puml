@@ -1,0 +1,80 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title Volume Group Snapshots - Crash-Consistent (K8s 1.32)
+
+package "Application Database Distribuée" as app {
+  database "PVC Data\n/var/lib/db/data" as pvc1 #90EE90
+  database "PVC Logs\n/var/lib/db/logs" as pvc2 #90EE90
+  database "PVC WAL\n/var/lib/db/wal" as pvc3 #90EE90
+
+  rectangle "Pod Database" as pod #87CEEB
+  pod -down-> pvc1
+  pod -down-> pvc2
+  pod -down-> pvc3
+}
+
+package "Sans Group Snapshot" as without #FFB6C1 {
+  rectangle "Snapshot 1\nt=0.00s" as s1
+  rectangle "Snapshot 2\nt=0.05s" as s2
+  rectangle "Snapshot 3\nt=0.10s" as s3
+
+  note bottom
+    ❌ **Inconsistant!**
+    Les snapshots sont pris
+    à des moments différents
+    → Corruption possible
+  end note
+}
+
+package "Avec Group Snapshot" as with #90EE90 {
+  rectangle "VolumeGroupSnapshot" as vgs #FFD700 {
+    rectangle "Snap Data\nt=0.00s" as gs1
+    rectangle "Snap Logs\nt=0.00s" as gs2
+    rectangle "Snap WAL\nt=0.00s" as gs3
+  }
+
+  note bottom
+    ✅ **Crash-Consistent!**
+    Tous les snapshots pris
+    au même instant
+    → Intégrité garantie
+  end note
+}
+
+pvc1 -down-> s1 : séquentiel
+pvc2 -down-> s2
+pvc3 -down-> s3
+
+pvc1 -down-> gs1 : atomique
+pvc2 -down-> gs2
+pvc3 -down-> gs3
+
+note bottom
+  **Configuration:**
+  ```yaml
+  apiVersion: groupsnapshot.storage.k8s.io/v1alpha1
+  kind: VolumeGroupSnapshot
+  metadata:
+    name: db-backup-2024
+  spec:
+    volumeGroupSnapshotClassName: csi-snapclass
+    source:
+      selector:
+        matchLabels:
+          app: database
+  ```
+end note
+
+legend right
+  |= Cas d'usage |= Besoin |
+  | PostgreSQL | Data + WAL |
+  | MongoDB | Data + Journal |
+  | Cassandra | Data + Commitlog |
+  | Elasticsearch | Indices multiples |
+endlegend
+
+@enduml

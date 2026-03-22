@@ -1,0 +1,74 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+
+title Cas d'Usage Reels des Taints et Tolerations
+
+rectangle "**1. Nodes Dedies (GPU/SSD)**" as gpu #B3E5FC {
+  rectangle "Node GPU" as gpu_node #326CE5 {
+    component "Taint:\ngpu=nvidia:NoSchedule" as gpu_taint #FF6B6B
+    component "Pod ML\n+ Toleration" as gpu_pod #90EE90
+  }
+  rectangle "Nodes Normaux" as normal_nodes {
+    component "Pods Web" as web_pods #87CEEB
+  }
+
+  note bottom of gpu_node
+    **Objectif:** Reserver les
+    nodes GPU aux workloads ML
+  end note
+}
+
+rectangle "**2. Maintenance Planifiee**" as maint #FFF9C4 {
+  rectangle "Avant" as maint_before {
+    component "Worker1" as w1_before #90EE90 {
+      label "Pods actifs"
+    }
+  }
+  rectangle "Pendant" as maint_during {
+    component "Worker1\nTaint: NoSchedule" as w1_during #FFD700 {
+      label "Pods restent\nPas de nouveaux"
+    }
+  }
+  rectangle "Apres drain" as maint_after {
+    component "Worker1\nTaint: NoExecute" as w1_after #FF6B6B {
+      label "Vide"
+    }
+  }
+
+  maint_before -right-> maint_during : kubectl taint
+  maint_during -right-> maint_after : kubectl drain
+}
+
+rectangle "**3. Multi-Tenancy**" as tenant #E1BEE7 {
+  rectangle "Node Equipe A" as team_a #9C27B0 {
+    component "Taint:\nteam=alpha:NoSchedule" as ta_taint #FF6B6B
+    component "Pods Team A\n+ Toleration" as ta_pods #90EE90
+  }
+  rectangle "Node Equipe B" as team_b #673AB7 {
+    component "Taint:\nteam=beta:NoSchedule" as tb_taint #FF6B6B
+    component "Pods Team B\n+ Toleration" as tb_pods #90EE90
+  }
+
+  note bottom of tenant
+    **Objectif:** Isolation des
+    workloads par equipe
+  end note
+}
+
+rectangle "**4. Nodes Control Plane**" as cp #FFCDD2 {
+  rectangle "Master Node" as master {
+    component "Taint:\nnode-role.kubernetes.io/\ncontrol-plane:NoSchedule" as cp_taint #FF6B6B
+    component "kube-apiserver\nkube-scheduler\n+ Tolerations" as cp_pods #90EE90
+  }
+
+  note right of master
+    **Par defaut:**
+    Master taint pour
+    proteger le control plane
+  end note
+}
+
+@enduml

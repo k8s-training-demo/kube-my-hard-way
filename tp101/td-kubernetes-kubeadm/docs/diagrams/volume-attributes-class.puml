@@ -1,0 +1,81 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title VolumeAttributesClass - Modification dynamique des volumes (K8s 1.31 Beta)
+
+package "Scenario: Scaling IOPS sans downtime" {
+
+  rectangle "Avant" as before {
+    database "PVC\n100 GB\n3000 IOPS" as pvc1 #FFD700
+    rectangle "Pod App" as pod1 #90EE90
+
+    pod1 -down-> pvc1
+  }
+
+  rectangle "Modification" as modify {
+    component "kubectl patch pvc\nvolumeAttributesClassName:\nhigh-performance" as cmd #87CEEB
+  }
+
+  rectangle "Après" as after {
+    database "PVC\n100 GB\n10000 IOPS" as pvc2 #90EE90
+    rectangle "Pod App\n(toujours running)" as pod2 #90EE90
+
+    pod2 -down-> pvc2
+  }
+
+  before -right-> modify : 1
+  modify -right-> after : 2
+}
+
+package "Configuration" {
+  rectangle "VolumeAttributesClass" as vac #FFD700 {
+    note right
+      **standard:**
+      iops: "3000"
+      throughput: "125Mi"
+
+      **high-performance:**
+      iops: "10000"
+      throughput: "500Mi"
+
+      **ultra-performance:**
+      iops: "64000"
+      throughput: "1000Mi"
+    end note
+  }
+
+  rectangle "StorageClass" as sc #87CEEB {
+    note right
+      **gp3-csi:**
+      provisioner: ebs.csi.aws.com
+      parameters:
+        type: gp3
+    end note
+  }
+}
+
+note bottom
+  **Avantages:**
+  ✅ Pas de downtime
+  ✅ Pas de migration de données
+  ✅ Scaling vertical du storage
+  ✅ Optimisation coûts/performance
+
+  **Cas d'usage:**
+  • Base de données sous charge
+  • Pic de trafic prévu
+  • Optimisation des coûts cloud
+end note
+
+legend right
+  |= Attribut |= Modifiable |
+  | IOPS | ✅ Oui |
+  | Throughput | ✅ Oui |
+  | Taille | Via PVC resize |
+  | Type | ❌ Non |
+endlegend
+
+@enduml

@@ -1,0 +1,65 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title Pod Scheduling Readiness (K8s 1.30 GA)
+
+rectangle "Workflow Scheduling Gates" {
+
+  rectangle "1. User" as step1 #87CEEB {
+    component "Crée Pod avec\nschedulingGates" as create
+  }
+
+  rectangle "2. Kubernetes" as step2 #FFD700 {
+    component "Pod état:\nSchedulingGated" as gated
+  }
+
+  rectangle "3. Controller Externe" as step3 #E6E6FA {
+    component "Provisionne\nressources" as provision
+  }
+
+  rectangle "4. Controller" as step4 #87CEEB {
+    component "Supprime les\nschedulingGates" as remove
+  }
+
+  rectangle "5. Scheduler" as step5 #90EE90 {
+    component "Pod schedulable\nAssigne un noeud" as schedule
+  }
+
+  rectangle "6. Running" as step6 #90EE90 {
+    component "Pod en\nexecution" as running
+  }
+
+  step1 -down-> step2
+  step2 -down-> step3 : attend
+  step3 -down-> step4
+  step4 -down-> step5
+  step5 -down-> step6
+}
+
+note right of step3
+  **Cas d usage:**
+  - Quota team validé
+  - Licence logicielle OK
+  - Ressources cloud prêtes
+  - Données téléchargées
+end note
+
+note bottom
+  **Exemple de configuration:**
+  spec:
+    schedulingGates:
+    - name: quota-controller
+    - name: license-controller
+end note
+
+legend right
+  |= Etat |= Description |
+  | SchedulingGated | En attente |
+  | Pending | Recherche noeud |
+  | Running | En execution |
+endlegend
+
+@enduml

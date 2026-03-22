@@ -1,0 +1,62 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title ValidatingAdmissionPolicy avec CEL (K8s 1.30 GA)
+
+actor "User" as user
+
+rectangle "kube-apiserver" as api #326CE5 {
+
+  rectangle "Admission Chain" as chain {
+    rectangle "1. Authentication" as auth #87CEEB
+    rectangle "2. Authorization" as authz #87CEEB
+    rectangle "3. Mutating\nAdmission" as mutate #FFD700
+    rectangle "4. Schema\nValidation" as schema #FFD700
+    rectangle "5. Validating\nAdmission" as validate #90EE90 {
+      component "CEL Policy 1" as cel1
+      component "CEL Policy 2" as cel2
+      component "Webhook" as webhook
+    }
+    rectangle "6. etcd" as etcd #E6E6FA
+  }
+}
+
+user -down-> auth
+auth -down-> authz
+authz -down-> mutate
+mutate -down-> schema
+schema -down-> validate
+validate -down-> etcd
+
+note right of validate
+  **Avantages CEL vs Webhooks:**
+  ✅ Pas de latence réseau
+  ✅ Pas de dépendance externe
+  ✅ Évaluation in-process
+  ✅ Plus simple à déployer
+  ✅ Audit natif
+end note
+
+note bottom
+  **Exemple de règle CEL:**
+  ```
+  object.spec.replicas <= 10
+  object.metadata.labels.exists(l, l == 'app')
+  !object.spec.template.spec.containers.exists(
+    c, c.securityContext.privileged == true
+  )
+  ```
+end note
+
+legend right
+  |= Action |= Description |
+  | Allow | Requête acceptée |
+  | Deny | Requête rejetée |
+  | Warn | Acceptée + warning |
+  | Audit | Log uniquement |
+endlegend
+
+@enduml

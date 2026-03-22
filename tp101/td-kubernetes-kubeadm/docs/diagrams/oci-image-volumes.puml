@@ -1,0 +1,73 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title OCI Image Volumes - AI/ML Workflows (K8s 1.31 Alpha)
+
+package "Container Registry" as registry #E6E6FA {
+  artifact "ml-model:v2.1\n(2 GB)" as model #FFD700
+  artifact "training-data:latest\n(50 GB)" as data #FFD700
+  artifact "config:prod\n(10 MB)" as config #FFD700
+}
+
+package "Kubernetes Pod" as pod #90EE90 {
+  rectangle "ML Training Container" as container {
+    folder "/models" as models_dir
+    folder "/data" as data_dir
+    folder "/config" as config_dir
+  }
+
+  rectangle "Volumes OCI" as volumes #87CEEB {
+    component "model-volume" as mv
+    component "data-volume" as dv
+    component "config-volume" as cv
+  }
+}
+
+model -down-> mv : pull
+data -down-> dv : pull
+config -down-> cv : pull
+
+mv -right-> models_dir : mount
+dv -right-> data_dir : mount
+cv -right-> config_dir : mount
+
+note bottom of pod
+  **Avantages:**
+  ✅ Versioning natif (tags)
+  ✅ Cache des layers
+  ✅ Distribution globale (CDN)
+  ✅ Sécurité (signatures, scanning)
+  ✅ Pas besoin de PVC
+
+  **Cas d'usage AI/ML:**
+  • Modèles pré-entraînés
+  • Datasets de référence
+  • Configurations immutables
+end note
+
+note right of registry
+  **Spec Pod:**
+  ```yaml
+  volumes:
+  - name: model
+    image:
+      reference: registry/ml-model:v2.1
+      pullPolicy: IfNotPresent
+  containers:
+  - volumeMounts:
+    - name: model
+      mountPath: /models
+  ```
+end note
+
+legend right
+  |= Type contenu |= Exemple |
+  | Modèles ML | TensorFlow, PyTorch |
+  | Données | Datasets, embeddings |
+  | Config | Paramètres, secrets |
+endlegend
+
+@enduml

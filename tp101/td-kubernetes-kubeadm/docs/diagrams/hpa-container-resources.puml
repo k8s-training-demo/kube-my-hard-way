@@ -1,0 +1,74 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title HPA Container Resource Metrics (K8s 1.30 GA)
+
+package "Pod avec Sidecar" as pod {
+  rectangle "App Container\n(cible HPA)" as app #90EE90 {
+    component "CPU: 80%\nMemory: 60%" as app_metrics
+  }
+
+  rectangle "Istio Sidecar\n(ignoré)" as sidecar #87CEEB {
+    component "CPU: 20%\nMemory: 30%" as sidecar_metrics
+  }
+
+  rectangle "Log Collector\n(ignoré)" as logs #87CEEB {
+    component "CPU: 10%\nMemory: 20%" as logs_metrics
+  }
+}
+
+package "Ancien HPA (Pod metrics)" as old #FFB6C1 {
+  rectangle "Moyenne Pod" as avg_old {
+    component "CPU: 36.6%\n(80+20+10)/3" as calc_old
+  }
+  note bottom
+    ❌ Inclut les sidecars
+    ❌ Scaling imprécis
+    ❌ Sous-estimation charge
+  end note
+}
+
+package "Nouveau HPA (Container metrics)" as new #90EE90 {
+  rectangle "Container ciblé" as avg_new {
+    component "CPU: 80%\n(app uniquement)" as calc_new
+  }
+  note bottom
+    ✅ Cible le bon container
+    ✅ Scaling précis
+    ✅ Ignore les sidecars
+  end note
+}
+
+app -down-> avg_old
+sidecar -down-> avg_old
+logs -down-> avg_old
+
+app -down-> avg_new
+
+note bottom
+  **Configuration HPA ContainerResource:**
+  ```yaml
+  apiVersion: autoscaling/v2
+  kind: HorizontalPodAutoscaler
+  spec:
+    metrics:
+    - type: ContainerResource
+      containerResource:
+        name: cpu
+        container: app    # <- Cible spécifique
+        target:
+          type: Utilization
+          averageUtilization: 70
+  ```
+end note
+
+legend right
+  |= Métrique |= Scope |
+  | Resource | Pod entier |
+  | ContainerResource | Container spécifique |
+endlegend
+
+@enduml

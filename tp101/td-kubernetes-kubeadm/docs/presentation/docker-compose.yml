@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  marp-server:
+    build: .
+    container_name: kubernetes-slides
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../:/slides:ro
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    command: marp --server --input-dir . --allow-local-files . --html --port 8080 --address 0.0.0.0

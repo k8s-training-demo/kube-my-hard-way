@@ -1,0 +1,70 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+
+title Native Sidecar Containers - Cycle de vie (K8s 1.28+)
+
+|#LightBlue| Temps
+|#FFEFD5| Init Containers
+|#90EE90| Sidecar (restartPolicy: Always)
+|#FFB6C1| Regular Containers
+
+|Init Containers|
+start
+:Init Container 1;
+note right
+  S'exécute et se termine
+  **avant** le suivant
+end note
+
+|Sidecar (restartPolicy: Always)|
+:Sidecar démarre;
+note right
+  **Ne bloque PAS** le démarrage
+  des containers suivants
+
+  Supporte:
+  - startupProbe
+  - readinessProbe
+  - livenessProbe
+end note
+
+|Init Containers|
+:Init Container 2
+(optionnel);
+
+|Regular Containers|
+fork
+  :App Container 1;
+fork again
+  :App Container 2;
+end fork
+
+|Sidecar (restartPolicy: Always)|
+:Sidecar reste actif
+pendant toute la vie du Pod;
+note right
+  Redémarre automatiquement
+  en cas d'échec
+end note
+
+|Regular Containers|
+:Containers se terminent;
+
+|Sidecar (restartPolicy: Always)|
+:Sidecar se termine
+**après** les regular containers;
+
+stop
+
+legend right
+  |= Type |= restartPolicy |= Comportement |
+  | Init Container | Once | Bloque, se termine |
+  | **Sidecar** | **Always** | **Ne bloque pas, persiste** |
+  | Regular Container | - | Workload principal |
+endlegend
+
+footer **Cas d'usage:** Istio/Envoy proxy, Fluent-bit logs, Vault agent, OpenTelemetry
+@enduml

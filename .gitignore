@@ -1,0 +1,37 @@
+# ── Clés SSH (toutes, présentes et à venir) ───────────────────────────────────
+**/vm_key
+**/vm_key.pub
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/*.crt
+**/*.cer
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+id_ecdsa
+id_ecdsa.pub
+
+# ── Fichiers d'environnement (tokens, secrets) ────────────────────────────────
+infra-exo/.env
+infra-do/.env
+.env
+*.env
+
+# ── Accès étudiants générés (contient les IPs) ────────────────────────────────
+infra-exo/access-etudiants.md
+infra-do/access-etudiants.md
+access-*.md
+
+# ── OS / éditeurs ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ── Fichiers temporaires ───────────────────────────────────────────────────────
+*.tmp
+*.log

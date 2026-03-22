@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-no-toleration
+  labels:
+    app: test-scheduling
+spec:
+  containers:
+  - name: nginx
+    image: nginx:alpine
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+  restartPolicy: Always

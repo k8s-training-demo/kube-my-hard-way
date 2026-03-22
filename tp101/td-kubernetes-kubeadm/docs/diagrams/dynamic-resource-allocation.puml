@@ -1,0 +1,71 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title Dynamic Resource Allocation DRA - GPU et AI Workloads
+
+package "Kubernetes Cluster" {
+
+  rectangle "ResourceClass" as rc #FFD700
+  note right of rc
+    **nvidia-gpu**
+    driver: nvidia.com/gpu
+    parametersRef: nvidia-params
+  end note
+
+  rectangle "ResourceClaim" as claim #87CEEB
+  note right of claim
+    **gpu-claim**
+    resourceClassName: nvidia-gpu
+    allocationMode: WaitForFirstConsumer
+  end note
+
+  rectangle "Pod ML Training" as pod #90EE90
+
+  rectangle "Node avec GPU" as node #E6E6FA
+  note right of node
+    NVIDIA A100 x2
+    DRA Driver installé
+  end note
+}
+
+rc -down-> claim : définit le type
+claim -down-> pod : consommé par
+node -up-> pod : héberge
+
+package "Workflow DRA" {
+  rectangle "1. Admin" as step1 #F5F5F5
+  rectangle "2. User" as step2 #F5F5F5
+  rectangle "3. Scheduler" as step3 #F5F5F5
+  rectangle "4. Kubelet" as step4 #F5F5F5
+
+  step1 -right-> step2
+  step2 -right-> step3
+  step3 -right-> step4
+}
+
+note bottom of step1
+  Crée ResourceClass
+end note
+
+note bottom of step4
+  Monte le GPU
+end note
+
+note bottom
+  **Structured Parameters K8s 1.32:**
+  - Paramètres visibles par le scheduler
+  - Compatible avec cluster autoscaler
+  - Allocation prédictible
+end note
+
+legend right
+  |= Ressource |= Exemple |
+  | GPU | NVIDIA A100 |
+  | FPGA | Intel Stratix |
+  | TPU | Google TPU v4 |
+endlegend
+
+@enduml

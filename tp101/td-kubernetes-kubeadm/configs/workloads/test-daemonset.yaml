@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-exporter
+  namespace: default
+  labels:
+    app: node-exporter
+spec:
+  selector:
+    matchLabels:
+      app: node-exporter
+  template:
+    metadata:
+      labels:
+        app: node-exporter
+    spec:
+      hostNetwork: true
+      hostPID: true
+      containers:
+      - name: node-exporter
+        image: busybox:latest
+        command:
+        - sh
+        - -c
+        - |
+          echo "Node Exporter on $(hostname)"
+          while true; do
+            echo "Collecting metrics at $(date)"
+            sleep 60
+          done
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        securityContext:
+          privileged: true
+      tolerations:
+      # Tolère les taints pour s'exécuter sur tous les nœuds
+      - operator: Exists

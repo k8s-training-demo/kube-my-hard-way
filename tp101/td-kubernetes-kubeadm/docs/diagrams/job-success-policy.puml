@@ -1,0 +1,54 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+
+title Job Success Policy (K8s 1.33 GA)
+
+skinparam rectangle {
+  BackgroundColor<<success>> #90EE90
+  BackgroundColor<<failed>> #FFB6C1
+  BackgroundColor<<running>> #87CEEB
+  BackgroundColor<<job>> #FFEFD5
+}
+
+rectangle "Indexed Job (10 indices)" as job <<job>> {
+  rectangle "Index 0" as i0 <<success>>
+  rectangle "Index 1" as i1 <<success>>
+  rectangle "Index 2" as i2 <<success>>
+  rectangle "Index 3" as i3 <<failed>>
+  rectangle "Index 4" as i4 <<success>>
+  rectangle "Index 5" as i5 <<running>>
+  rectangle "..." as dots
+}
+
+note right of job
+  **successPolicy:**
+    succeededIndexes: [0, 1, 2]
+
+  ou
+
+    succeededCount: 5
+end note
+
+rectangle "Resultat avec Success Policy" as result {
+  note as n1
+    **Avant K8s 1.33:**
+    Index 3 echoue -> Job FAILED
+
+    **Avec Success Policy:**
+    Indices 0,1,2 OK -> Job SUCCESS
+    (meme si index 3 echoue)
+  end note
+}
+
+legend right
+  |= Scenario |= Comportement |
+  | Leader-Worker | Leader (index 0) suffit |
+  | Simulation | N resultats sur M |
+  | Batch tolerant | Succes partiel OK |
+endlegend
+
+footer **KEP-3998:** Completion partielle pour simulations et patterns leader-worker
+@enduml

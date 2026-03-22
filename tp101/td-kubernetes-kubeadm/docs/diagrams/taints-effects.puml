@@ -1,0 +1,71 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+title Les 3 Effects des Taints
+
+rectangle "**NoSchedule**" as ns #FFB3B3 {
+  rectangle "Node avec Taint" as ns_node #FF6B6B {
+    component "Pod A\n(existant)" as ns_poda #90EE90
+    component "Pod B\n(existant)" as ns_podb #90EE90
+  }
+  rectangle "Nouveaux Pods" as ns_new {
+    component "Pod C" as ns_podc #CCCCCC
+    component "Pod D" as ns_podd #CCCCCC
+  }
+}
+
+note bottom of ns
+  **Comportement:**
+  - Pods existants: **RESTENT**
+  - Nouveaux pods: **BLOQUES**
+
+  **Cas d'usage:**
+  Preparation maintenance
+end note
+
+rectangle "**PreferNoSchedule**" as pns #FFFFB3 {
+  rectangle "Node avec Taint" as pns_node #FFD700 {
+    component "Pod X\n(si pas d'autre choix)" as pns_podx #FFE4B5
+  }
+  rectangle "Autres Nodes" as pns_other {
+    component "Pod Y" as pns_pody #90EE90
+    component "Pod Z" as pns_podz #90EE90
+  }
+}
+
+note bottom of pns
+  **Comportement:**
+  - Scheduler **evite** ce node
+  - Mais l'utilise si **necessaire**
+
+  **Cas d'usage:**
+  Nodes moins performants
+end note
+
+rectangle "**NoExecute**" as ne #B3B3FF {
+  rectangle "Node avec Taint" as ne_node #6B6BFF {
+    component "Pod M\n(EVACUE!)" as ne_podm #FF6B6B
+    component "Pod N\n(EVACUE!)" as ne_podn #FF6B6B
+  }
+  rectangle "Autres Nodes" as ne_other {
+    component "Pod M\n(rescheduled)" as ne_podm2 #90EE90
+    component "Pod N\n(rescheduled)" as ne_podn2 #90EE90
+  }
+}
+
+note bottom of ne
+  **Comportement:**
+  - Nouveaux pods: **BLOQUES**
+  - Pods existants: **EVACUES**
+
+  **Cas d'usage:**
+  Node en panne, maintenance urgente
+end note
+
+ne_podm -[#FF0000,dashed]-> ne_podm2 : eviction
+ne_podn -[#FF0000,dashed]-> ne_podn2 : eviction
+
+@enduml

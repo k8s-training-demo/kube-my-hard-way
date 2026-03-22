@@ -1,0 +1,72 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+
+title ServiceAccount Token pour Image Pull (K8s 1.34 Beta)
+
+skinparam rectangle {
+  BackgroundColor<<pod>> #90EE90
+  BackgroundColor<<registry>> #87CEEB
+  BackgroundColor<<secret>> #FFB6C1
+  BackgroundColor<<token>> #FFEFD5
+}
+
+rectangle "Avant: Image Pull Secrets" as before {
+  rectangle "Pod" as pod1 <<pod>>
+  rectangle "imagePullSecrets\n(long-lived)" as secret <<secret>>
+  rectangle "Container\nRegistry" as reg1 <<registry>>
+
+  pod1 -right-> secret : reference
+  secret -right-> reg1 : credentials statiques
+
+  note bottom of secret
+    **Problemes:**
+    - Secret long-lived
+    - Rotation manuelle
+    - Partage entre pods
+    - Risque de fuite
+  end note
+}
+
+rectangle "Apres: SA Token Auth" as after {
+  rectangle "Pod" as pod2 <<pod>>
+  rectangle "ServiceAccount\nToken (short-lived)" as token <<token>>
+  rectangle "Container\nRegistry" as reg2 <<registry>>
+
+  pod2 -right-> token : auto-generated
+  token -right-> reg2 : JWT ephemere
+
+  note bottom of token
+    **Avantages:**
+    - Token ephemere (~1h)
+    - Rotation automatique
+    - Scope par Pod
+    - Pas de secret a gerer
+  end note
+}
+
+note right of after
+  **Configuration:**
+  ```yaml
+  apiVersion: v1
+  kind: Pod
+  spec:
+    serviceAccountName: my-sa
+    containers:
+    - image: registry.io/app:v1
+  ```
+
+  Le kubelet utilise le SA token
+  pour s'authentifier au registry
+end note
+
+legend right
+  |= Methode |= Duree vie |= Rotation |= Securite |
+  | imagePullSecrets | Illimitee | Manuelle | Faible |
+  | **SA Token** | **~1h** | **Auto** | **Forte** |
+endlegend
+
+footer **KEP-4412:** Authentification registry sans secrets long-lived
+@enduml

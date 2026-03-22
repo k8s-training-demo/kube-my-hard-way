@@ -1,0 +1,62 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title Static Pods - Gestion par Kubelet
+
+actor "Administrateur" as admin
+
+package "Control Plane" {
+  rectangle "API Server" as api #326CE5 {
+    component "Mirror Pod\n(read-only)" as mirror
+  }
+}
+
+package "Node" {
+  rectangle "Kubelet" as kubelet #90EE90 {
+    component "Static Pod\nWatcher" as watcher
+  }
+
+  folder "/etc/kubernetes/manifests/" as manifests {
+    file "etcd.yaml" as etcd_file
+    file "kube-apiserver.yaml" as api_file
+    file "custom-pod.yaml" as custom_file
+  }
+
+  rectangle "Container Runtime" as runtime #87CEEB {
+    component "etcd\ncontainer" as etcd_pod #90EE90
+    component "kube-apiserver\ncontainer" as api_pod #90EE90
+    component "custom-app\ncontainer" as custom_pod #90EE90
+  }
+}
+
+admin -down-> manifests : 1. Crée/modifie\nfichier YAML
+manifests -down-> watcher : 2. Détecte changement
+watcher -down-> runtime : 3. Démarre/arrête\ncontainer
+runtime -up-> mirror : 4. Crée mirror pod\n(lecture seule)
+
+note right of mirror
+  Le mirror pod dans l'API
+  reflète l'état réel mais
+  **ne peut pas être modifié**
+  via kubectl
+end note
+
+note bottom of manifests
+  **Avantages:**
+  - Démarrage avant l'API Server
+  - Haute disponibilité
+  - Gestion locale par kubelet
+  - Utilisé pour control plane
+end note
+
+legend right
+  |= Action |= Résultat |
+  | kubectl delete | Pod recréé immédiatement |
+  | Supprimer fichier | Pod supprimé définitivement |
+  | Modifier fichier | Pod mis à jour automatiquement |
+endlegend
+
+@enduml

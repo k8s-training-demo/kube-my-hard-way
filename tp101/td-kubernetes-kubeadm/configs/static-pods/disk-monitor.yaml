@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: disk-monitor
+  namespace: kube-system
+  labels:
+    component: disk-monitor
+    tier: node
+spec:
+  hostNetwork: true
+  hostPID: true
+  containers:
+  - name: disk-monitor
+    image: busybox:latest
+    command:
+    - sh
+    - -c
+    - |
+      echo "=== Disk Monitor Static Pod ==="
+      echo "Node: $(hostname)"
+      echo "Start time: $(date)"
+      echo ""
+
+      while true; do
+        echo "----------------------------------------"
+        echo "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
+        echo ""
+        echo "Disk Usage:"
+        df -h | grep -E '(Filesystem|/dev/)'
+        echo ""
+        echo "Inodes Usage:"
+        df -i | grep -E '(Filesystem|/dev/)' | head -5
+        echo ""
+        echo "Top 5 largest directories in /var:"
+        du -h --max-depth=1 /var 2>/dev/null | sort -rh | head -6
+        echo ""
+        sleep 300  # Check every 5 minutes
+      done
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
+    volumeMounts:
+    - name: root-fs
+      mountPath: /var
+      readOnly: true
+  volumes:
+  - name: root-fs
+    hostPath:
+      path: /var
+      type: Directory
+  restartPolicy: Always
+  priorityClassName: system-node-critical

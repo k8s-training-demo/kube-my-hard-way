@@ -1,0 +1,66 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+title Operators des Tolerations: Equal vs Exists
+
+rectangle "**Operator: Equal**\nCorrespondance exacte" as equal #B3D9FF {
+
+  rectangle "Taint sur Node" as eq_taint #FFB3B3 {
+    label "key: **gpu**\nvalue: **nvidia**\neffect: NoSchedule" as eq_t1
+  }
+
+  rectangle "Toleration Pod" as eq_tol #B3FFB3 {
+    label "key: **gpu**\noperator: **Equal**\nvalue: **nvidia**\neffect: NoSchedule" as eq_p1
+  }
+
+  eq_taint <--> eq_tol : **MATCH**\nkey + value + effect
+}
+
+note bottom of equal
+  **Utilisation:**
+  - Correspondance **precise**
+  - value doit etre **identique**
+
+  **Exemple:** Pods GPU specifiques
+end note
+
+rectangle "**Operator: Exists**\nCorrespondance flexible" as exists #FFE4B3 {
+
+  rectangle "Taints sur Node" as ex_taint #FFB3B3 {
+    label "key: **env**\nvalue: **prod**" as ex_t1
+    label "key: **env**\nvalue: **staging**" as ex_t2
+    label "key: **env**\nvalue: **dev**" as ex_t3
+  }
+
+  rectangle "Toleration Pod" as ex_tol #B3FFB3 {
+    label "key: **env**\noperator: **Exists**\neffect: NoSchedule" as ex_p1
+  }
+
+  ex_t1 <-- ex_tol : MATCH
+  ex_t2 <-- ex_tol : MATCH
+  ex_t3 <-- ex_tol : MATCH
+}
+
+note bottom of exists
+  **Utilisation:**
+  - Tolere **n'importe quelle valeur**
+  - Wildcard sur la value
+
+  **Exemple:** Tous les envs
+end note
+
+rectangle "**Wildcard Total**\nTolere tout" as wildcard #E0E0E0 {
+  rectangle "Toleration" as wc_tol #B3FFB3 {
+    label "operator: **Exists**\n(pas de key)" as wc_p1
+  }
+
+  note right of wc_tol
+    Tolere **TOUS** les taints!
+    A utiliser avec precaution
+  end note
+}
+
+@enduml

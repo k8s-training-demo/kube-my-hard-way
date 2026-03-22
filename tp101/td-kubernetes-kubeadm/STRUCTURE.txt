@@ -1,0 +1,55 @@
+.
+├── configs
+│   ├── kubelet
+│   │   └── kubelet-config-custom.yaml
+│   ├── network
+│   ├── static-pods
+│   │   └── disk-monitor.yaml
+│   └── workloads
+│       ├── deployment-with-pdb.yaml
+│       ├── pod-no-toleration.yaml
+│       ├── pod-tolerate-all.yaml
+│       ├── pod-with-toleration.yaml
+│       └── test-daemonset.yaml
+├── docs
+│   ├── exercices-etudiants.md
+│   ├── guide-instructeur.md
+│   └── quick-reference.md
+├── README.md
+├── scripts
+│   ├── partie1-installation
+│   │   ├── 01-prereqs.sh
+│   │   ├── 02-init-control-plane.sh
+│   │   ├── 03-join-workers.sh
+│   │   ├── 04-install-flannel.sh
+│   │   └── 05-verify-cluster.sh
+│   ├── partie2-kubelet-static-pods
+│   │   ├── 01-modify-kubelet-config.sh
+│   │   ├── 02-deploy-static-pod.sh
+│   │   └── 03-test-static-pod-behavior.sh
+│   ├── partie3-taints-tolerations
+│   │   ├── 01-explore-default-taints.sh
+│   │   ├── 02-add-custom-taints.sh
+│   │   └── 03-observe-scheduling.sh
+│   ├── partie4-migration-cni
+│   │   ├── 01-backup-cluster-state.sh
+│   │   ├── 02-drain-nodes.sh
+│   │   ├── 03-remove-flannel.sh
+│   │   ├── 04-install-calico.sh
+│   │   └── 05-uncordon-and-validate.sh
+│   ├── partie5-drain-maintenance
+│   │   ├── 01-drain-with-pdb.sh
+│   │   ├── 02-drain-with-daemonsets.sh
+│   │   └── 03-simulate-node-failure.sh
+│   └── partie6-upgrade
+│       ├── 01-check-versions.sh
+│       ├── 02-upgrade-control-plane.sh
+│       ├── 03-upgrade-master-kubelet.sh
+│       ├── 04-upgrade-worker.sh
+│       └── 05-validate-upgrade.sh
+├── STRUCTURE.txt
+└── validation
+    ├── validate-all.sh
+    └── validate-partie.sh
+
+15 directories, 38 files

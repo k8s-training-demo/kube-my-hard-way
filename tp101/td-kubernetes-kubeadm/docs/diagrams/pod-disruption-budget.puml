@@ -1,0 +1,53 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title Pod Disruption Budget - Garantie de disponibilité
+
+rectangle "Deployment: 5 replicas" as deploy {
+  component "Pod 1\n✓ Running" as p1 #90EE90
+  component "Pod 2\n✓ Running" as p2 #90EE90
+  component "Pod 3\n✓ Running" as p3 #90EE90
+  component "Pod 4\n✓ Running" as p4 #90EE90
+  component "Pod 5\n✓ Running" as p5 #90EE90
+}
+
+rectangle "PodDisruptionBudget" as pdb #FFD700 {
+  note right
+    **minAvailable: 3**
+    ou
+    **maxUnavailable: 2**
+  end note
+}
+
+rectangle "Drain du nœud" as drain #FF6B6B {
+  component "Pod 4\n⏳ Terminating" as p4_term #FFB6C1
+  component "Pod 5\n⏳ Terminating" as p5_term #FFB6C1
+}
+
+note bottom of pdb
+  Le PDB garantit qu'au moins 3 pods
+  restent disponibles pendant les
+  opérations de maintenance
+end note
+
+note bottom of drain
+  Maximum 2 pods peuvent être
+  évacués simultanément
+  (5 - 3 = 2)
+end note
+
+deploy -down-> pdb : protégé par
+pdb -down-> drain : autorise max 2 évictions
+
+legend right
+  |= Couleur |= Signification |
+  | <#90EE90>   | Pod Running |
+  | <#FFB6C1>   | Pod Terminating |
+  | <#FFD700>   | PDB actif |
+  | <#FF6B6B>   | Opération maintenance |
+endlegend
+
+@enduml

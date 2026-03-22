@@ -1,0 +1,15 @@
+{
+  "name": "presentation",
+  "version": "1.0.0",
+  "description": "Ce dossier contient tout le nécessaire pour lancer un serveur de présentation interactif des slides du cours Kubernetes.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "^1.57.0"
+  }
+}

@@ -1,0 +1,84 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title Migration CNI - Flannel vers Calico
+
+|Master Node|
+start
+:**1. Backup état cluster**;
+note right
+  - Liste des pods
+  - Configuration réseau
+  - État des nœuds
+end note
+
+:**2. Drain Worker1**;
+note right
+  kubectl drain worker1
+  --ignore-daemonsets
+end note
+
+:**3. Drain Worker2**;
+
+|Workers|
+:Pods évacués vers
+autres nœuds;
+note right
+  Les pods sont déplacés
+  gracefully
+end note
+
+|Master Node|
+:**4. Supprimer Flannel**;
+note right
+  - kubectl delete -f flannel.yml
+  - Nettoyer interfaces réseau
+  - Supprimer règles iptables
+end note
+
+:⚠️ **Cluster sans réseau**;
+note right
+  Les pods perdent la
+  connectivité inter-pod
+  pendant quelques minutes
+end note
+
+:**5. Installer Calico**;
+note right
+  - kubectl apply -f calico.yml
+  - Attendre pods calico-node
+  - Vérifier interfaces
+end note
+
+:**6. Uncordon Worker1**;
+:**7. Uncordon Worker2**;
+
+|Workers|
+:Pods redistribués
+sur tous les nœuds;
+
+|Master Node|
+:**8. Valider connectivité**;
+note right
+  - DNS
+  - Inter-pod
+  - Services
+  - Externe
+end note
+
+stop
+
+legend right
+  |= Étape |= Durée estimée |
+  | Backup | 3 min |
+  | Drain nodes | 5 min |
+  | Supprimer Flannel | 5 min |
+  | Installer Calico | 7 min |
+  | Validation | 5 min |
+  | **Total** | **~25 min** |
+endlegend
+
+@enduml

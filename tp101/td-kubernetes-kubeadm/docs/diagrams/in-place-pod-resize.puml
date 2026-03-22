@@ -1,0 +1,48 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+
+title In-Place Pod Vertical Scaling (K8s 1.33 Beta)
+
+skinparam rectangle {
+  BackgroundColor<<pod>> #90EE90
+  BackgroundColor<<kubelet>> #87CEEB
+  BackgroundColor<<api>> #FFB6C1
+}
+
+rectangle "Avant: Resize classique" as before {
+  rectangle "Pod v1\nCPU: 100m\nMem: 128Mi" as pod1 <<pod>>
+  rectangle "Pod v2\nCPU: 200m\nMem: 256Mi" as pod2 <<pod>>
+  pod1 -[#red]-> pod2 : **Suppression + Recreation**\n(Downtime)
+}
+
+rectangle "Apres: In-Place Resize" as after {
+  rectangle "Pod\nCPU: 100m -> 200m\nMem: 128Mi -> 256Mi" as pod3 <<pod>>
+  rectangle "kubelet" as kubelet <<kubelet>>
+  rectangle "API Server" as api <<api>>
+
+  api -down-> kubelet : PATCH resize subresource
+  kubelet -down-> pod3 : Update cgroups\n**Sans redemarrage**
+}
+
+note right of after
+  **Conditions du Pod:**
+  - PodResizePending
+  - PodResizeInProgress
+
+  **Avantages:**
+  - Zero downtime
+  - Pas de rescheduling
+  - Connections maintenues
+end note
+
+legend right
+  |= Methode |= Downtime |= Connections |
+  | Classique | Oui | Perdues |
+  | **In-Place** | **Non** | **Maintenues** |
+endlegend
+
+footer **Cas d'usage:** Scaling vertical automatique, ajustement charge, HPA vertical
+@enduml

@@ -1,0 +1,39 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+
+title Flux de Decision du Scheduler avec Taints
+
+start
+
+:Pod soumis au Scheduler;
+
+:Lister tous les Nodes disponibles;
+
+repeat :Pour chaque Node
+  if (Node a des Taints?) then (oui)
+    if (Pod a Tolerations\ncorrespondantes?) then (oui)
+      :Node **eligible**;
+      #90EE90:Ajouter a la liste;
+    else (non)
+      :Node **rejete**;
+      #FF6B6B:Exclure de la liste;
+    endif
+  else (non)
+    :Node **eligible**;
+    #90EE90:Ajouter a la liste;
+  endif
+repeat while (Autres Nodes?) is (oui)
+
+if (Nodes eligibles > 0?) then (oui)
+  :Calculer scores\n(affinities, resources...);
+  :Selectionner meilleur Node;
+  #90EE90:Pod schedule!;
+else (non)
+  #FF6B6B:Pod **Pending**\n(Unschedulable);
+endif
+
+stop
+
+@enduml

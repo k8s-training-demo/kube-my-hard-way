@@ -1,0 +1,83 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+
+title Dynamic Resource Allocation - GA (K8s 1.34)
+
+skinparam rectangle {
+  BackgroundColor<<pod>> #90EE90
+  BackgroundColor<<claim>> #FFEFD5
+  BackgroundColor<<driver>> #87CEEB
+  BackgroundColor<<node>> #FFB6C1
+}
+
+rectangle "Architecture DRA" {
+  rectangle "Pod" as pod <<pod>> {
+    note as podspec
+      spec:
+        resourceClaims:
+        - name: gpu-claim
+          resourceClaimName: my-gpu
+        containers:
+        - resources:
+            claims:
+            - name: gpu-claim
+    end note
+  }
+
+  rectangle "ResourceClaim" as claim <<claim>> {
+    note as claimspec
+      apiVersion: resource.k8s.io/v1
+      kind: ResourceClaim
+      spec:
+        devices:
+          requests:
+          - name: gpu
+            deviceClassName: nvidia-gpu
+            selectors:
+            - cel:
+                expression: >
+                  device.attributes["memory"]
+                  .quantity >= "16Gi"
+    end note
+  }
+
+  rectangle "DeviceClass" as dc <<driver>> {
+    note as dcspec
+      kind: DeviceClass
+      metadata:
+        name: nvidia-gpu
+      spec:
+        selectors:
+        - cel:
+            expression: >
+              device.driver == "nvidia.com"
+    end note
+  }
+
+  rectangle "ResourceSlice\n(Node inventory)" as slice <<node>> {
+    note as slicespec
+      Devices disponibles:
+      - GPU A100 16GB
+      - GPU A100 80GB
+      - GPU H100 80GB
+    end note
+  }
+
+  pod -right-> claim : reference
+  claim -right-> dc : deviceClassName
+  dc -down-> slice : match devices
+}
+
+legend right
+  |= API |= Role |
+  | ResourceClaim | Demande de device |
+  | DeviceClass | Type de device |
+  | ResourceSlice | Inventaire node |
+  | ResourceClaimTemplate | Template reutilisable |
+endlegend
+
+footer **KEP-4381:** API stable resource.k8s.io/v1 - GPU, TPU, FPGA, custom devices
+@enduml

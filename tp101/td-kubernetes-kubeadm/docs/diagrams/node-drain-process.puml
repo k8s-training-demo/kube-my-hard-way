@@ -1,0 +1,87 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title Node Drain Process - Maintenance sécurisée
+
+|Administrateur|
+start
+:**kubectl drain worker1**;
+note right
+  Options importantes:
+  --ignore-daemonsets
+  --delete-emptydir-data
+  --force (si nécessaire)
+end note
+
+|Kubernetes API|
+:**Marquer nœud\nSchedulingDisabled**;
+note right
+  kubectl cordon worker1
+  (automatique avec drain)
+end note
+
+:**Vérifier PodDisruptionBudget**;
+
+if (PDB respecté?) then (oui)
+  :**Continuer l'éviction**;
+else (non)
+  :⏳ **Attendre**;
+  note right
+    Le drain attend que
+    le PDB puisse être
+    respecté
+  end note
+  -up-> **Vérifier PodDisruptionBudget**
+endif
+
+|Worker Node|
+:**Envoyer SIGTERM\naux pods**;
+note right
+  Grace period: 30s par défaut
+  Les pods peuvent cleanup
+end note
+
+:Attendre terminationGracePeriod;
+
+:**Envoyer SIGKILL\naux pods restants**;
+
+:**Supprimer les pods\ndu nœud**;
+
+|Kubernetes Scheduler|
+:**Recréer les pods\nsur autres nœuds**;
+note right
+  Seulement pour les pods
+  avec controllers:
+  - Deployment
+  - StatefulSet
+  - DaemonSet
+  - Job
+end note
+
+|Administrateur|
+:**Maintenance du nœud**;
+note right
+  - Upgrade kernel
+  - Mise à jour kubelet
+  - Réparation hardware
+  - etc.
+end note
+
+:**kubectl uncordon worker1**;
+
+|Kubernetes Scheduler|
+:Nœud disponible\npour scheduling;
+
+stop
+
+legend right
+  |= État |= Description |
+  | Ready | Nœud disponible |
+  | SchedulingDisabled | Cordon appliqué |
+  | NotReady | Kubelet arrêté |
+endlegend
+
+@enduml
