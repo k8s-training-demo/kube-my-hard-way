@@ -80,30 +80,51 @@ else
 fi
 
 echo ""
-echo "3. Application du manifest Calico:"
+echo "3. Configuration du mode réseau (VXLAN pour Exoscale/cloud providers):"
+
+# Sur Exoscale et la plupart des cloud providers, IPIP (IP protocol 4) est bloqué
+# par les security groups. On force VXLAN dès le départ dans le manifest.
+echo "   Passage en mode VXLAN (compatibilité cloud — IPIP bloqué sur Exoscale)..."
+# Désactiver IPIP dans les variables d'environnement du DaemonSet calico-node
+sed -i 's/value: "Always"$/value: "Never"/' calico.yaml
+# Activer VXLAN en ajoutant la variable après CALICO_IPV4POOL_IPIP
+python3 - <<'PYEOF'
+import re, sys
+
+with open('calico.yaml', 'r') as f:
+    content = f.read()
+
+# Vérifier si CALICO_IPV4POOL_VXLAN est déjà présent
+if 'CALICO_IPV4POOL_VXLAN' not in content:
+    # Insérer CALICO_IPV4POOL_VXLAN: Always après CALICO_IPV4POOL_IPIP block
+    content = re.sub(
+        r'(name: CALICO_IPV4POOL_IPIP\n\s+value: "Never")',
+        r'\1\n            - name: CALICO_IPV4POOL_VXLAN\n              value: "Always"',
+        content
+    )
+    with open('calico.yaml', 'w') as f:
+        f.write(content)
+    print("   ✓ VXLAN activé dans le manifest")
+else:
+    print("   ✓ VXLAN déjà configuré dans le manifest")
+PYEOF
+echo ""
+
+echo "4. Application du manifest Calico:"
 kubectl apply -f calico.yaml
 
 echo ""
-echo "4. Attente du déploiement de Calico..."
-echo "   Cela peut prendre 2-3 minutes..."
+echo "5. Attente du déploiement de Calico..."
+echo "   Cela peut prendre 2-5 minutes..."
 
 # Attendre que calico-node soit prêt
-kubectl wait --for=condition=ready pod -l k8s-app=calico-node -n kube-system --timeout=300s
+kubectl wait --for=condition=ready pod -l k8s-app=calico-node -n kube-system --timeout=420s
 
 # Attendre que calico-kube-controllers soit prêt
 kubectl wait --for=condition=ready pod -l k8s-app=calico-kube-controllers -n kube-system --timeout=120s
 
 echo ""
-echo "5. Vérification de la configuration Calico:"
-
-# Vérifier que le CIDR a été correctement appliqué
-echo "   Vérification du CIDR configuré..."
-if grep -q "CALICO_IPV4POOL_CIDR.*$POD_CIDR" calico.yaml; then
-    echo "   ✓ CIDR $POD_CIDR correctement configuré dans le manifest"
-else
-    echo "   ⚠️  CIDR $POD_CIDR non trouvé dans le manifest"
-    echo "   Vérifiez manuellement la configuration dans calico.yaml"
-fi
+echo "6. Vérification de la configuration Calico:"
 
 # Vérifier que les pods Calico sont en cours d'exécution
 echo "   Vérification des pods Calico..."
@@ -114,24 +135,30 @@ if [ "$CALICO_NODES" -eq 0 ]; then
 fi
 
 echo ""
-echo "✓ Calico installé avec succès!"
+echo "✓ Calico installé avec succès (mode VXLAN)!"
 echo ""
 
-echo "5. Vérification des composants Calico:"
+echo "   Composants Calico:"
 kubectl get pods -n kube-system -l k8s-app=calico-node -o wide
 kubectl get pods -n kube-system -l k8s-app=calico-kube-controllers
 
 echo ""
-echo "6. Redémarrage de kubelet sur tous les nœuds..."
+echo "7. Recyclage de kube-proxy et CoreDNS (post-migration CNI)..."
+kubectl rollout restart daemonset/kube-proxy -n kube-system
+kubectl delete pods -n kube-system -l k8s-app=kube-dns
+echo "   ✓ kube-proxy redémarré, CoreDNS pods recyclés"
+echo ""
+
+echo "8. Redémarrage de kubelet sur tous les nœuds..."
 echo "   ⚠️  IMPORTANT: Attendez que Calico soit complètement installé avant de redémarrer kubelet"
-echo "   Exécutez sur CHAQUE nœud (master et workers):"
+echo "   Exécutez sur CHAQUE nœud worker (pas le master):"
 echo "   sudo systemctl start kubelet"
 echo ""
 echo "   ⚠️  NE PAS redémarrer kubelet avant que ce script affiche 'Calico installé avec succès!'"
 echo ""
 
-echo "7. Sauvegarde du manifest:"
+echo "9. Sauvegarde du manifest:"
 mkdir -p ~/calico-manifests
 mv calico.yaml ~/calico-manifests/
-mv calico.yaml.bak ~/calico-manifests/
+mv calico.yaml.bak ~/calico-manifests/ 2>/dev/null || true
 echo "   ✓ Manifest sauvegardé dans ~/calico-manifests/"
