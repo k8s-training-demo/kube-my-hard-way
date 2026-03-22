@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fake-gpu-workload
+  labels:
+    app: gpu-training
+    workload-type: gpu
+    # Simulation d'un workload ML — pas de GPU réel requis
+spec:
+  containers:
+  - name: gpu-simulation
+    image: busybox:latest
+    command: ["sh", "-c", "echo 'Simulated GPU training job running...'; sleep 3600"]
+    resources:
+      requests:
+        cpu: 100m
+        memory: 64Mi
+    env:
+    - name: CUDA_VISIBLE_DEVICES
+      value: "none"   # Simulation — pas de GPU réel
+    - name: WORKLOAD_TYPE
+      value: "gpu-training-simulation"
+  tolerations:
+  # Ce pod tolère le taint gpu=true:NoSchedule
+  # → il PEUT être schedulé sur le nœud réservé GPU
+  - key: "gpu"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+  restartPolicy: Never

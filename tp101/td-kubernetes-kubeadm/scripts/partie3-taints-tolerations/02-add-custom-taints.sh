@@ -43,6 +43,47 @@ echo ""
 
 echo "✓ Taints personnalisés ajoutés!"
 echo ""
-echo "Pour supprimer un taint:"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+echo "5. Démonstration — pod GPU simulé (sans GPU réel) :"
+echo ""
+echo "   Un pod 'fake-gpu-workload' avec la toleration gpu=true:NoSchedule"
+echo "   → il PEUT être schedulé sur $WORKER_NODE malgré le taint"
+echo ""
+kubectl apply -f "$PROJECT_ROOT/configs/workloads/pod-fake-gpu.yaml"
+sleep 5
+kubectl get pod fake-gpu-workload -o wide
+NODE_PLACED=$(kubectl get pod fake-gpu-workload -o jsonpath='{.spec.nodeName}')
+echo ""
+if [ "$NODE_PLACED" = "$WORKER_NODE" ]; then
+    echo "   ✓ Pod schedulé sur $WORKER_NODE (nœud tainté GPU) — toleration OK"
+else
+    echo "   ℹ️  Pod schedulé sur : ${NODE_PLACED:-NON SCHEDULÉ}"
+fi
+echo ""
+
+echo "6. Comparaison — pod SANS toleration gpu :"
+cat <<'EOF'
+   apiVersion: v1
+   kind: Pod
+   metadata:
+     name: pod-sans-toleration
+   spec:
+     containers:
+     - name: app
+       image: nginx:alpine
+     # Pas de tolerations → ne peut PAS aller sur le nœud GPU tainté
+EOF
+echo ""
+echo "   → Ce pod sera schedulé uniquement sur les nœuds sans taint gpu."
+echo ""
+
+echo "Nettoyage du pod de démonstration..."
+kubectl delete pod fake-gpu-workload --ignore-not-found=true
+echo ""
+echo "Pour supprimer les taints :"
 echo "  kubectl taint nodes $WORKER_NODE gpu=true:NoSchedule-"
 echo "  kubectl taint nodes $WORKER_NODE environment=production:NoExecute-"
+echo "  (ou lancez : ./00-reset.sh)"
