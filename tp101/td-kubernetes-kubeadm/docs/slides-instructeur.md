@@ -3966,6 +3966,85 @@ spec:
 
 ---
 
+## Modèle OSI — où se situent IPIP et VXLAN
+
+<div style="display:flex;flex-direction:column;gap:4px;font-size:0.82em;margin-top:6px">
+  <div style="background:#f3e8ff;border-radius:6px;padding:7px 16px;border-left:5px solid #9333ea"><strong>L7 · Application</strong> &nbsp;·&nbsp; HTTP, gRPC, données du pod</div>
+  <div style="background:#ede9fe;border-radius:6px;padding:7px 16px;border-left:5px solid #7c3aed;opacity:0.7"><strong>L6 · Présentation</strong> &nbsp;·&nbsp; <em>théorique — fondu dans L7 en TCP/IP (TLS, encodage)</em></div>
+  <div style="background:#ede9fe;border-radius:6px;padding:7px 16px;border-left:5px solid #7c3aed;opacity:0.7"><strong>L5 · Session</strong> &nbsp;·&nbsp; <em>théorique — fondu dans L7 en TCP/IP (sessions HTTP, WebSocket)</em></div>
+  <div style="text-align:center;color:#888;font-size:0.8em">▼</div>
+  <div style="background:#bbf7d0;border-radius:6px;padding:7px 16px;border-left:5px solid #16a34a"><strong>L4 · Transport</strong> &nbsp;·&nbsp; TCP (proto 6) · UDP (proto 17) &nbsp;·&nbsp; <em>ports src / dst</em> &nbsp;← <strong>Security Groups filtrent ici</strong></div>
+  <div style="text-align:center;color:#888;font-size:0.8em">▼</div>
+  <div style="background:#fef08a;border-radius:6px;padding:7px 16px;border-left:5px solid #ca8a04"><strong>L3 · Réseau</strong> &nbsp;·&nbsp; IP · adresses src/dst · champ <strong>Protocol</strong> (1 octet) &nbsp;·&nbsp; <em>proto 4 = IPIP · proto 17 = UDP</em></div>
+  <div style="text-align:center;color:#888;font-size:0.8em">▼</div>
+  <div style="background:#e0f2fe;border-radius:6px;padding:7px 16px;border-left:5px solid #0284c7"><strong>L2 · Liaison</strong> &nbsp;·&nbsp; Ethernet · adresses MAC</div>
+  <div style="text-align:center;color:#888;font-size:0.8em">▼</div>
+  <div style="background:#f1f5f9;border-radius:6px;padding:7px 16px;border-left:5px solid #94a3b8"><strong>L1 · Physique</strong> &nbsp;·&nbsp; câble · fibre · switch virtuel</div>
+</div>
+
+> L5/L6 existent dans le modèle OSI théorique (1984) mais **n'ont pas d'équivalent en TCP/IP** — on parle uniquement de L3/L4/L7 en pratique. IPIP : L3→L3, pas de L4 → drop SG.
+
+---
+
+## IPIP — couches OSI du paquet encapsulé
+
+<div style="font-size:0.82em">
+
+<div style="background:#fee2e2;border-radius:6px;padding:8px 14px;margin:4px 0;border-left:4px solid #dc2626">
+<strong>L3 outer</strong> · IP · src=<code>NodeA</code> dst=<code>NodeB</code> · <strong>Protocol = 4</strong> ← pas de L4, pas de port
+</div>
+<div style="background:#fecaca;border-radius:6px;padding:8px 14px;margin:4px 0 4px 30px;border-left:4px solid #ef4444">
+<strong>L3 inner</strong> · IP · src=<code>10.244.0.5</code> (PodA) dst=<code>10.244.1.8</code> (PodB) · Protocol = 6
+</div>
+<div style="background:#fee2e2;border-radius:6px;padding:8px 14px;margin:4px 0 4px 60px;border-left:4px solid #f87171">
+<strong>L4 inner</strong> · TCP · src=<code>54321</code> dst=<code>80</code>
+</div>
+<div style="background:#fef2f2;border-radius:6px;padding:8px 14px;margin:4px 0 4px 90px;border-left:4px solid #fca5a5">
+<strong>L7 inner</strong> · HTTP GET /
+</div>
+
+</div>
+
+<br/>
+
+<div style="display:flex;align-items:center;gap:12px;font-size:0.85em;margin-top:8px">
+  <div style="background:#fee2e2;border:2px solid #dc2626;border-radius:8px;padding:8px 14px;text-align:center"><strong>Paquet IPIP</strong><br/>proto=4</div>
+  <div style="font-size:1.4em;color:#888">→</div>
+  <div style="background:#fef9c3;border:2px solid #ca8a04;border-radius:8px;padding:8px 14px;text-align:center"><strong>Security Group</strong><br/>cherche L4…</div>
+  <div style="font-size:1.4em;color:#888">→</div>
+  <div style="background:#fee2e2;border:2px solid #dc2626;border-radius:8px;padding:8px 14px;text-align:center">pas de port ❌<br/><strong>DROP silencieux</strong><br/><small>au hyperviseur</small></div>
+</div>
+
+---
+
+## VXLAN — couches OSI du paquet encapsulé
+
+<div style="font-size:0.82em">
+
+<div style="background:#dcfce7;border-radius:6px;padding:8px 14px;margin:4px 0;border-left:4px solid #16a34a">
+<strong>L3 outer</strong> · IP · src=<code>NodeA</code> dst=<code>NodeB</code> · Protocol = 17 (UDP)
+</div>
+<div style="background:#bbf7d0;border-radius:6px;padding:8px 14px;margin:4px 0 4px 30px;border-left:4px solid #22c55e">
+<strong>L4 outer</strong> · UDP · src=<code>ephémère</code> dst=<strong><code>4789</code></strong> ← filtrable par SG ✅
+</div>
+<div style="background:#f0fdf4;border-radius:6px;padding:8px 14px;margin:4px 0 4px 60px;border-left:4px solid #86efac">
+<strong>VXLAN header</strong> · VNI (Virtual Network Identifier)
+</div>
+<div style="background:#dcfce7;border-radius:6px;padding:8px 14px;margin:4px 0 4px 90px;border-left:4px solid #4ade80">
+<strong>L2 inner</strong> · Ethernet · MAC PodA → MAC PodB
+</div>
+<div style="background:#f0fdf4;border-radius:6px;padding:8px 14px;margin:4px 0 4px 90px;border-left:4px solid #86efac">
+<strong>L3 inner</strong> · IP · <code>10.244.0.5</code> → <code>10.244.1.8</code> &nbsp;|&nbsp; <strong>L4</strong> · TCP :80 &nbsp;|&nbsp; <strong>L7</strong> · HTTP
+</div>
+
+</div>
+
+<br/>
+
+> Calico par défaut = IPIP (bare-metal). Sur Exoscale → `vxlanMode: Always` dans le manifest.
+
+---
+
 ## 4.1 - Backup
 
 ![bg right:40% fit](diagrams/cni-migration.png)

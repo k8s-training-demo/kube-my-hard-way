@@ -117,8 +117,14 @@ echo ""
 echo "5. Attente du déploiement de Calico..."
 echo "   Cela peut prendre 2-5 minutes..."
 
-# Attendre que calico-node soit prêt
-kubectl wait --for=condition=ready pod -l k8s-app=calico-node -n kube-system --timeout=420s
+# Attendre uniquement le calico-node du master (les workers ont kubelet arrêté à ce stade)
+MASTER_NODE=$(kubectl get nodes -o json | jq -r '.items[] | select(.metadata.labels."node-role.kubernetes.io/control-plane" != null) | .metadata.name')
+echo "   Attente du calico-node sur le master ($MASTER_NODE)..."
+kubectl wait --for=condition=ready pod \
+    -l k8s-app=calico-node \
+    -n kube-system \
+    --field-selector "spec.nodeName=$MASTER_NODE" \
+    --timeout=420s
 
 # Attendre que calico-kube-controllers soit prêt
 kubectl wait --for=condition=ready pod -l k8s-app=calico-kube-controllers -n kube-system --timeout=120s
@@ -135,7 +141,10 @@ if [ "$CALICO_NODES" -eq 0 ]; then
 fi
 
 echo ""
-echo "✓ Calico installé avec succès (mode VXLAN)!"
+echo "✓ Calico installé avec succès (mode VXLAN) sur le master !"
+echo "══════════════════════════════════════════════════════════"
+echo "  → MAINTENANT vous pouvez démarrer kubelet sur les workers"
+echo "══════════════════════════════════════════════════════════"
 echo ""
 
 echo "   Composants Calico:"
@@ -149,12 +158,10 @@ kubectl delete pods -n kube-system -l k8s-app=kube-dns
 echo "   ✓ kube-proxy redémarré, CoreDNS pods recyclés"
 echo ""
 
-echo "8. Redémarrage de kubelet sur tous les nœuds..."
-echo "   ⚠️  IMPORTANT: Attendez que Calico soit complètement installé avant de redémarrer kubelet"
-echo "   Exécutez sur CHAQUE nœud worker (pas le master):"
+echo "8. Redémarrage de kubelet sur les workers..."
+echo "   Le script vient d'afficher 'Calico installé avec succès' — c'est le signal."
+echo "   Exécutez maintenant sur CHAQUE nœud worker :"
 echo "   sudo systemctl start kubelet"
-echo ""
-echo "   ⚠️  NE PAS redémarrer kubelet avant que ce script affiche 'Calico installé avec succès!'"
 echo ""
 
 echo "9. Sauvegarde du manifest:"

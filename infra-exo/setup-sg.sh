@@ -122,6 +122,27 @@ else
     echo "ajoutée."
 fi
 
+# 5. Kubernetes API (TCP 6443) depuis partout — accès kubectl externe pour TP
+echo -n "  → Kubernetes API (TCP 6443) depuis 0.0.0.0/0… "
+if exo compute security-group show "$SG_NAME" --output-format json 2>/dev/null | \
+   python3 -c "
+import sys, json
+rules = json.load(sys.stdin).get('ingress_rules', [])
+for r in rules:
+    if r.get('protocol') == 'tcp' and r.get('start_port') == 6443 and r.get('end_port') == 6443 \
+       and r.get('network') in ('0.0.0.0/0', '::/0'):
+        sys.exit(0)
+sys.exit(1)
+" 2>/dev/null; then
+    echo "déjà présent."
+else
+    exo compute security-group rule add "$SG_NAME" \
+        --protocol tcp \
+        --port 6443 \
+        --network 0.0.0.0/0 > /dev/null
+    echo "ajoutée."
+fi
+
 echo ""
 echo "✅ Security group '$SG_NAME' configuré."
 echo ""
