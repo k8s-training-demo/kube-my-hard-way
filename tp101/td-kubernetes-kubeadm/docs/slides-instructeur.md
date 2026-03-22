@@ -1503,7 +1503,7 @@ kubectl get pod mon-pod \
 
 ## K8s 1.35 - DRA (Dynamic Resource Allocation) GA
 
-<svg width="1100" height="270" viewBox="0 0 1100 270" xmlns="http://www.w3.org/2000/svg">
+<svg width="1100" height="270" viewBox="0 0 1100 270" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
 <defs>
 <marker id="dra1" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,9 3,0 6" fill="#6b7280"/></marker>
 <marker id="dra2" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,9 3,0 6" fill="#7c3aed"/></marker>
@@ -1611,7 +1611,7 @@ spec:
 
 **Problème :** distribuer des CA certificates → ConfigMap par namespace, maintenance lourde
 
-<svg width="1100" height="200" viewBox="0 0 1100 200" xmlns="http://www.w3.org/2000/svg">
+<svg width="1100" height="200" viewBox="0 0 1100 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
 <defs><marker id="ctb1" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,9 3,0 6" fill="#6b7280"/></marker></defs>
 <style>text{font-family:sans-serif;font-size:12px}</style>
 <rect x="10" y="30" width="200" height="60" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
@@ -3422,8 +3422,6 @@ kubectl taint nodes worker1 maintenance=true:NoSchedule-
 
 ## Les 3 Effects - Vue d'ensemble
 
-![bg right:45% fit](diagrams/taints-tolerations.png)
-
 | Effect | Pods existants | Nouveaux pods |
 |--------|----------------|---------------|
 | `NoSchedule` | ✅ Restent | ❌ Bloques |
@@ -3432,80 +3430,103 @@ kubectl taint nodes worker1 maintenance=true:NoSchedule-
 
 ---
 
+## Les 3 Effects - Diagramme
+
+![fit](diagrams/taints-tolerations.png)
+
+---
+
 ## Effect 1: NoSchedule (le plus courant)
 
-```
-     AVANT le taint              APRES le taint
-┌─────────────────────┐    ┌─────────────────────┐
-│      Worker1        │    │      Worker1        │
-│                     │    │  Taint: NoSchedule  │
-│  ┌───┐ ┌───┐ ┌───┐ │    │                     │
-│  │Pod│ │Pod│ │Pod│ │    │  ┌───┐ ┌───┐ ┌───┐ │
-│  │ A │ │ B │ │ C │ │    │  │Pod│ │Pod│ │Pod│ │ ← Restent!
-│  └───┘ └───┘ └───┘ │    │  │ A │ │ B │ │ C │ │
-└─────────────────────┘    │  └───┘ └───┘ └───┘ │
-                           └─────────────────────┘
+<div style="display:flex;align-items:flex-start;gap:30px;margin-top:10px">
+<div style="flex:1;border:2px solid #43a047;border-radius:8px;padding:12px;background:#e8f5e9">
+<div style="font-weight:bold;color:#2e7d32;margin-bottom:8px">AVANT le taint — Worker1</div>
+<div style="display:flex;gap:8px;margin-bottom:8px">
+<div style="background:#a5d6a7;border:1px solid #43a047;border-radius:4px;padding:6px 12px;color:#1b5e20">Pod A</div>
+<div style="background:#a5d6a7;border:1px solid #43a047;border-radius:4px;padding:6px 12px;color:#1b5e20">Pod B</div>
+<div style="background:#a5d6a7;border:1px solid #43a047;border-radius:4px;padding:6px 12px;color:#1b5e20">Pod C</div>
+<div style="background:#fff9c4;border:1px dashed #f9a825;border-radius:4px;padding:6px 12px;color:#e65100">Pod D (libre)</div>
+</div>
+</div>
+<div style="font-size:32px;align-self:center">➜</div>
+<div style="flex:1;border:2px solid #e53935;border-radius:8px;padding:12px;background:#ffebee">
+<div style="font-weight:bold;color:#b71c1c;margin-bottom:4px">APRÈS — Worker1</div>
+<div style="background:#ffcdd2;border-radius:4px;padding:4px 8px;margin-bottom:8px;color:#c62828;font-size:13px">🔴 Taint: NoSchedule</div>
+<div style="display:flex;gap:8px;margin-bottom:8px">
+<div style="background:#a5d6a7;border:1px solid #43a047;border-radius:4px;padding:6px 12px;color:#1b5e20">Pod A ✅</div>
+<div style="background:#a5d6a7;border:1px solid #43a047;border-radius:4px;padding:6px 12px;color:#1b5e20">Pod B ✅</div>
+<div style="background:#a5d6a7;border:1px solid #43a047;border-radius:4px;padding:6px 12px;color:#1b5e20">Pod C ✅</div>
+</div>
+<div style="background:#ffcdd2;border:1px dashed #e53935;border-radius:4px;padding:6px 12px;color:#b71c1c;display:inline-block">Pod D ❌ REFUSÉ</div>
+</div>
+</div>
 
-         Nouveau Pod D?     ──────> ❌ REFUSE
-```
-
-**Cas d'usage:** Preparation maintenance, reserver un node
+📌 Cas d'usage : maintenance planifiée, réserver un nœud GPU
 
 ---
 
 ## Effect 2: PreferNoSchedule (soft)
 
-```
-         ┌─────────────────┐
-         │    Scheduler    │
-         └────────┬────────┘
-                  │
-    ┌─────────────┴─────────────┐
-    │    Ou placer Pod X ?      │
-    └─────────────┬─────────────┘
-                  │
-    ┌─────────────┼─────────────┐
-    │             │             │
-    ▼             ▼             ▼
-┌───────┐   ┌───────────┐   ┌───────┐
-│Worker1│   │  Worker2  │   │Worker3│
-│       │   │ Taint:    │   │       │
-│  OK!  │   │ Prefer... │   │  OK!  │
-└───┬───┘   └─────┬─────┘   └───┬───┘
-    │             │             │
-  Score:100    Score:50      Score:100
-                  │
-         Worker2 seulement si
-         pas d'autre choix
-```
+<div style="text-align:center;margin-top:10px">
+<div style="display:inline-block;background:#e3f2fd;border:2px solid #1565c0;border-radius:8px;padding:10px 30px;color:#0d47a1;font-weight:bold;margin-bottom:16px">⚙️ Scheduler — Où placer Pod X ?</div>
+</div>
+<div style="display:flex;gap:20px;margin-top:8px">
+<div style="flex:1;border:2px solid #43a047;border-radius:8px;padding:14px;background:#e8f5e9;text-align:center">
+<div style="font-weight:bold;color:#2e7d32;margin-bottom:8px">Worker1</div>
+<div style="font-size:22px;margin-bottom:6px">✅</div>
+<div style="background:#c8e6c9;border-radius:4px;padding:4px;color:#1b5e20;font-weight:bold">Score : 100</div>
+<div style="color:#388e3c;font-size:13px;margin-top:6px">Prioritaire</div>
+</div>
+<div style="flex:1;border:2px solid #f9a825;border-radius:8px;padding:14px;background:#fff8e1;text-align:center">
+<div style="font-weight:bold;color:#e65100;margin-bottom:4px">Worker2</div>
+<div style="background:#ffe0b2;border-radius:4px;padding:4px;color:#bf360c;font-size:13px;margin-bottom:6px">⚠️ Taint: PreferNoSchedule</div>
+<div style="background:#ffcc80;border-radius:4px;padding:4px;color:#e65100;font-weight:bold">Score : 50</div>
+<div style="color:#e65100;font-size:13px;margin-top:6px">Évité si possible</div>
+</div>
+<div style="flex:1;border:2px solid #43a047;border-radius:8px;padding:14px;background:#e8f5e9;text-align:center">
+<div style="font-weight:bold;color:#2e7d32;margin-bottom:8px">Worker3</div>
+<div style="font-size:22px;margin-bottom:6px">✅</div>
+<div style="background:#c8e6c9;border-radius:4px;padding:4px;color:#1b5e20;font-weight:bold">Score : 100</div>
+<div style="color:#388e3c;font-size:13px;margin-top:6px">Prioritaire</div>
+</div>
+</div>
+
+📌 Worker2 utilisé seulement si Worker1 et Worker3 sont saturés
 
 ---
 
 ## Effect 3: NoExecute (agressif!)
 
-```
-     AVANT NoExecute             APRES NoExecute
-┌─────────────────────┐    ┌─────────────────────┐
-│      Worker1        │    │      Worker1        │
-│                     │    │  Taint: NoExecute   │
-│  ┌───┐ ┌───┐ ┌───┐ │    │                     │
-│  │Pod│ │Pod│ │Pod│ │    │       (VIDE)        │
-│  │ A │ │ B │ │ C │ │    │                     │
-│  └───┘ └───┘ └───┘ │    └─────────────────────┘
-└─────────────────────┘
-           │
-           │    EVACUATION IMMEDIATE
-           ▼
-              ┌─────────────────────┐
-              │      Worker2        │
-              │  ┌───┐ ┌───┐ ┌───┐ │
-              │  │Pod│ │Pod│ │Pod│ │ ← Reschedules
-              │  │ A │ │ B │ │ C │ │
-              │  └───┘ └───┘ └───┘ │
-              └─────────────────────┘
-```
+<div style="display:flex;align-items:flex-start;gap:20px;margin-top:10px">
+<div style="flex:1;border:2px solid #43a047;border-radius:8px;padding:12px;background:#e8f5e9">
+<div style="font-weight:bold;color:#2e7d32;margin-bottom:8px">AVANT — Worker1</div>
+<div style="display:flex;gap:8px">
+<div style="background:#a5d6a7;border:1px solid #43a047;border-radius:4px;padding:6px 12px;color:#1b5e20">Pod A</div>
+<div style="background:#a5d6a7;border:1px solid #43a047;border-radius:4px;padding:6px 12px;color:#1b5e20">Pod B</div>
+<div style="background:#a5d6a7;border:1px solid #43a047;border-radius:4px;padding:6px 12px;color:#1b5e20">Pod C</div>
+</div>
+</div>
+<div style="text-align:center;align-self:center">
+<div style="font-size:28px">➜</div>
+<div style="color:#c62828;font-weight:bold;font-size:13px">ÉVACUATION<br>IMMÉDIATE</div>
+</div>
+<div style="flex:1;border:2px solid #e53935;border-radius:8px;padding:12px;background:#ffebee">
+<div style="font-weight:bold;color:#b71c1c;margin-bottom:4px">APRÈS — Worker1</div>
+<div style="background:#ffcdd2;border-radius:4px;padding:4px 8px;margin-bottom:8px;color:#c62828;font-size:13px">🔴 Taint: NoExecute</div>
+<div style="color:#b71c1c;font-style:italic;text-align:center;padding:10px">(VIDE)</div>
+</div>
+<div style="font-size:28px;align-self:center">➜</div>
+<div style="flex:1;border:2px solid #43a047;border-radius:8px;padding:12px;background:#e8f5e9">
+<div style="font-weight:bold;color:#2e7d32;margin-bottom:8px">Worker2 — Reschedule</div>
+<div style="display:flex;gap:8px">
+<div style="background:#a5d6a7;border:1px solid #43a047;border-radius:4px;padding:6px 12px;color:#1b5e20">Pod A ✅</div>
+<div style="background:#a5d6a7;border:1px solid #43a047;border-radius:4px;padding:6px 12px;color:#1b5e20">Pod B ✅</div>
+<div style="background:#a5d6a7;border:1px solid #43a047;border-radius:4px;padding:6px 12px;color:#1b5e20">Pod C ✅</div>
+</div>
+</div>
+</div>
 
-**⚠️ Attention:** Peut causer des interruptions de service!
+⚠️ Peut causer des interruptions de service — à utiliser avec précaution
 
 ---
 
@@ -4343,7 +4364,7 @@ cd ../../validation && ./validate-partie.sh 6
 - CVE kernel = **tous les containers exposés**
 - Attaque kernel: escalade de privilèges possible
 
-<svg width="760" height="185" viewBox="0 0 760 185" xmlns="http://www.w3.org/2000/svg">
+<svg width="760" height="185" viewBox="0 0 760 185" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
 <defs>
 <marker id="p8a1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6b7280"/></marker>
 <marker id="p8a2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#ef4444"/></marker>
@@ -4393,7 +4414,7 @@ cd ../../validation && ./validate-partie.sh 6
 - ~70% des syscalls Linux implémentés
 - Composant clé: **Sentry** (kernel en Go/userspace)
 
-<svg width="740" height="80" viewBox="0 0 740 80" xmlns="http://www.w3.org/2000/svg">
+<svg width="740" height="80" viewBox="0 0 740 80" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
 <defs><marker id="p8a4" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6b7280"/></marker></defs>
 <style>text{font-family:sans-serif;font-size:13px}</style>
 <rect x="5" y="20" width="80" height="38" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
@@ -4461,7 +4482,7 @@ cd scripts/partie7-runtimeclass
 
 ## RuntimeClass — Le lien K8s ↔ containerd
 
-<svg width="740" height="68" viewBox="0 0 740 68" xmlns="http://www.w3.org/2000/svg">
+<svg width="740" height="68" viewBox="0 0 740 68" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
 <defs><marker id="p8a5" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6b7280"/></marker></defs>
 <style>text{font-family:sans-serif;font-size:12px}</style>
 <rect x="5" y="13" width="155" height="42" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
@@ -4634,7 +4655,7 @@ spec:
 
 ## Architecture sans réseau privé — les risques
 
-<svg width="760" height="160" viewBox="0 0 760 160" xmlns="http://www.w3.org/2000/svg">
+<svg width="760" height="160" viewBox="0 0 760 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
 <defs><marker id="p9a1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#ef4444"/></marker><marker id="p9a2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6b7280"/></marker></defs>
 <style>text{font-family:sans-serif;font-size:12px}</style>
 <rect x="5" y="10" width="740" height="140" rx="8" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5" stroke-dasharray="6,3"/>
@@ -4665,7 +4686,7 @@ spec:
 
 ## Architecture avec réseau privé — isolation
 
-<svg width="760" height="165" viewBox="0 0 760 165" xmlns="http://www.w3.org/2000/svg">
+<svg width="760" height="165" viewBox="0 0 760 165" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
 <defs><marker id="p9b1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16a34a"/></marker><marker id="p9b2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6b7280"/></marker></defs>
 <style>text{font-family:sans-serif;font-size:12px}</style>
 <rect x="5" y="10" width="740" height="150" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
