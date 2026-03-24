@@ -3571,103 +3571,95 @@ spec:
 
 ## Dream architecture — security groups dédiés
 
-<svg width="1100" height="318" viewBox="0 0 760 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+<svg width="1100" height="405" viewBox="0 0 760 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
 <defs>
   <marker id="dga" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16a34a"/></marker>
-  <marker id="dba" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#2563eb"/></marker>
   <marker id="doa" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#d97706"/></marker>
+  <marker id="dga-up" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16a34a"/></marker>
 </defs>
 <style>text{font-family:sans-serif}</style>
 
-<!-- SG Masters (violet) -->
-<rect x="8" y="8" width="230" height="170" rx="10" fill="#faf5ff" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6,3"/>
-<text x="123" y="26" text-anchor="middle" fill="#7c3aed" font-size="10" font-weight="bold">SG: sg-masters</text>
-<text x="123" y="38" text-anchor="middle" fill="#7c3aed" font-size="9">etcd :2379-2380 entre masters</text>
-<text x="123" y="50" text-anchor="middle" fill="#7c3aed" font-size="9">API :6443 ← LB + sg-workers</text>
+<!-- Internet / kubectl -->
+<rect x="290" y="5" width="180" height="30" rx="6" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
+<text x="380" y="25" text-anchor="middle" fill="#475569" font-size="11" font-weight="bold">Internet — kubectl / admin</text>
+
+<!-- Flèche Internet → NLB -->
+<line x1="380" y1="35" x2="380" y2="52" stroke="#d97706" stroke-width="2" marker-end="url(#doa)"/>
+<text x="420" y="48" fill="#92400e" font-size="9">HTTPS :6443</text>
+
+<!-- Exoscale NLB -->
+<rect x="270" y="52" width="220" height="40" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+<text x="380" y="69" text-anchor="middle" fill="#92400e" font-weight="bold" font-size="12">Exoscale NLB</text>
+<text x="380" y="84" text-anchor="middle" fill="#d97706" font-size="10">185.42.17.100  (seule IP publique)</text>
+
+<!-- Flèche NLB → sg-masters -->
+<line x1="380" y1="92" x2="380" y2="112" stroke="#d97706" stroke-width="2" marker-end="url(#doa)"/>
+<text x="420" y="108" fill="#92400e" font-size="9">forward :6443</text>
+
+<!-- SG Masters -->
+<rect x="80" y="112" width="600" height="75" rx="8" fill="#faf5ff" stroke="#7c3aed" stroke-width="2" stroke-dasharray="5,3"/>
+<text x="190" y="128" text-anchor="middle" fill="#7c3aed" font-size="10" font-weight="bold">sg-masters</text>
+<text x="190" y="141" text-anchor="middle" fill="#7c3aed" font-size="9">IN :6443 ← NLB + sg-workers</text>
+<text x="190" y="153" text-anchor="middle" fill="#7c3aed" font-size="9">IN :2379-2380 ← sg-masters</text>
 
 <!-- Master 1 -->
-<rect x="20" y="58" width="95" height="105" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="67" y="76" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="11">Master 1</text>
-<text x="67" y="91" text-anchor="middle" fill="#6b7280" font-size="9">10.0.0.1</text>
-<rect x="28" y="97" width="78" height="18" rx="3" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1"/>
-<text x="67" y="110" text-anchor="middle" fill="#1e40af" font-size="9">API Server</text>
-<rect x="28" y="120" width="78" height="18" rx="3" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1"/>
-<text x="67" y="133" text-anchor="middle" fill="#1e40af" font-size="9">etcd</text>
-<text x="67" y="153" text-anchor="middle" fill="#15803d" font-size="8">loopback ✓</text>
+<rect x="95" y="122" width="130" height="55" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="160" y="141" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="11">Master 1 · 10.0.0.1</text>
+<rect x="105" y="147" width="55" height="16" rx="3" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1"/>
+<text x="132" y="159" text-anchor="middle" fill="#1e40af" font-size="9">API Server</text>
+<rect x="165" y="147" width="50" height="16" rx="3" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1"/>
+<text x="190" y="159" text-anchor="middle" fill="#1e40af" font-size="9">etcd</text>
 
 <!-- Master 2 -->
-<rect x="125" y="58" width="100" height="105" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="175" y="76" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="11">Master 2</text>
-<text x="175" y="91" text-anchor="middle" fill="#6b7280" font-size="9">10.0.0.2</text>
-<rect x="133" y="97" width="78" height="18" rx="3" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1"/>
-<text x="172" y="110" text-anchor="middle" fill="#1e40af" font-size="9">API Server</text>
-<rect x="133" y="120" width="78" height="18" rx="3" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1"/>
-<text x="172" y="133" text-anchor="middle" fill="#1e40af" font-size="9">etcd</text>
-<text x="175" y="153" text-anchor="middle" fill="#15803d" font-size="8">loopback ✓</text>
-<!-- etcd inter-masters -->
-<line x1="115" y1="129" x2="133" y2="129" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#dga)"/>
+<rect x="245" y="122" width="130" height="55" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="310" y="141" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="11">Master 2 · 10.0.0.2</text>
+<rect x="255" y="147" width="55" height="16" rx="3" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1"/>
+<text x="282" y="159" text-anchor="middle" fill="#1e40af" font-size="9">API Server</text>
+<rect x="315" y="147" width="50" height="16" rx="3" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1"/>
+<text x="340" y="159" text-anchor="middle" fill="#1e40af" font-size="9">etcd</text>
 
-<!-- SG Workers (vert foncé) -->
-<rect x="260" y="8" width="280" height="170" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="2" stroke-dasharray="6,3"/>
-<text x="400" y="26" text-anchor="middle" fill="#166534" font-size="10" font-weight="bold">SG: sg-workers</text>
-<text x="400" y="38" text-anchor="middle" fill="#166534" font-size="9">kubelet :10250 ← sg-masters uniquement</text>
-<text x="400" y="50" text-anchor="middle" fill="#166534" font-size="9">CNI entre membres sg-workers</text>
+<!-- etcd inter-masters -->
+<line x1="225" y1="155" x2="245" y2="155" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#dga)"/>
+
+<!-- Flèche sg-masters → sg-workers (kubelet) -->
+<line x1="380" y1="187" x2="380" y2="202" stroke="#16a34a" stroke-width="2" marker-end="url(#dga)"/>
+<text x="420" y="198" fill="#166534" font-size="9">kubelet :10250</text>
+
+<!-- SG Workers -->
+<rect x="80" y="202" width="600" height="70" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2" stroke-dasharray="5,3"/>
+<text x="190" y="218" text-anchor="middle" fill="#166534" font-size="10" font-weight="bold">sg-workers</text>
+<text x="190" y="231" text-anchor="middle" fill="#166534" font-size="9">IN :10250 ← sg-masters</text>
+<text x="190" y="243" text-anchor="middle" fill="#166534" font-size="9">CNI ← sg-workers</text>
 
 <!-- Worker 1 -->
-<rect x="272" y="58" width="110" height="90" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="327" y="76" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="11">Worker 1</text>
-<text x="327" y="91" text-anchor="middle" fill="#15803d" font-size="9">10.0.1.1</text>
-<text x="327" y="107" text-anchor="middle" fill="#6b7280" font-size="9">kubelet</text>
-<text x="327" y="121" text-anchor="middle" fill="#6b7280" font-size="9">pods / CNI</text>
-<text x="327" y="138" text-anchor="middle" fill="#6b7280" font-size="8">pas d'IP publique</text>
+<rect x="95" y="210" width="130" height="52" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="160" y="228" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="11">Worker 1 · 10.0.1.1</text>
+<text x="160" y="244" text-anchor="middle" fill="#6b7280" font-size="9">kubelet / pods / CNI</text>
+<text x="160" y="256" text-anchor="middle" fill="#15803d" font-size="8">pas d'IP publique</text>
 
 <!-- Worker 2 -->
-<rect x="398" y="58" width="110" height="90" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="453" y="76" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="11">Worker 2</text>
-<text x="453" y="91" text-anchor="middle" fill="#15803d" font-size="9">10.0.1.2</text>
-<text x="453" y="107" text-anchor="middle" fill="#6b7280" font-size="9">kubelet</text>
-<text x="453" y="121" text-anchor="middle" fill="#6b7280" font-size="9">pods / CNI</text>
-<text x="453" y="138" text-anchor="middle" fill="#6b7280" font-size="8">pas d'IP publique</text>
+<rect x="245" y="210" width="130" height="52" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="310" y="228" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="11">Worker 2 · 10.0.1.2</text>
+<text x="310" y="244" text-anchor="middle" fill="#6b7280" font-size="9">kubelet / pods / CNI</text>
+<text x="310" y="256" text-anchor="middle" fill="#15803d" font-size="8">pas d'IP publique</text>
+
 <!-- CNI inter-workers -->
-<line x1="382" y1="110" x2="398" y2="110" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#dga)"/>
-
-<!-- LB public -->
-<rect x="568" y="55" width="110" height="70" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
-<text x="623" y="78" text-anchor="middle" fill="#92400e" font-weight="bold" font-size="11">Load Balancer</text>
-<text x="623" y="95" text-anchor="middle" fill="#d97706" font-size="9">185.42.17.100</text>
-<text x="623" y="110" text-anchor="middle" fill="#92400e" font-size="9">:6443 → masters</text>
-<text x="623" y="123" text-anchor="middle" fill="#92400e" font-size="9">(IP publique seule)</text>
-
-<!-- Arrows: LB → Masters API -->
-<line x1="568" y1="88" x2="238" y2="103" stroke="#d97706" stroke-width="1.5" marker-end="url(#doa)"/>
-<text x="400" y="82" text-anchor="middle" fill="#d97706" font-size="9">:6443 kubectl / admin</text>
-
-<!-- Arrows: Workers kubelet → Masters API (via privé) -->
-<line x1="260" y1="105" x2="238" y2="105" stroke="#16a34a" stroke-width="1.5" marker-end="url(#dga)"/>
-<text x="249" y="98" text-anchor="middle" fill="#166534" font-size="8">kubelet</text>
-
-<!-- Internet user -->
-<text x="700" y="80" text-anchor="middle" fill="#6b7280" font-size="10">kubectl</text>
-<text x="700" y="93" text-anchor="middle" fill="#6b7280" font-size="9">admin</text>
-<line x1="678" y1="88" x2="678" y2="88" stroke="none"/>
-<line x1="676" y1="88" x2="678" y2="88" stroke="#6b7280" stroke-width="1.5" marker-end="url(#doa)"/>
-<line x1="740" y1="88" x2="682" y2="88" stroke="#6b7280" stroke-width="1.5" marker-end="url(#doa)"/>
+<line x1="225" y1="240" x2="245" y2="240" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#dga)"/>
 
 <!-- Legend -->
-<rect x="8" y="188" width="740" height="28" rx="4" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1"/>
-<rect x="16" y="196" width="12" height="12" rx="2" fill="#faf5ff" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="3,2"/>
-<text x="33" y="206" fill="#7c3aed" font-size="9">sg-masters (etcd, API)</text>
-<rect x="155" y="196" width="12" height="12" rx="2" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="3,2"/>
-<text x="172" y="206" fill="#166534" font-size="9">sg-workers (kubelet, CNI)</text>
-<rect x="320" y="196" width="12" height="12" rx="2" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
-<text x="337" y="206" fill="#92400e" font-size="9">LB public (seul point d'entrée)</text>
-<text x="530" y="206" fill="#6b7280" font-size="9">aucun nœud avec IP publique directe</text>
+<rect x="80" y="278" width="600" height="0" rx="0" fill="none"/>
+<rect x="80" y="272" width="12" height="8" rx="2" fill="#faf5ff" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="3,1"/>
+<text x="97" y="279" fill="#7c3aed" font-size="9">sg-masters</text>
+<rect x="185" y="272" width="12" height="8" rx="2" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="3,1"/>
+<text x="202" y="279" fill="#166534" font-size="9">sg-workers</text>
+<rect x="295" y="272" width="12" height="8" rx="2" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+<text x="312" y="279" fill="#92400e" font-size="9">Exoscale NLB (managé, IP pub)</text>
+<text x="510" y="279" fill="#6b7280" font-size="9">flux verticaux = pas de croisement</text>
 </svg>
 
-**Règles clés par security group :**
-- `sg-masters` : etcd `:2379` inter-masters · API `:6443` ← LB + sg-workers
-- `sg-workers` : kubelet `:10250` ← sg-masters · CNI inter-membres sg-workers
-- LB : seul composant avec IP publique — forward `:6443` vers masters
+- **Exoscale NLB** : service managé L4, seul composant exposé — pas un HAProxy custom
+- `sg-masters` : ports etcd/API ouverts uniquement entre pairs ou depuis NLB
+- `sg-workers` : aucune IP publique, kubelet joignable uniquement par `sg-masters`
 
 ---
 
