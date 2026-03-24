@@ -163,7 +163,8 @@ exo compute sks create tp-k8s --zone de-fra-1 \
 | [Partie 6](#113) | Drain & Maintenance | [→ Aller](#113) |
 | [Partie 7](#125) | Upgrade cluster | [→ Aller](#125) |
 | [Partie 8](#140) | RuntimeClass & gVisor | [→ Aller](#140) |
-| [Partie 9](#155) | Réseau privé & SKS Exoscale | [→ Aller](#155) |
+| [Partie 9](#155) | Réseau public vs privé | [→ Aller](#155) |
+| [Partie 10](#160) | SKS Exoscale — Kubernetes managé | [→ Aller](#160) |
 
 ---
 
@@ -3431,16 +3432,15 @@ spec:
 <!-- _class: lead -->
 
 # Partie 9
-## Réseau privé & SKS Exoscale (20 min)
+## Réseau public vs privé (10 min)
 
 ---
 
 ## Partie 9 - Timeline suggérée
 
-- Architecture réseau public vs privé: **5 min**
-- Démo live SKS Exoscale: **7 min**
-- Comparaison SKS vs kubeadm: **5 min**
-- Quand choisir quoi: **3 min**
+- Architecture sans réseau privé — risques: **4 min**
+- Architecture avec réseau privé — isolation: **4 min**
+- Quand choisir: **2 min**
 
 ---
 
@@ -3557,6 +3557,33 @@ spec:
 
 ---
 
+## Quand choisir quelle architecture réseau
+
+### Réseau public seul
+- Acceptable pour: labs éphémères, démos isolées
+- Mitigation: security group strict, firewalld
+
+### Réseau privé + public
+- Recommandé pour: tout environnement de formation réel
+- Configurer `PRIVATE_NETWORK` dans `infra-exo/.env`
+
+---
+
+<!-- _class: lead -->
+
+# Partie 10
+## SKS Exoscale — Kubernetes managé (15 min)
+
+---
+
+## Partie 10 - Timeline suggérée
+
+- Présentation SKS vs kubeadm: **4 min**
+- Démo live SKS: **7 min**
+- Cluster hybride SKS + on-prem: **4 min**
+
+---
+
 ## SKS Exoscale — Kubernetes managé
 
 Exoscale **SKS** (Scalable Kubernetes Service): control plane géré, nœuds Exoscale.
@@ -3614,22 +3641,6 @@ KUBECONFIG=~/.kube/config-sks kubectl get nodes
 | Cas d'usage prod | Petites équipes | Équipes DevOps |
 
 **Point pédagogique:** le TD kubeadm vous donne la compréhension interne nécessaire pour opérer SKS intelligemment.
-
----
-
-## Quand choisir quelle architecture
-
-### Réseau public seul
-- Acceptable pour: labs éphémères, démos isolées
-- Mitigation: security group strict, firewalld
-
-### Réseau privé + public
-- Recommandé pour: tout environnement de formation réel
-- Configurer `PRIVATE_NETWORK` dans `infra-exo/.env`
-
-### SKS Exoscale
-- Recommandé pour: prod, équipes sans ops K8s
-- Garder kubeadm pour: apprentissage, contrôle total, edge
 
 ---
 
