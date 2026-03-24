@@ -3663,6 +3663,82 @@ spec:
 
 ---
 
+## NLB Exoscale — filtrage IP (defense in depth)
+
+<svg width="1100" height="376" viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+<defs>
+  <marker id="fa" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16a34a"/></marker>
+  <marker id="ra" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#dc2626"/></marker>
+  <marker id="oa" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#d97706"/></marker>
+</defs>
+<style>text{font-family:sans-serif}</style>
+
+<!-- Source autorisée (VPN) -->
+<rect x="30" y="8" width="155" height="38" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+<text x="107" y="24" text-anchor="middle" fill="#166534" font-weight="bold" font-size="10">✓ VPN bureau</text>
+<text x="107" y="38" text-anchor="middle" fill="#166534" font-size="9">203.0.113.0/24</text>
+
+<!-- Source bloquée (internet random) -->
+<rect x="210" y="8" width="155" height="38" rx="6" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+<text x="287" y="24" text-anchor="middle" fill="#991b1b" font-weight="bold" font-size="10">✗ Internet inconnu</text>
+<text x="287" y="38" text-anchor="middle" fill="#991b1b" font-size="9">45.x.x.x / bots / scanners</text>
+
+<!-- Source bloquée 2 (CI) -->
+<rect x="390" y="8" width="155" height="38" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+<text x="467" y="24" text-anchor="middle" fill="#166534" font-weight="bold" font-size="10">✓ CI/CD runner</text>
+<text x="467" y="38" text-anchor="middle" fill="#166534" font-size="9">198.51.100.12/32</text>
+
+<!-- Flèches vers NLB -->
+<line x1="107" y1="46" x2="200" y2="68" stroke="#16a34a" stroke-width="1.5" marker-end="url(#fa)"/>
+<line x1="287" y1="46" x2="270" y2="68" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#ra)"/>
+<line x1="467" y1="46" x2="340" y2="68" stroke="#16a34a" stroke-width="1.5" marker-end="url(#fa)"/>
+
+<!-- NLB + ACL CIDR — couche 1 -->
+<rect x="130" y="68" width="370" height="48" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+<text x="315" y="86" text-anchor="middle" fill="#92400e" font-weight="bold" font-size="12">Exoscale NLB  ·  185.42.17.100</text>
+<text x="315" y="101" text-anchor="middle" fill="#d97706" font-size="10">ACL CIDR : allowed_sources = [203.0.113.0/24, 198.51.100.12/32]</text>
+
+<!-- Croix de blocage sur le trait rouge -->
+<text x="271" y="63" text-anchor="middle" fill="#dc2626" font-size="12" font-weight="bold">✗</text>
+
+<!-- Badge couche -->
+<rect x="505" y="74" width="90" height="18" rx="4" fill="#d97706"/>
+<text x="550" y="87" text-anchor="middle" fill="white" font-size="9" font-weight="bold">Couche 1 : NLB</text>
+
+<!-- Flèche NLB → SG masters -->
+<line x1="315" y1="116" x2="315" y2="136" stroke="#d97706" stroke-width="2" marker-end="url(#oa)"/>
+<text x="395" y="130" fill="#92400e" font-size="9">185.42.17.100 → masters</text>
+
+<!-- SG masters — couche 2 -->
+<rect x="130" y="136" width="370" height="48" rx="8" fill="#faf5ff" stroke="#7c3aed" stroke-width="2" stroke-dasharray="5,3"/>
+<text x="315" y="154" text-anchor="middle" fill="#7c3aed" font-weight="bold" font-size="12">sg-masters</text>
+<text x="315" y="170" text-anchor="middle" fill="#7c3aed" font-size="10">IN :6443 source = 185.42.17.100/32 (IP NLB uniquement)</text>
+
+<!-- Badge couche -->
+<rect x="505" y="142" width="100" height="18" rx="4" fill="#7c3aed"/>
+<text x="555" y="155" text-anchor="middle" fill="white" font-size="9" font-weight="bold">Couche 2 : SG</text>
+
+<!-- Flèche SG → API Server -->
+<line x1="315" y1="184" x2="315" y2="200" stroke="#16a34a" stroke-width="2" marker-end="url(#fa)"/>
+
+<!-- API Server -->
+<rect x="215" y="200" width="200" height="32" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+<text x="315" y="221" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="12">API Server (masters)</text>
+
+<!-- Note defense in depth -->
+<rect x="30" y="240" width="700" height="16" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+<text x="380" y="252" text-anchor="middle" fill="#64748b" font-size="9">Defense in depth : NLB bloque par IP source · SG bloque si paquet arriverait autrement (ex: réseau interne compromis)</text>
+</svg>
+
+```bash
+# Configurer les ACL CIDR sur le service NLB (exo CLI)
+exo compute load-balancer service update my-nlb my-svc \
+  --healthcheck-mode tcp \
+  --allowed-ips 203.0.113.0/24,198.51.100.12/32
+```
+
+---
+
 <!-- _class: lead -->
 
 # Partie 10
