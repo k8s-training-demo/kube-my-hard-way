@@ -3724,6 +3724,7 @@ spec:
 </svg>
 
 - **Exoscale NLB** : service managé L4, seul composant exposé — pas un HAProxy custom
+- Ce NLB est **exclusivement pour le kube-apiserver** (port `:6443`) — il ne sert pas à exposer des services HTTP applicatifs
 - `sg-masters` : ports etcd/API ouverts uniquement entre pairs ou depuis NLB
 - `sg-workers` : aucune IP publique, kubelet joignable uniquement par `sg-masters`
 
@@ -3802,6 +3803,132 @@ exo compute load-balancer service update my-nlb my-svc \
   --healthcheck-mode tcp \
   --allowed-ips 203.0.113.0/24,198.51.100.12/32
 ```
+
+---
+
+## Service type LoadBalancer — le problème sur kubeadm
+
+### Sur un cluster kubeadm bare metal
+
+```bash
+kubectl expose deploy mon-app --type=LoadBalancer --port=80
+kubectl get svc mon-app
+# NAME      TYPE           CLUSTER-IP    EXTERNAL-IP   PORT
+# mon-app   LoadBalancer   10.96.0.42    <pending>     80/TCP
+```
+
+`<pending>` indéfiniment — kubeadm n'a pas de cloud provider pour provisionner un LB
+
+### Pourquoi ?
+
+- `Service type:LoadBalancer` délègue au **cloud-controller-manager**
+- Sur kubeadm DIY : aucun cloud-ccm configuré → l'EXTERNAL-IP ne sera jamais assignée
+- Sur SKS : le cloud-ccm Exoscale provisionne **automatiquement** un NLB Exoscale
+
+**Solutions sur kubeadm :** MetalLB · kube-vip · NodePort + LB externe
+
+---
+
+## LoadBalancer apps — 3 approches
+
+<svg width="1100" height="376" viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+<defs>
+  <marker id="lba" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6b7280"/></marker>
+  <marker id="lbg" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16a34a"/></marker>
+  <marker id="lbo" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#d97706"/></marker>
+</defs>
+<style>text{font-family:sans-serif}</style>
+
+<!-- Titres colonnes -->
+<text x="127" y="16" text-anchor="middle" fill="#374151" font-weight="bold" font-size="11">① MetalLB (kubeadm)</text>
+<text x="380" y="16" text-anchor="middle" fill="#374151" font-weight="bold" font-size="11">② NLB Exoscale (SKS)</text>
+<text x="633" y="16" text-anchor="middle" fill="#374151" font-weight="bold" font-size="11">③ Ingress Controller</text>
+<line x1="253" y1="8" x2="253" y2="250" stroke="#e5e7eb" stroke-width="1"/>
+<line x1="506" y1="8" x2="506" y2="250" stroke="#e5e7eb" stroke-width="1"/>
+
+<!-- Col 1 : MetalLB -->
+<rect x="70" y="24" width="115" height="22" rx="4" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1"/>
+<text x="127" y="39" text-anchor="middle" fill="#475569" font-size="10">Client</text>
+<line x1="127" y1="46" x2="127" y2="58" stroke="#6b7280" stroke-width="1.5" marker-end="url(#lba)"/>
+<rect x="52" y="58" width="150" height="28" rx="5" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+<text x="127" y="72" text-anchor="middle" fill="#92400e" font-weight="bold" font-size="10">MetalLB VIP</text>
+<text x="127" y="82" text-anchor="middle" fill="#d97706" font-size="8">L2 (ARP) ou BGP</text>
+<line x1="127" y1="86" x2="127" y2="98" stroke="#d97706" stroke-width="1.5" marker-end="url(#lbo)"/>
+<rect x="62" y="98" width="130" height="20" rx="4" fill="#e0e7ff" stroke="#6366f1" stroke-width="1"/>
+<text x="127" y="112" text-anchor="middle" fill="#4338ca" font-size="9">kube-proxy</text>
+<line x1="95" y1="118" x2="82" y2="130" stroke="#6b7280" stroke-width="1.5" marker-end="url(#lba)"/>
+<line x1="158" y1="118" x2="172" y2="130" stroke="#6b7280" stroke-width="1.5" marker-end="url(#lba)"/>
+<rect x="44" y="130" width="62" height="20" rx="4" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+<text x="75" y="144" text-anchor="middle" fill="#1e40af" font-size="9">Pod A</text>
+<rect x="148" y="130" width="62" height="20" rx="4" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+<text x="179" y="144" text-anchor="middle" fill="#1e40af" font-size="9">Pod B</text>
+<text x="127" y="168" text-anchor="middle" fill="#15803d" font-size="8">✓ kubeadm bare metal</text>
+<text x="127" y="178" text-anchor="middle" fill="#dc2626" font-size="8">✗ SKS (cloud-ccm actif)</text>
+<text x="127" y="190" text-anchor="middle" fill="#6b7280" font-size="8">1 IP par Service</text>
+
+<!-- Col 2 : NLB SKS -->
+<rect x="323" y="24" width="115" height="22" rx="4" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1"/>
+<text x="380" y="39" text-anchor="middle" fill="#475569" font-size="10">Client</text>
+<line x1="380" y1="46" x2="380" y2="58" stroke="#6b7280" stroke-width="1.5" marker-end="url(#lba)"/>
+<rect x="305" y="58" width="150" height="28" rx="5" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+<text x="380" y="72" text-anchor="middle" fill="#92400e" font-weight="bold" font-size="10">Exoscale NLB</text>
+<text x="380" y="82" text-anchor="middle" fill="#d97706" font-size="8">provisionné par cloud-ccm</text>
+<line x1="380" y1="86" x2="380" y2="98" stroke="#d97706" stroke-width="1.5" marker-end="url(#lbo)"/>
+<rect x="305" y="98" width="150" height="20" rx="4" fill="#e0e7ff" stroke="#6366f1" stroke-width="1"/>
+<text x="380" y="112" text-anchor="middle" fill="#4338ca" font-size="9">NodePort sur workers</text>
+<line x1="348" y1="118" x2="335" y2="130" stroke="#6b7280" stroke-width="1.5" marker-end="url(#lba)"/>
+<line x1="412" y1="118" x2="425" y2="130" stroke="#6b7280" stroke-width="1.5" marker-end="url(#lba)"/>
+<rect x="297" y="130" width="62" height="20" rx="4" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+<text x="328" y="144" text-anchor="middle" fill="#1e40af" font-size="9">Pod A</text>
+<rect x="401" y="130" width="62" height="20" rx="4" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+<text x="432" y="144" text-anchor="middle" fill="#1e40af" font-size="9">Pod B</text>
+<text x="380" y="168" text-anchor="middle" fill="#15803d" font-size="8">✓ SKS (automatique)</text>
+<text x="380" y="178" text-anchor="middle" fill="#dc2626" font-size="8">✗ kubeadm (pending)</text>
+<text x="380" y="190" text-anchor="middle" fill="#6b7280" font-size="8">1 NLB par Service = coûteux</text>
+
+<!-- Col 3 : Ingress -->
+<rect x="576" y="24" width="115" height="22" rx="4" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1"/>
+<text x="633" y="39" text-anchor="middle" fill="#475569" font-size="10">Client</text>
+<line x1="633" y1="46" x2="633" y2="58" stroke="#6b7280" stroke-width="1.5" marker-end="url(#lba)"/>
+<rect x="558" y="58" width="150" height="22" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+<text x="633" y="73" text-anchor="middle" fill="#92400e" font-size="9">1 LB ou NodePort</text>
+<line x1="633" y1="80" x2="633" y2="92" stroke="#d97706" stroke-width="1.5" marker-end="url(#lbo)"/>
+<rect x="553" y="92" width="160" height="28" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+<text x="633" y="106" text-anchor="middle" fill="#166534" font-weight="bold" font-size="10">Ingress Controller</text>
+<text x="633" y="117" text-anchor="middle" fill="#16a34a" font-size="8">nginx · traefik · HAProxy</text>
+<line x1="585" y1="120" x2="560" y2="132" stroke="#16a34a" stroke-width="1.5" marker-end="url(#lbg)"/>
+<line x1="633" y1="120" x2="633" y2="132" stroke="#16a34a" stroke-width="1.5" marker-end="url(#lbg)"/>
+<line x1="681" y1="120" x2="706" y2="132" stroke="#16a34a" stroke-width="1.5" marker-end="url(#lbg)"/>
+<rect x="518" y="132" width="60" height="20" rx="4" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+<text x="548" y="146" text-anchor="middle" fill="#1e40af" font-size="8">app-a</text>
+<rect x="603" y="132" width="60" height="20" rx="4" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+<text x="633" y="146" text-anchor="middle" fill="#1e40af" font-size="8">app-b</text>
+<rect x="688" y="132" width="60" height="20" rx="4" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+<text x="718" y="146" text-anchor="middle" fill="#1e40af" font-size="8">app-c</text>
+<text x="633" y="168" text-anchor="middle" fill="#15803d" font-size="8">✓ kubeadm ET SKS</text>
+<text x="633" y="178" text-anchor="middle" fill="#15803d" font-size="8">✓ recommandé en prod</text>
+<text x="633" y="190" text-anchor="middle" fill="#6b7280" font-size="8">1 IP pour N apps (L7)</text>
+
+<!-- Barre résumé -->
+<line x1="8" y1="220" x2="752" y2="220" stroke="#e5e7eb" stroke-width="1"/>
+<text x="127" y="236" text-anchor="middle" fill="#374151" font-size="9" font-weight="bold">L4 · 1 IP / service</text>
+<text x="380" y="236" text-anchor="middle" fill="#374151" font-size="9" font-weight="bold">L4 · 1 NLB / service</text>
+<text x="633" y="236" text-anchor="middle" fill="#374151" font-size="9" font-weight="bold">L7 · 1 IP pour tout</text>
+</svg>
+
+---
+
+## LoadBalancer apps — récapitulatif
+
+| Approche | Niveau | kubeadm | SKS | Cas d'usage |
+|----------|--------|---------|-----|-------------|
+| **MetalLB** | L4 | ✓ | ✗ | bare metal, 1 IP/service |
+| **Service LB (cloud-ccm)** | L4 | ✗ | ✓ | service TCP non-HTTP |
+| **Ingress (nginx/traefik)** | L7 | ✓ | ✓ | apps HTTP/S en prod |
+| **Gateway API** | L7+ | ✓ | ✓ | successeur Ingress, nouveaux clusters |
+
+> **Règle pratique :** Ingress ou Gateway API pour tout ce qui est HTTP/S.
+> Service LoadBalancer uniquement pour les services TCP bruts (BDD exposée, MQTT, etc.)
 
 ---
 
