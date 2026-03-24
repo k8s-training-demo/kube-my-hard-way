@@ -3167,6 +3167,34 @@ Config containerd via drop-in (ne pas modifier `config.toml`):
 
 ---
 
+## containerd 2.x — le plugin CRI a changé de nom
+
+### containerd 1.x vs 2.x : deux chemins incompatibles
+
+```toml
+# containerd 1.x  (< 2.0)
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runsc]
+  runtime_type = "io.containerd.runsc.v1"
+
+# containerd 2.x  (ce TD)
+[plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runsc]
+  runtime_type = 'io.containerd.runsc.v1'
+```
+
+### Pourquoi ce renommage ?
+
+- En 1.x, le CRI était un **plugin gRPC parmi d'autres** → `grpc.v1.cri`
+- En 2.x, le CRI est **natif** dans containerd → `cri.v1.runtime`
+- Le préfixe `grpc` disparaît : CRI n'est plus un greffon, c'est le cœur
+
+### Piège fréquent
+
+Copier une config gVisor/kata depuis internet → souvent écrite pour 1.x
+→ containerd 2.x **ignore silencieusement** la section mal nommée
+→ le runtime n'apparaît pas, sans message d'erreur explicite
+
+---
+
 ## Exercice 8.1 — Install gVisor
 
 ### 📝 EXERCICE ÉLÈVE — Sur TOUS les nœuds
