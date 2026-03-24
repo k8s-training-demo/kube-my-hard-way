@@ -265,6 +265,64 @@ containerd config default | sudo tee /etc/containerd/config.toml
 
 ---
 
+## `containerd config default` — pas portable entre distros
+
+### La commande inspecte l'environnement au moment de l'exécution
+
+```bash
+# Sur CentOS 10 (systemd, cgroup v2)
+containerd config default | grep -E "SystemdCgroup|snapshotter"
+#   SystemdCgroup = false       ← cgroupfs par défaut même sur systemd !
+#   snapshotter = "overlayfs"
+
+# Sur Alpine (OpenRC, cgroup v1 possible)
+containerd config default | grep -E "SystemdCgroup|snapshotter"
+#   SystemdCgroup = false       ← identique
+#   snapshotter = "overlayfs"
+```
+
+### Ce qui change réellement selon la distro
+
+| Paramètre | CentOS 10 | Alpine | Ubuntu 24.04 |
+|-----------|-----------|--------|--------------|
+| `SystemdCgroup` (défaut) | false | false | false |
+| cgroup version hôte | **v2** | v1 ou v2 | **v2** |
+| Init system | systemd | OpenRC | systemd |
+| Ajustement requis | `true` | non | `true` |
+
+> `config default` donne **les mêmes valeurs partout** — c'est la config universelle minimale, pas la config optimale pour ton OS
+
+---
+
+## Règle : toujours générer sur la cible finale
+
+### Ne jamais copier une config.toml d'une autre machine
+
+```
+❌ À ne pas faire
+──────────────────────────────────────────────────────
+Copier config.toml depuis un tuto, une VM de test,
+ou un autre OS → valeurs inadaptées, bugs silencieux
+
+✅ Procédure correcte
+──────────────────────────────────────────────────────
+1. Installer containerd sur la machine CIBLE
+2. containerd config default > /etc/containerd/config.toml
+3. Ajuster SystemdCgroup selon l'init system de CETTE machine
+4. Redémarrer containerd sur CETTE machine
+```
+
+### Pourquoi les bugs sont silencieux
+
+- containerd démarre sans erreur avec une config incorrecte
+- Les pods démarrent… jusqu'à la pression mémoire
+- L'OOM killer se comporte différemment → crash imprévisibles
+- `kubeadm init` peut passer → problèmes appraissent en production
+
+> La config containerd est **locale** : générée sur place, ajustée sur place
+
+---
+
 ## Configuration containerd - SystemdCgroup
 
 ### ⚠️ IMPORTANT: Activer SystemdCgroup
@@ -3388,65 +3446,114 @@ spec:
 
 ## Architecture sans réseau privé — les risques
 
-<svg width="760" height="160" viewBox="0 0 760 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
-<defs><marker id="p9a1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#ef4444"/></marker><marker id="p9a2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6b7280"/></marker></defs>
-<style>text{font-family:sans-serif;font-size:12px}</style>
-<rect x="5" y="10" width="740" height="140" rx="8" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5" stroke-dasharray="6,3"/>
-<text x="375" y="28" text-anchor="middle" fill="#dc2626" font-weight="bold" font-size="13">Internet (IP publiques uniquement)</text>
-<rect x="30" y="40" width="120" height="40" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="90" y="65" text-anchor="middle" fill="#1d4ed8" font-weight="bold">Master</text>
-<rect x="200" y="40" width="120" height="40" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="260" y="65" text-anchor="middle" fill="#1d4ed8" font-weight="bold">Worker 1</text>
-<rect x="370" y="40" width="120" height="40" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="430" y="65" text-anchor="middle" fill="#1d4ed8" font-weight="bold">Worker 2</text>
-<line x1="150" y1="60" x2="200" y2="60" stroke="#6b7280" stroke-width="1.5" marker-end="url(#p9a2)"/>
-<line x1="320" y1="60" x2="370" y2="60" stroke="#6b7280" stroke-width="1.5" marker-end="url(#p9a2)"/>
-<text x="90" y="100" text-anchor="middle" fill="#6b7280" font-size="11">1.2.3.4 (pub)</text>
-<text x="260" y="100" text-anchor="middle" fill="#6b7280" font-size="11">5.6.7.8 (pub)</text>
-<text x="430" y="100" text-anchor="middle" fill="#6b7280" font-size="11">9.10.11.12 (pub)</text>
-<rect x="550" y="35" width="180" height="55" rx="5" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
-<text x="640" y="58" text-anchor="middle" fill="#b91c1c" font-weight="bold">⚠ Risques</text>
-<text x="640" y="74" text-anchor="middle" fill="#b91c1c" font-size="11">trafic inter-nœuds exposé</text>
-<text x="640" y="87" text-anchor="middle" fill="#b91c1c" font-size="11">etcd / kubelet sur IP pub</text>
-<text x="375" y="140" text-anchor="middle" fill="#dc2626" font-size="12">Le trafic K8s interne (etcd, kubelet, CNI) transite sur IP publique</text>
+<svg width="760" height="220" viewBox="0 0 760 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+<defs>
+  <marker id="ra" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#dc2626"/></marker>
+  <marker id="ga" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16a34a"/></marker>
+</defs>
+<style>text{font-family:sans-serif}</style>
+
+<!-- Master -->
+<rect x="20" y="20" width="190" height="130" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+<text x="115" y="42" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="14">Master</text>
+<text x="115" y="57" text-anchor="middle" fill="#6b7280" font-size="11">1.2.3.4 (IP publique)</text>
+<rect x="35" y="65" width="160" height="28" rx="4" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="115" y="84" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">API Server :6443</text>
+<rect x="35" y="105" width="160" height="28" rx="4" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="115" y="124" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">etcd :2379</text>
+<line x1="115" y1="93" x2="115" y2="105" stroke="#16a34a" stroke-width="2" marker-end="url(#ga)"/>
+<text x="200" y="102" fill="#15803d" font-size="10">loopback ✓</text>
+
+<!-- Worker 1 -->
+<rect x="280" y="30" width="170" height="100" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="365" y="55" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="14">Worker 1</text>
+<text x="365" y="73" text-anchor="middle" fill="#6b7280" font-size="11">kubelet</text>
+<text x="365" y="90" text-anchor="middle" fill="#dc2626" font-size="11">5.6.7.8 (pub)</text>
+<text x="365" y="107" text-anchor="middle" fill="#6b7280" font-size="11">pods / CNI</text>
+
+<!-- Worker 2 -->
+<rect x="520" y="30" width="170" height="100" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="605" y="55" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="14">Worker 2</text>
+<text x="605" y="73" text-anchor="middle" fill="#6b7280" font-size="11">kubelet</text>
+<text x="605" y="90" text-anchor="middle" fill="#dc2626" font-size="11">9.10.11.12 (pub)</text>
+<text x="605" y="107" text-anchor="middle" fill="#6b7280" font-size="11">pods / CNI</text>
+
+<!-- Bus IP publique rouge -->
+<rect x="20" y="155" width="720" height="34" rx="6" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
+<text x="380" y="169" text-anchor="middle" fill="#dc2626" font-weight="bold" font-size="12">⚠ Bus IP publique — kubelet→API  et  CNI pod-to-pod</text>
+<text x="380" y="183" text-anchor="middle" fill="#b91c1c" font-size="11">trafic inter-nœuds exposé sur internet · ports 6443 et 10250 accessibles</text>
+
+<!-- Connexions nœuds → bus -->
+<line x1="115" y1="150" x2="115" y2="155" stroke="#ef4444" stroke-width="2"/>
+<line x1="365" y1="130" x2="365" y2="155" stroke="#ef4444" stroke-width="2"/>
+<line x1="605" y1="130" x2="605" y2="155" stroke="#ef4444" stroke-width="2"/>
+
+<!-- Legend -->
+<line x1="20" y1="210" x2="50" y2="210" stroke="#16a34a" stroke-width="2" marker-end="url(#ga)"/>
+<text x="56" y="214" fill="#15803d" font-size="10">loopback (local au master)</text>
+<rect x="270" y="202" width="50" height="14" rx="3" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
+<text x="330" y="213" fill="#dc2626" font-size="10">trafic sur IP publique</text>
 </svg>
 
-- Ports etcd (2379-2380) et kubelet (10250) exposés sur IP publique
-- Security group = seule protection → surface d'attaque large
-- Scan réseau trivial depuis l'extérieur
+- **etcd ↔ API server** : loopback `127.0.0.1` — reste local sur le master ✓
+- **kubelet → API server** : IP publique du master ⚠
+- **CNI pod-to-pod** : IP publique des workers ⚠
 
 ---
 
 ## Architecture avec réseau privé — isolation
 
-<svg width="760" height="165" viewBox="0 0 760 165" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
-<defs><marker id="p9b1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16a34a"/></marker><marker id="p9b2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6b7280"/></marker></defs>
-<style>text{font-family:sans-serif;font-size:12px}</style>
-<rect x="5" y="10" width="740" height="150" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
-<text x="375" y="28" text-anchor="middle" fill="#15803d" font-weight="bold" font-size="13">Réseau privé Exoscale (10.0.0.0/24)</text>
-<rect x="30" y="38" width="130" height="55" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="95" y="60" text-anchor="middle" fill="#1d4ed8" font-weight="bold">Master</text>
-<text x="95" y="75" text-anchor="middle" fill="#1d4ed8" font-size="11">pub: 1.2.3.4</text>
-<text x="95" y="88" text-anchor="middle" fill="#15803d" font-size="11">priv: 10.0.0.1</text>
-<rect x="210" y="38" width="130" height="55" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="275" y="60" text-anchor="middle" fill="#1d4ed8" font-weight="bold">Worker 1</text>
-<text x="275" y="75" text-anchor="middle" fill="#6b7280" font-size="11">pub: 5.6.7.8</text>
-<text x="275" y="88" text-anchor="middle" fill="#15803d" font-size="11">priv: 10.0.0.2</text>
-<rect x="390" y="38" width="130" height="55" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="455" y="60" text-anchor="middle" fill="#1d4ed8" font-weight="bold">Worker 2</text>
-<text x="455" y="75" text-anchor="middle" fill="#6b7280" font-size="11">pub: 9.10.11.12</text>
-<text x="455" y="88" text-anchor="middle" fill="#15803d" font-size="11">priv: 10.0.0.3</text>
-<line x1="160" y1="65" x2="210" y2="65" stroke="#16a34a" stroke-width="2" marker-end="url(#p9b1)"/>
-<line x1="340" y1="65" x2="390" y2="65" stroke="#16a34a" stroke-width="2" marker-end="url(#p9b1)"/>
-<text x="185" y="58" text-anchor="middle" fill="#15803d" font-size="10">privé</text>
-<text x="365" y="58" text-anchor="middle" fill="#15803d" font-size="10">privé</text>
-<rect x="545" y="35" width="195" height="62" rx="5" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
-<text x="642" y="57" text-anchor="middle" fill="#15803d" font-weight="bold">✓ Bénéfices</text>
-<text x="642" y="73" text-anchor="middle" fill="#15803d" font-size="11">etcd/kubelet sur IP privée</text>
-<text x="642" y="86" text-anchor="middle" fill="#15803d" font-size="11">IP publique = SSH seul</text>
-<text x="375" y="130" text-anchor="middle" fill="#15803d" font-size="12">Trafic K8s interne sur réseau privé isolé — non routable depuis l'extérieur</text>
-<text x="375" y="148" text-anchor="middle" fill="#6b7280" font-size="11">Configurer dans .env: PRIVATE_NETWORK="tp-k8s-privnet"</text>
+<svg width="760" height="220" viewBox="0 0 760 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+<defs>
+  <marker id="ga2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16a34a"/></marker>
+</defs>
+<style>text{font-family:sans-serif}</style>
+
+<!-- Master -->
+<rect x="20" y="20" width="190" height="130" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+<text x="115" y="42" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="14">Master</text>
+<text x="115" y="57" text-anchor="middle" fill="#6b7280" font-size="11">pub: 1.2.3.4 · priv: 10.0.0.1</text>
+<rect x="35" y="65" width="160" height="28" rx="4" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="115" y="84" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">API Server :6443</text>
+<rect x="35" y="105" width="160" height="28" rx="4" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="115" y="124" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">etcd :2379</text>
+<line x1="115" y1="93" x2="115" y2="105" stroke="#16a34a" stroke-width="2" marker-end="url(#ga2)"/>
+<text x="200" y="102" fill="#15803d" font-size="10">loopback ✓</text>
+
+<!-- Worker 1 -->
+<rect x="280" y="30" width="170" height="100" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="365" y="55" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="14">Worker 1</text>
+<text x="365" y="73" text-anchor="middle" fill="#6b7280" font-size="11">kubelet</text>
+<text x="365" y="90" text-anchor="middle" fill="#15803d" font-size="11">priv: 10.0.0.2</text>
+<text x="365" y="107" text-anchor="middle" fill="#6b7280" font-size="11">pods / CNI</text>
+
+<!-- Worker 2 -->
+<rect x="520" y="30" width="170" height="100" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="605" y="55" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="14">Worker 2</text>
+<text x="605" y="73" text-anchor="middle" fill="#6b7280" font-size="11">kubelet</text>
+<text x="605" y="90" text-anchor="middle" fill="#15803d" font-size="11">priv: 10.0.0.3</text>
+<text x="605" y="107" text-anchor="middle" fill="#6b7280" font-size="11">pods / CNI</text>
+
+<!-- Bus réseau privé vert -->
+<rect x="20" y="155" width="720" height="34" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+<text x="380" y="169" text-anchor="middle" fill="#15803d" font-weight="bold" font-size="12">✓ Bus réseau privé 10.0.0.0/24 — kubelet→API  et  CNI pod-to-pod</text>
+<text x="380" y="183" text-anchor="middle" fill="#166534" font-size="11">non routable depuis internet · IP publique = SSH uniquement</text>
+
+<!-- Connexions nœuds → bus -->
+<line x1="115" y1="150" x2="115" y2="155" stroke="#16a34a" stroke-width="2"/>
+<line x1="365" y1="130" x2="365" y2="155" stroke="#16a34a" stroke-width="2"/>
+<line x1="605" y1="130" x2="605" y2="155" stroke="#16a34a" stroke-width="2"/>
+
+<!-- Legend -->
+<line x1="20" y1="210" x2="50" y2="210" stroke="#16a34a" stroke-width="2" marker-end="url(#ga2)"/>
+<text x="56" y="214" fill="#15803d" font-size="10">loopback (local au master)</text>
+<rect x="270" y="202" width="50" height="14" rx="3" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+<text x="330" y="213" fill="#15803d" font-size="10">trafic sur réseau privé</text>
 </svg>
+
+- **etcd ↔ API server** : loopback — inchangé ✓
+- **kubelet → API server** : IP privée `10.0.0.x` — non accessible depuis internet ✓
+- **CNI pod-to-pod** : IP privée — non routable depuis internet ✓
 
 ---
 
@@ -3523,6 +3630,30 @@ KUBECONFIG=~/.kube/config-sks kubectl get nodes
 ### SKS Exoscale
 - Recommandé pour: prod, équipes sans ops K8s
 - Garder kubeadm pour: apprentissage, contrôle total, edge
+
+---
+
+## Cluster hybride SKS + kubeadm on-prem ?
+
+### Non — pas nativement possible
+
+SKS ne permet pas de joindre des nœuds extérieurs à son control plane :
+
+| Obstacle | Raison |
+|----------|--------|
+| Tokens kubeadm join | Non exposés par SKS |
+| CA privée du control plane | Gérée par Exoscale, inaccessible |
+| Node pools SKS | Exclusivement des instances Exoscale |
+| API server | Non configuré pour accepter des kubelets externes |
+
+### Alternatives pour du vrai hybride
+
+- **Liqo** — peering de clusters, partage de capacité entre K8s distincts
+- **Submariner** — connectivité réseau cross-cluster (pod CIDR routable entre clusters)
+- **Skupper** — service mesh multi-cluster via proxy, sans VPN
+
+> L'hybride en production = **deux clusters séparés** reliés par un outil multi-cluster,
+> pas un seul cluster avec des nœuds sur deux infrastructures
 
 ---
 
