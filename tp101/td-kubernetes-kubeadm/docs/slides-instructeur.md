@@ -2266,6 +2266,41 @@ containerd choisit le mode universel → **l'intégrateur fait le dernier pas**
 
 ---
 
+## cgroup v1 → v2 : chronologie du support containerd
+
+### Les bornes à retenir
+
+| Jalon | Version | Date |
+|-------|---------|------|
+| containerd supporte cgroup v1 | toutes (dès l'origine) | — |
+| containerd supporte cgroup v2 | **1.4+** | août 2020 |
+| Avant 1.4 sur Fedora 31+ | kernel cmdline `systemd.unified_cgroup_hierarchy=0` requis | — |
+| Dernière version supportant v1 | **1.7.x** | — |
+| containerd 2.0+ | **cgroup v2 uniquement** | 2024 |
+
+### Conséquence pour Kubernetes
+
+- K8s **1.35** = dernier K8s acceptant cgroup v1 (avec containerd 1.7)
+- K8s **1.36+** exige containerd 2.0 → cgroup v2 obligatoire
+- CentOS Stream 10 : cgroup v2 par défaut ✓ → on est alignés
+
+---
+
+## Matrice containerd × Kubernetes × cgroup
+
+| Kubernetes | containerd min | containerd max | cgroup v1 | cgroup v2 |
+|-----------|---------------|---------------|-----------|-----------|
+| 1.24–1.25 | 1.5 | 1.6.x | ✓ | ✓ (depuis 1.4) |
+| 1.26–1.27 | 1.6 | 1.7.x | ✓ | ✓ |
+| 1.28–1.33 | 1.6 | 1.7.x / 2.0 | ✓ (1.6/1.7) | ✓ |
+| 1.34 | 1.7 ⚠️ déprécié | 2.x | ✓ (1.7 seul) | ✓ |
+| **1.35** | 1.7 (dernier) | 2.x | ✓ **(dernier K8s)** | ✓ |
+| **1.36+** | **2.0 minimum** | 2.x | ✗ supprimé | ✓ uniquement |
+
+> **Ce TD** : K8s 1.34/1.35 + containerd 2.x → cgroup v2 uniquement, on est dans la trajectoire moderne
+
+---
+
 ## Prérequis réseau CentOS 10 - Modules kernel
 
 ```bash
