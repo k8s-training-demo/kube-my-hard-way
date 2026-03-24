@@ -3569,6 +3569,72 @@ spec:
 
 ---
 
+## Un LB DIY — ce que ça implique vraiment
+
+<svg width="1100" height="376" viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+<defs>
+  <marker id="ha" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6b7280"/></marker>
+  <marker id="ra2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#dc2626"/></marker>
+  <marker id="oa2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#d97706"/></marker>
+</defs>
+<style>text{font-family:sans-serif}</style>
+
+<!-- Grosse boite DIY LB -->
+<rect x="8" y="8" width="744" height="200" rx="10" fill="#fef9f0" stroke="#d97706" stroke-width="2.5" stroke-dasharray="8,4"/>
+<text x="380" y="28" text-anchor="middle" fill="#92400e" font-weight="bold" font-size="13">Ce que cache "un Load Balancer" en DIY</text>
+
+<!-- VIP flottante -->
+<rect x="285" y="38" width="190" height="28" rx="6" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+<text x="380" y="57" text-anchor="middle" fill="#92400e" font-weight="bold" font-size="11">VIP  185.42.17.100  (Keepalived)</text>
+
+<!-- Keepalived + HAProxy 1 (MASTER) -->
+<rect x="30" y="82" width="185" height="105" rx="7" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+<text x="122" y="100" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="11">Node LB-1  (MASTER)</text>
+<rect x="42" y="106" width="160" height="22" rx="4" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1"/>
+<text x="122" y="122" text-anchor="middle" fill="#1e40af" font-size="10">HAProxy  :6443 → masters</text>
+<rect x="42" y="132" width="160" height="22" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+<text x="122" y="148" text-anchor="middle" fill="#92400e" font-size="10">Keepalived  VRRP MASTER</text>
+<text x="122" y="175" text-anchor="middle" fill="#15803d" font-size="9">détient la VIP ✓</text>
+
+<!-- Keepalived + HAProxy 2 (BACKUP) -->
+<rect x="287" y="82" width="185" height="105" rx="7" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
+<text x="379" y="100" text-anchor="middle" fill="#475569" font-weight="bold" font-size="11">Node LB-2  (BACKUP)</text>
+<rect x="299" y="106" width="160" height="22" rx="4" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/>
+<text x="379" y="122" text-anchor="middle" fill="#475569" font-size="10">HAProxy  :6443 → masters</text>
+<rect x="299" y="132" width="160" height="22" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+<text x="379" y="148" text-anchor="middle" fill="#92400e" font-size="10">Keepalived  VRRP BACKUP</text>
+<text x="379" y="175" text-anchor="middle" fill="#6b7280" font-size="9">prêt à reprendre la VIP</text>
+
+<!-- Keepalived + HAProxy 3 (BACKUP 2) -->
+<rect x="544" y="82" width="185" height="105" rx="7" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
+<text x="636" y="100" text-anchor="middle" fill="#475569" font-weight="bold" font-size="11">Node LB-3  (BACKUP)</text>
+<rect x="556" y="106" width="160" height="22" rx="4" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/>
+<text x="636" y="122" text-anchor="middle" fill="#475569" font-size="10">HAProxy  :6443 → masters</text>
+<rect x="556" y="132" width="160" height="22" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+<text x="636" y="148" text-anchor="middle" fill="#92400e" font-size="10">Keepalived  VRRP BACKUP</text>
+<text x="636" y="175" text-anchor="middle" fill="#6b7280" font-size="9">prêt à reprendre la VIP</text>
+
+<!-- Flèche VIP → LB1 (détient) -->
+<line x1="330" y1="66" x2="190" y2="82" stroke="#d97706" stroke-width="1.5" marker-end="url(#oa2)"/>
+<!-- Flèche VIP → LB2 pointillé -->
+<line x1="370" y1="66" x2="370" y2="82" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#ha)"/>
+<!-- Flèche VIP → LB3 pointillé -->
+<line x1="420" y1="66" x2="590" y2="82" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#ha)"/>
+
+<!-- VRRP heartbeat entre les 3 -->
+<line x1="215" y1="155" x2="287" y2="155" stroke="#d97706" stroke-width="1.5" stroke-dasharray="3,2"/>
+<line x1="472" y1="155" x2="544" y2="155" stroke="#d97706" stroke-width="1.5" stroke-dasharray="3,2"/>
+<text x="250" y="150" text-anchor="middle" fill="#d97706" font-size="8">VRRP</text>
+<text x="508" y="150" text-anchor="middle" fill="#d97706" font-size="8">VRRP</text>
+
+<!-- Ce que ça implique -->
+<text x="380" y="204" text-anchor="middle" fill="#dc2626" font-weight="bold" font-size="10">3 VMs supplémentaires · config HAProxy · config Keepalived · surveillance VRRP · failover testé</text>
+</svg>
+
+> Tout ça pour remplacer **une ligne** `exo compute load-balancer create` — et c'est sans compter les mises à jour, la supervision et les certificats TLS
+
+---
+
 ## Dream architecture — security groups dédiés
 
 <svg width="1100" height="405" viewBox="0 0 760 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
