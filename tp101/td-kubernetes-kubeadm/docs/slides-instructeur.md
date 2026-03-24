@@ -3814,6 +3814,36 @@ KUBECONFIG=~/.kube/config-sks kubectl get nodes
 
 ---
 
+## SKS — mono-zone : la limite à connaître
+
+### SKS est strictement mono-zone
+
+```
+exo compute sks create tp-k8s --zone de-fra-1 ...
+                                       ↑
+                               une seule zone
+```
+
+- Le control plane SKS tourne dans une zone Exoscale (`de-fra-1`, `ch-gva-2`, etc.)
+- Les node pools sont liés à cette même zone
+- **Pas de workers dans une autre zone** dans le même cluster SKS
+- Si la zone tombe → cluster indisponible
+
+### Comparaison avec les autres providers
+
+| Provider | Multi-zone natif |
+|----------|-----------------|
+| GKE / EKS / AKS | ✓ nœuds sur plusieurs AZ dans un cluster |
+| **SKS Exoscale** | ✗ mono-zone par design |
+| kubeadm DIY | ✓ possible si VMs dans plusieurs zones |
+
+### Stratégie HA sur Exoscale
+
+- Plusieurs clusters SKS dans des zones différentes + outil multi-cluster (Liqo, Submariner)
+- Ou kubeadm multi-zone avec VMs Exoscale réparties manuellement
+
+---
+
 ## Cluster hybride SKS + kubeadm on-prem ?
 
 ### Non — pas nativement possible
