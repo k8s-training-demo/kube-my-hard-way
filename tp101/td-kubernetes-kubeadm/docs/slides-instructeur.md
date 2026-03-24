@@ -3446,7 +3446,7 @@ spec:
 
 ## Architecture sans réseau privé — les risques
 
-<svg width="760" height="220" viewBox="0 0 760 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+<svg width="1100" height="318" viewBox="0 0 760 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
 <defs>
   <marker id="ra" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#dc2626"/></marker>
   <marker id="ga" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16a34a"/></marker>
@@ -3503,7 +3503,7 @@ spec:
 
 ## Architecture avec réseau privé — isolation
 
-<svg width="760" height="220" viewBox="0 0 760 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+<svg width="1100" height="318" viewBox="0 0 760 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
 <defs>
   <marker id="ga2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16a34a"/></marker>
 </defs>
