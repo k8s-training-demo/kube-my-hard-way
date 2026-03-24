@@ -2954,27 +2954,85 @@ spec:
 
 ## Kubelet au-delà des containers
 
-### L'abstraction CRI permet bien plus
+### CRI : deux implémentations, deux niveaux OCI
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                          KUBELET                                │
-│                             │                                   │
-│                             ▼                                   │
-│                    ┌─────────────────┐                          │
-│                    │       CRI       │  ← Interface abstraite   │
-│                    │ (gRPC protocol) │                          │
-│                    └────────┬────────┘                          │
-└─────────────────────────────┼───────────────────────────────────┘
-        ┌─────────────────────┼─────────────────────┐
-        ▼                     ▼                     ▼
-┌───────────────┐    ┌───────────────┐    ┌───────────────┐
-│  containerd   │    │   CRI-O       │    │  Kata/gVisor  │
-│  Containers   │    │  Containers   │    │  microVMs     │
-└───────────────┘    └───────────────┘    └───────────────┘
+│                    ↓ parle CRI (gRPC)                           │
+├──────────────────────────┬──────────────────────────────────────┤
+│  containerd              │  CRI-O                               │
+│  (CRI via plugin)        │  (CRI natif, conçu pour K8s)         │
+│  ↓ appelle runtimes OCI  │  ↓ appelle runtimes OCI              │
+├────────┬────────┬────────┼────────┬────────┬────────────────────┤
+│  runc  │  kata  │ runsc  │  runc  │  kata  │  runsc             │
+│        │(microVM│(gVisor)│        │(microVM│ (gVisor)           │
+└────────┴────────┴────────┴────────┴────────┴────────────────────┘
 ```
 
-Pour kubelet, **tout ce qui implémente CRI est un "container"**
+**Couche 1 — implémentent CRI :** `containerd` (plugin), `CRI-O` (natif)
+**Couche 2 — runtimes OCI :** `runc`, `kata-runtime`, `runsc` (gVisor)
+
+---
+
+## KubeVirt — VM dans Kubernetes, sans toucher à CRI
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                    KUBERNETES API                                 │
+│   kubectl apply VirtualMachine (CRD KubeVirt)                    │
+│                        ↓                                         │
+│             virt-controller (operator)                           │
+│                        ↓ crée un Pod normal                      │
+├──────────────────────────────────────────────────────────────────┤
+│  kubelet → CRI → containerd → runc → Pod "virt-launcher"         │
+│                                          ↓ (dans le container)   │
+│                                     libvirt / QEMU               │
+│                                          ↓ (KVM)                 │
+│                                     Vraie VM (OS invité complet) │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+KubeVirt ne touche **ni kubelet, ni CRI, ni les runtimes OCI**
+
+---
+
+## KubeVirt — Gérer des VMs, c'est une autre approche
+
+### Containers vs VMs dans Kubernetes
+
+| | Containers (runc/kata) | KubeVirt |
+|---|---|---|
+| Unité schedulée | Pod | Pod (`virt-launcher`) |
+| Isolation | namespaces/cgroups (ou microVM kata) | QEMU + KVM |
+| OS invité | Non (shared kernel) | Oui (kernel complet) |
+| Niveau d'extension | OCI runtime | Kubernetes CRD + Operator |
+| kubelet modifié ? | **Non** | **Non** |
+
+> On ne remplace pas le runtime : on encapsule QEMU dans un pod
+
+---
+
+## KubeVirt — Kubelet a-t-il encore du sens ?
+
+### Oui — et à deux niveaux
+
+**1. Le nœud n'est pas 100% VMs**
+- Pods système toujours présents : CNI, CSI, kube-proxy, monitoring, etc.
+- Rien n'empêche containers ET VMs sur le même worker
+
+**2. Kubelet gère le pod `virt-launcher` lui-même**
+- Liveness/readiness probes sur la VM
+- Resource limits CPU/RAM → éviction si pression mémoire
+- Scheduling, QoS class, PodDisruptionBudget
+
+**Ce que KubeVirt ajoute *au-dessus* de kubelet :**
+- Live migration entre nœuds (coordonné par `virt-controller`)
+- Snapshots, disques persistants (CDI)
+- API `VirtualMachine` / `VMI` pour le cycle de vie VM
+
+> Kubelet gère le pod qui **contient** la VM.
+> KubeVirt gère ce qui est **à l'intérieur** — QEMU, migration, disques.
 
 ---
 
@@ -4173,6 +4231,75 @@ cd ../../validation && ./validate-partie.sh 4
 
 ---
 
+## Drain + PDB — ce qui se passe étape par étape
+
+<div style="font-size:0.78em">
+
+<!-- État initial -->
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+  <div style="width:90px;font-weight:bold;color:#6b7280">① Initial</div>
+  <div style="display:flex;gap:3px">
+    <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 7px">A<br/><small>w1</small></div>
+    <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 7px">B<br/><small>w1</small></div>
+    <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 7px">C<br/><small>w1</small></div>
+    <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 7px">D<br/><small>w2</small></div>
+    <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 7px">E<br/><small>w2</small></div>
+  </div>
+  <div style="color:#16a34a;font-size:0.85em">PDB minAvailable=3 · 5/5 dispo · <strong>2 disruptions autorisées</strong></div>
+</div>
+
+<!-- kubectl drain -->
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+  <div style="width:90px;font-weight:bold;color:#6b7280">② drain<br/>worker1</div>
+  <div style="background:#fef9c3;border:2px solid #ca8a04;border-radius:5px;padding:3px 8px;font-size:0.85em"><code>kubectl drain worker1</code><br/>cordon + éviction</div>
+  <div style="font-size:1.2em">→</div>
+  <div style="display:flex;gap:3px">
+    <div style="background:#fee2e2;border:2px dashed #dc2626;border-radius:5px;padding:3px 7px;color:#dc2626">A<br/><small>évincé</small></div>
+    <div style="background:#fee2e2;border:2px dashed #dc2626;border-radius:5px;padding:3px 7px;color:#dc2626">B<br/><small>évincé</small></div>
+    <div style="background:#ffedd5;border:2px dashed #ea580c;border-radius:5px;padding:3px 7px;color:#ea580c">C<br/><small>bloqué ⏸</small></div>
+    <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 7px">D<br/><small>w2</small></div>
+    <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 7px">E<br/><small>w2</small></div>
+  </div>
+  <div style="color:#ca8a04;font-size:0.85em">A+B évincés (2 dispo) → 3ème éviction bloquée tant que A'/B' pas Ready</div>
+</div>
+
+<!-- reschedulé -->
+<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">
+  <div style="width:90px;font-weight:bold;color:#6b7280;padding-top:4px">③ reschedule<br/>A' B' → Ready</div>
+  <div style="display:flex;flex-direction:column;gap:4px">
+    <div style="display:flex;gap:3px;align-items:center">
+      <div style="background:#e0f2fe;border:2px solid #0284c7;border-radius:5px;padding:3px 7px">A'<br/><small>w2 ✅</small></div>
+      <div style="background:#e0f2fe;border:2px solid #0284c7;border-radius:5px;padding:3px 7px">B'<br/><small>w2 ✅</small></div>
+      <div style="background:#fee2e2;border:2px dashed #dc2626;border-radius:5px;padding:3px 7px;color:#dc2626">C<br/><small>évincé</small></div>
+      <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 7px">D<br/><small>w2</small></div>
+      <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 7px">E<br/><small>w2</small></div>
+    </div>
+    <div style="background:#f0f9ff;border-left:3px solid #0284c7;padding:4px 8px;border-radius:3px;color:#0369a1;font-size:0.82em">
+      Le drain vide <strong>tous</strong> les pods de worker1 — C doit partir aussi car il est sur worker1 ·
+      Le PDB contrôle le <strong>rythme</strong> : il attend que A' et B' soient <strong>Ready</strong> avant d'autoriser l'éviction de C ·
+      Sans PDB, A, B et C auraient été évincés simultanément → risque de tomber sous minAvailable
+    </div>
+  </div>
+</div>
+
+<!-- final -->
+<div style="display:flex;align-items:center;gap:8px">
+  <div style="width:90px;font-weight:bold;color:#6b7280">④ Final</div>
+  <div style="display:flex;gap:3px">
+    <div style="background:#e0f2fe;border:2px solid #0284c7;border-radius:5px;padding:3px 7px">A'<br/><small>w2</small></div>
+    <div style="background:#e0f2fe;border:2px solid #0284c7;border-radius:5px;padding:3px 7px">B'<br/><small>w2</small></div>
+    <div style="background:#e0f2fe;border:2px solid #0284c7;border-radius:5px;padding:3px 7px">C'<br/><small>w2</small></div>
+    <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 7px">D<br/><small>w2</small></div>
+    <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 7px">E<br/><small>w2</small></div>
+    <div style="background:#f1f5f9;border:2px dashed #94a3b8;border-radius:5px;padding:3px 7px;color:#94a3b8">w1<br/><small>cordonné</small></div>
+  </div>
+  <div style="color:#16a34a;font-size:0.85em">5/5 Running · worker1 vide · prêt pour maintenance</div>
+</div>
+
+</div>
+
+---
+
 ## PodDisruptionBudget - Configuration
 
 ```yaml
@@ -4263,6 +4390,60 @@ Le drain échoue car les DaemonSets doivent rester sur le nœud
 
 ---
 
+## Drain + DaemonSet — ce qui se passe
+
+<div style="font-size:0.8em">
+
+<!-- Initial -->
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+  <div style="width:100px;font-weight:bold;color:#6b7280">① Initial</div>
+  <div style="display:flex;gap:6px;align-items:flex-end">
+    <div style="display:flex;flex-direction:column;gap:3px;align-items:center">
+      <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 8px">App A<br/><small>w1</small></div>
+      <div style="background:#e0f2fe;border:2px solid #0284c7;border-radius:5px;padding:3px 8px">DS-w1<br/><small>DaemonSet</small></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:3px;align-items:center">
+      <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 8px">App B<br/><small>w2</small></div>
+      <div style="background:#e0f2fe;border:2px solid #0284c7;border-radius:5px;padding:3px 8px">DS-w2<br/><small>DaemonSet</small></div>
+    </div>
+  </div>
+  <div style="color:#6b7280;font-size:0.85em">1 pod DaemonSet par nœud — obligatoire</div>
+</div>
+
+<!-- Sans flag -->
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+  <div style="width:100px;font-weight:bold;color:#6b7280">② drain<br/><small>sans flag</small></div>
+  <div style="background:#fee2e2;border:2px solid #dc2626;border-radius:5px;padding:4px 10px;font-size:0.85em">
+    <code>kubectl drain worker1</code><br/>❌ <strong>ERREUR</strong> : cannot delete DaemonSet-managed Pods
+  </div>
+  <div style="background:#fef9c3;border-left:3px solid #ca8a04;padding:4px 8px;border-radius:3px;font-size:0.82em;color:#92400e">
+    Le drain refuse de supprimer DS-w1 car le DaemonSet le recréerait immédiatement → boucle infinie
+  </div>
+</div>
+
+<!-- Avec flag -->
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+  <div style="width:100px;font-weight:bold;color:#6b7280">③ drain<br/><small>--ignore-daemonsets</small></div>
+  <div style="display:flex;gap:6px;align-items:flex-end">
+    <div style="display:flex;flex-direction:column;gap:3px;align-items:center">
+      <div style="background:#fee2e2;border:2px dashed #dc2626;border-radius:5px;padding:3px 8px;color:#dc2626">App A<br/><small>évincé</small></div>
+      <div style="background:#e0f2fe;border:2px solid #0284c7;border-radius:5px;padding:3px 8px">DS-w1<br/><small>ignoré ✅</small></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:3px;align-items:center">
+      <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 8px">App B<br/><small>w2</small></div>
+      <div style="background:#e0f2fe;border:2px solid #0284c7;border-radius:5px;padding:3px 8px">DS-w2<br/><small>DaemonSet</small></div>
+    </div>
+    <div style="background:#e0f2fe;border:2px solid #0284c7;border-radius:5px;padding:3px 8px">App A'<br/><small>w2</small></div>
+  </div>
+  <div style="color:#0284c7;font-size:0.85em">App A reschedulée · DS-w1 reste en place — il est node-level</div>
+</div>
+
+</div>
+
+> Le pod DaemonSet **reste sur le nœud drainé** — c'est voulu : il fournit un service au niveau du nœud (réseau, logs, monitoring) qui ne peut pas migrer.
+
+---
+
 ## 5.3 - Simulation de panne
 
 ### 📝 EXERCICE ÉLÈVE
@@ -4280,6 +4461,64 @@ cd ../../validation && ./validate-partie.sh 5
 | Détection NotReady | ~40s |
 | Pods Terminating | ~5 min |
 | Recréation pods | Après éviction |
+
+---
+
+## Simulation de panne — timeline Kubernetes
+
+<div style="font-size:0.8em">
+
+<!-- Initial -->
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+  <div style="width:110px;font-weight:bold;color:#6b7280">① t=0<br/>Panne kubelet</div>
+  <div style="display:flex;gap:4px">
+    <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 8px">Pod 1<br/><small>w1</small></div>
+    <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 8px">Pod 2<br/><small>w1</small></div>
+    <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 8px">Pod 3<br/><small>w2</small></div>
+  </div>
+  <div style="background:#fee2e2;border:2px dashed #dc2626;border-radius:5px;padding:3px 10px;color:#dc2626">worker1<br/><small>kubelet arrêté</small></div>
+  <div style="color:#6b7280;font-size:0.82em">Les pods semblent Running — l'API ne sait pas encore</div>
+</div>
+
+<!-- t=40s -->
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+  <div style="width:110px;font-weight:bold;color:#6b7280">② t≈40s<br/>NotReady</div>
+  <div style="display:flex;gap:4px">
+    <div style="background:#ffedd5;border:2px dashed #ea580c;border-radius:5px;padding:3px 8px;color:#ea580c">Pod 1<br/><small>Unknown</small></div>
+    <div style="background:#ffedd5;border:2px dashed #ea580c;border-radius:5px;padding:3px 8px;color:#ea580c">Pod 2<br/><small>Unknown</small></div>
+    <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 8px">Pod 3<br/><small>w2</small></div>
+  </div>
+  <div style="background:#fef9c3;border-left:3px solid #ca8a04;padding:4px 8px;border-radius:3px;font-size:0.82em;color:#92400e">
+    <code>node-monitor-grace-period=40s</code> · node-controller marque worker1 <strong>NotReady</strong>
+  </div>
+</div>
+
+<!-- t=5min -->
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+  <div style="width:110px;font-weight:bold;color:#6b7280">③ t≈5min<br/>Eviction</div>
+  <div style="display:flex;gap:4px">
+    <div style="background:#fee2e2;border:2px dashed #dc2626;border-radius:5px;padding:3px 8px;color:#dc2626">Pod 1<br/><small>Terminating</small></div>
+    <div style="background:#fee2e2;border:2px dashed #dc2626;border-radius:5px;padding:3px 8px;color:#dc2626">Pod 2<br/><small>Terminating</small></div>
+    <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 8px">Pod 3<br/><small>w2</small></div>
+    <div style="background:#e0f2fe;border:2px solid #0284c7;border-radius:5px;padding:3px 8px">Pod 1'<br/><small>w2 🆕</small></div>
+    <div style="background:#e0f2fe;border:2px solid #0284c7;border-radius:5px;padding:3px 8px">Pod 2'<br/><small>w2 🆕</small></div>
+  </div>
+  <div style="color:#dc2626;font-size:0.82em"><code>pod-eviction-timeout=5min</code> · pods recréés sur nœuds sains</div>
+</div>
+
+<!-- récupération -->
+<div style="display:flex;align-items:center;gap:8px">
+  <div style="width:110px;font-weight:bold;color:#6b7280">④ Récupération<br/>kubelet restart</div>
+  <div style="display:flex;gap:4px">
+    <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 8px">Pod 1'<br/><small>w2</small></div>
+    <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 8px">Pod 2'<br/><small>w2</small></div>
+    <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:5px;padding:3px 8px">Pod 3<br/><small>w2</small></div>
+    <div style="background:#f1f5f9;border:2px solid #94a3b8;border-radius:5px;padding:3px 8px;color:#6b7280">worker1<br/><small>Ready (vide)</small></div>
+  </div>
+  <div style="color:#16a34a;font-size:0.82em">worker1 revient Ready · anciens pods <strong>ne reviennent pas</strong> (déjà remplacés)</div>
+</div>
+
+</div>
 
 ---
 
