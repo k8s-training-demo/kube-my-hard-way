@@ -3446,53 +3446,48 @@ spec:
 
 ## Architecture sans réseau privé — les risques
 
-<svg width="1100" height="318" viewBox="0 0 760 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
-<defs>
-  <marker id="ra" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#dc2626"/></marker>
-  <marker id="ga" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16a34a"/></marker>
-</defs>
+<svg width="1100" height="300" viewBox="0 0 880 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
 <style>text{font-family:sans-serif}</style>
 
-<!-- Master -->
-<rect x="20" y="20" width="190" height="130" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
-<text x="115" y="42" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="14">Master</text>
-<text x="115" y="57" text-anchor="middle" fill="#6b7280" font-size="11">185.42.17.3 (IP publique)</text>
-<rect x="35" y="65" width="160" height="28" rx="4" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="115" y="84" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">API Server :6443</text>
-<rect x="35" y="105" width="160" height="28" rx="4" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="115" y="124" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">etcd :2379</text>
-<line x1="115" y1="93" x2="115" y2="105" stroke="#16a34a" stroke-width="2" marker-end="url(#ga)"/>
-<text x="200" y="102" fill="#15803d" font-size="10">loopback ✓</text>
+<!-- Master node -->
+<rect x="10" y="15" width="260" height="140" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+<text x="140" y="38" text-anchor="middle" fill="#1e40af" font-size="15" font-weight="bold">Master</text>
+<text x="140" y="57" text-anchor="middle" fill="#dc2626" font-size="12">185.42.17.3 (IP publique)</text>
+<!-- API + etcd côte à côte -->
+<rect x="20" y="68" width="100" height="28" rx="5" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="70" y="87" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">API :6443</text>
+<text x="130" y="88" text-anchor="middle" fill="#16a34a" font-size="18">↔</text>
+<rect x="140" y="68" width="118" height="28" rx="5" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="199" y="87" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">etcd :2379</text>
+<!-- Crochet + label loopback -->
+<line x1="20" y1="100" x2="258" y2="100" stroke="#16a34a" stroke-width="1.5"/>
+<line x1="20" y1="96" x2="20" y2="100" stroke="#16a34a" stroke-width="1.5"/>
+<line x1="258" y1="96" x2="258" y2="100" stroke="#16a34a" stroke-width="1.5"/>
+<text x="139" y="117" text-anchor="middle" fill="#15803d" font-size="12">loopback 127.0.0.1 ✓  —  reste local au master</text>
 
 <!-- Worker 1 -->
-<rect x="280" y="30" width="170" height="100" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="365" y="55" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="14">Worker 1</text>
-<text x="365" y="73" text-anchor="middle" fill="#6b7280" font-size="11">kubelet</text>
-<text x="365" y="90" text-anchor="middle" fill="#dc2626" font-size="11">185.42.17.8 (pub)</text>
-<text x="365" y="107" text-anchor="middle" fill="#6b7280" font-size="11">pods / CNI</text>
+<rect x="305" y="15" width="185" height="115" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+<text x="397" y="42" text-anchor="middle" fill="#1e40af" font-size="15" font-weight="bold">Worker 1</text>
+<text x="397" y="61" text-anchor="middle" fill="#dc2626" font-size="13">185.42.17.8 (pub)</text>
+<text x="397" y="83" text-anchor="middle" fill="#6b7280" font-size="13">kubelet</text>
+<text x="397" y="103" text-anchor="middle" fill="#6b7280" font-size="13">pods / CNI</text>
 
 <!-- Worker 2 -->
-<rect x="520" y="30" width="170" height="100" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="605" y="55" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="14">Worker 2</text>
-<text x="605" y="73" text-anchor="middle" fill="#6b7280" font-size="11">kubelet</text>
-<text x="605" y="90" text-anchor="middle" fill="#dc2626" font-size="11">185.42.17.15 (pub)</text>
-<text x="605" y="107" text-anchor="middle" fill="#6b7280" font-size="11">pods / CNI</text>
+<rect x="520" y="15" width="185" height="115" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+<text x="612" y="42" text-anchor="middle" fill="#1e40af" font-size="15" font-weight="bold">Worker 2</text>
+<text x="612" y="61" text-anchor="middle" fill="#dc2626" font-size="13">185.42.17.15 (pub)</text>
+<text x="612" y="83" text-anchor="middle" fill="#6b7280" font-size="13">kubelet</text>
+<text x="612" y="103" text-anchor="middle" fill="#6b7280" font-size="13">pods / CNI</text>
+
+<!-- Lignes de connexion vers le bus -->
+<line x1="140" y1="155" x2="140" y2="175" stroke="#ef4444" stroke-width="2"/>
+<line x1="397" y1="130" x2="397" y2="175" stroke="#ef4444" stroke-width="2"/>
+<line x1="612" y1="130" x2="612" y2="175" stroke="#ef4444" stroke-width="2"/>
 
 <!-- Bus IP publique rouge -->
-<rect x="20" y="155" width="720" height="34" rx="6" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
-<text x="380" y="169" text-anchor="middle" fill="#dc2626" font-weight="bold" font-size="12">⚠ Bus IP publique — kubelet→API  et  CNI pod-to-pod</text>
-<text x="380" y="183" text-anchor="middle" fill="#b91c1c" font-size="11">trafic inter-nœuds exposé sur internet · ports 6443 et 10250 accessibles</text>
-
-<!-- Connexions nœuds → bus -->
-<line x1="115" y1="150" x2="115" y2="155" stroke="#ef4444" stroke-width="2"/>
-<line x1="365" y1="130" x2="365" y2="155" stroke="#ef4444" stroke-width="2"/>
-<line x1="605" y1="130" x2="605" y2="155" stroke="#ef4444" stroke-width="2"/>
-
-<!-- Legend -->
-<line x1="20" y1="210" x2="50" y2="210" stroke="#16a34a" stroke-width="2" marker-end="url(#ga)"/>
-<text x="56" y="214" fill="#15803d" font-size="10">loopback (local au master)</text>
-<rect x="270" y="202" width="50" height="14" rx="3" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
-<text x="330" y="213" fill="#dc2626" font-size="10">trafic sur IP publique</text>
+<rect x="10" y="175" width="720" height="58" rx="8" fill="#fee2e2" stroke="#ef4444" stroke-width="2.5"/>
+<text x="370" y="199" text-anchor="middle" fill="#dc2626" font-size="14" font-weight="bold">⚠ Bus IP publique — kubelet→API  et  CNI pod-to-pod</text>
+<text x="370" y="220" text-anchor="middle" fill="#b91c1c" font-size="12">trafic inter-nœuds exposé sur internet · ports 6443 + 10250 accessibles</text>
 </svg>
 
 - **etcd ↔ API server** : loopback `127.0.0.1` — reste local sur le master ✓
@@ -3503,52 +3498,49 @@ spec:
 
 ## Architecture avec réseau privé — isolation
 
-<svg width="1100" height="318" viewBox="0 0 760 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
-<defs>
-  <marker id="ga2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16a34a"/></marker>
-</defs>
+<svg width="1100" height="300" viewBox="0 0 880 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
 <style>text{font-family:sans-serif}</style>
 
-<!-- Master -->
-<rect x="20" y="20" width="190" height="130" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
-<text x="115" y="42" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="14">Master</text>
-<text x="115" y="57" text-anchor="middle" fill="#6b7280" font-size="11">pub: 185.42.17.3 · priv: 10.0.0.1</text>
-<rect x="35" y="65" width="160" height="28" rx="4" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="115" y="84" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">API Server :6443</text>
-<rect x="35" y="105" width="160" height="28" rx="4" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="115" y="124" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">etcd :2379</text>
-<line x1="115" y1="93" x2="115" y2="105" stroke="#16a34a" stroke-width="2" marker-end="url(#ga2)"/>
-<text x="200" y="102" fill="#15803d" font-size="10">loopback ✓</text>
+<!-- Master node -->
+<rect x="10" y="15" width="260" height="140" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+<text x="140" y="38" text-anchor="middle" fill="#1e40af" font-size="15" font-weight="bold">Master</text>
+<text x="140" y="54" text-anchor="middle" fill="#6b7280" font-size="11">pub: 185.42.17.3</text>
+<text x="140" y="68" text-anchor="middle" fill="#15803d" font-size="11">priv: 10.0.0.1</text>
+<!-- API + etcd côte à côte -->
+<rect x="20" y="78" width="100" height="28" rx="5" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="70" y="97" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">API :6443</text>
+<text x="130" y="98" text-anchor="middle" fill="#16a34a" font-size="18">↔</text>
+<rect x="140" y="78" width="118" height="28" rx="5" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="199" y="97" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">etcd :2379</text>
+<!-- Crochet + label loopback -->
+<line x1="20" y1="110" x2="258" y2="110" stroke="#16a34a" stroke-width="1.5"/>
+<line x1="20" y1="106" x2="20" y2="110" stroke="#16a34a" stroke-width="1.5"/>
+<line x1="258" y1="106" x2="258" y2="110" stroke="#16a34a" stroke-width="1.5"/>
+<text x="139" y="127" text-anchor="middle" fill="#15803d" font-size="12">loopback 127.0.0.1 ✓  —  reste local au master</text>
 
 <!-- Worker 1 -->
-<rect x="280" y="30" width="170" height="100" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="365" y="55" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="14">Worker 1</text>
-<text x="365" y="73" text-anchor="middle" fill="#6b7280" font-size="11">kubelet</text>
-<text x="365" y="90" text-anchor="middle" fill="#15803d" font-size="11">priv: 10.0.0.2</text>
-<text x="365" y="107" text-anchor="middle" fill="#6b7280" font-size="11">pods / CNI</text>
+<rect x="305" y="15" width="185" height="115" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+<text x="397" y="42" text-anchor="middle" fill="#1e40af" font-size="15" font-weight="bold">Worker 1</text>
+<text x="397" y="61" text-anchor="middle" fill="#15803d" font-size="13">priv: 10.0.0.2</text>
+<text x="397" y="83" text-anchor="middle" fill="#6b7280" font-size="13">kubelet</text>
+<text x="397" y="103" text-anchor="middle" fill="#6b7280" font-size="13">pods / CNI</text>
 
 <!-- Worker 2 -->
-<rect x="520" y="30" width="170" height="100" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="605" y="55" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="14">Worker 2</text>
-<text x="605" y="73" text-anchor="middle" fill="#6b7280" font-size="11">kubelet</text>
-<text x="605" y="90" text-anchor="middle" fill="#15803d" font-size="11">priv: 10.0.0.3</text>
-<text x="605" y="107" text-anchor="middle" fill="#6b7280" font-size="11">pods / CNI</text>
+<rect x="520" y="15" width="185" height="115" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+<text x="612" y="42" text-anchor="middle" fill="#1e40af" font-size="15" font-weight="bold">Worker 2</text>
+<text x="612" y="61" text-anchor="middle" fill="#15803d" font-size="13">priv: 10.0.0.3</text>
+<text x="612" y="83" text-anchor="middle" fill="#6b7280" font-size="13">kubelet</text>
+<text x="612" y="103" text-anchor="middle" fill="#6b7280" font-size="13">pods / CNI</text>
+
+<!-- Lignes de connexion vers le bus -->
+<line x1="140" y1="155" x2="140" y2="175" stroke="#16a34a" stroke-width="2"/>
+<line x1="397" y1="130" x2="397" y2="175" stroke="#16a34a" stroke-width="2"/>
+<line x1="612" y1="130" x2="612" y2="175" stroke="#16a34a" stroke-width="2"/>
 
 <!-- Bus réseau privé vert -->
-<rect x="20" y="155" width="720" height="34" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
-<text x="380" y="169" text-anchor="middle" fill="#15803d" font-weight="bold" font-size="12">✓ Bus réseau privé 10.0.0.0/24 — kubelet→API  et  CNI pod-to-pod</text>
-<text x="380" y="183" text-anchor="middle" fill="#166534" font-size="11">non routable depuis internet · IP publique = SSH uniquement</text>
-
-<!-- Connexions nœuds → bus -->
-<line x1="115" y1="150" x2="115" y2="155" stroke="#16a34a" stroke-width="2"/>
-<line x1="365" y1="130" x2="365" y2="155" stroke="#16a34a" stroke-width="2"/>
-<line x1="605" y1="130" x2="605" y2="155" stroke="#16a34a" stroke-width="2"/>
-
-<!-- Legend -->
-<line x1="20" y1="210" x2="50" y2="210" stroke="#16a34a" stroke-width="2" marker-end="url(#ga2)"/>
-<text x="56" y="214" fill="#15803d" font-size="10">loopback (local au master)</text>
-<rect x="270" y="202" width="50" height="14" rx="3" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
-<text x="330" y="213" fill="#15803d" font-size="10">trafic sur réseau privé</text>
+<rect x="10" y="175" width="720" height="58" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2.5"/>
+<text x="370" y="199" text-anchor="middle" fill="#15803d" font-size="14" font-weight="bold">✓ Bus réseau privé 10.0.0.0/24 — kubelet→API  et  CNI pod-to-pod</text>
+<text x="370" y="220" text-anchor="middle" fill="#166534" font-size="12">non routable depuis internet · IP publique = SSH uniquement</text>
 </svg>
 
 - **etcd ↔ API server** : loopback — inchangé ✓
