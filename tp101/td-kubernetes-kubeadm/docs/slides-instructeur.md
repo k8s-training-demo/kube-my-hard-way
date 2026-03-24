@@ -3456,7 +3456,7 @@ spec:
 <!-- Master -->
 <rect x="20" y="20" width="190" height="130" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
 <text x="115" y="42" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="14">Master</text>
-<text x="115" y="57" text-anchor="middle" fill="#6b7280" font-size="11">1.2.3.4 (IP publique)</text>
+<text x="115" y="57" text-anchor="middle" fill="#6b7280" font-size="11">185.42.17.3 (IP publique)</text>
 <rect x="35" y="65" width="160" height="28" rx="4" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="115" y="84" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">API Server :6443</text>
 <rect x="35" y="105" width="160" height="28" rx="4" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
@@ -3468,14 +3468,14 @@ spec:
 <rect x="280" y="30" width="170" height="100" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="365" y="55" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="14">Worker 1</text>
 <text x="365" y="73" text-anchor="middle" fill="#6b7280" font-size="11">kubelet</text>
-<text x="365" y="90" text-anchor="middle" fill="#dc2626" font-size="11">5.6.7.8 (pub)</text>
+<text x="365" y="90" text-anchor="middle" fill="#dc2626" font-size="11">185.42.17.8 (pub)</text>
 <text x="365" y="107" text-anchor="middle" fill="#6b7280" font-size="11">pods / CNI</text>
 
 <!-- Worker 2 -->
 <rect x="520" y="30" width="170" height="100" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="605" y="55" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="14">Worker 2</text>
 <text x="605" y="73" text-anchor="middle" fill="#6b7280" font-size="11">kubelet</text>
-<text x="605" y="90" text-anchor="middle" fill="#dc2626" font-size="11">9.10.11.12 (pub)</text>
+<text x="605" y="90" text-anchor="middle" fill="#dc2626" font-size="11">185.42.17.15 (pub)</text>
 <text x="605" y="107" text-anchor="middle" fill="#6b7280" font-size="11">pods / CNI</text>
 
 <!-- Bus IP publique rouge -->
@@ -3512,7 +3512,7 @@ spec:
 <!-- Master -->
 <rect x="20" y="20" width="190" height="130" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
 <text x="115" y="42" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="14">Master</text>
-<text x="115" y="57" text-anchor="middle" fill="#6b7280" font-size="11">pub: 1.2.3.4 · priv: 10.0.0.1</text>
+<text x="115" y="57" text-anchor="middle" fill="#6b7280" font-size="11">pub: 185.42.17.3 · priv: 10.0.0.1</text>
 <rect x="35" y="65" width="160" height="28" rx="4" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="115" y="84" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">API Server :6443</text>
 <rect x="35" y="105" width="160" height="28" rx="4" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
