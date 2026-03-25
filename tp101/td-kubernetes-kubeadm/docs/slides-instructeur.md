@@ -3432,11 +3432,223 @@ spec:
 <!-- _class: lead -->
 
 # Partie 9
-## Réseau public vs privé (10 min)
+## cgroups — le moteur des containers (20 min)
 
 ---
 
 ## Partie 9 - Timeline suggérée
+
+- Qu'est-ce qu'un cgroup : **5 min**
+- Démo nerdctl + Docker : **5 min**
+- Manipulation manuelle + code C : **5 min**
+- cgroups dans Kubernetes (QoS) : **5 min**
+
+---
+
+## Qu'est-ce qu'un cgroup ?
+
+- **Linux Control Groups** — mécanisme noyau depuis kernel 2.6.24 (2008)
+- Organise les processus en groupes hiérarchiques
+- Contrôle et limite : **CPU** · **mémoire** · **I/O disque** · **réseau** · **devices**
+- Implémenté comme un **pseudo-filesystem** : `/sys/fs/cgroup/`
+- **cgroup v1** (2008) : hiérarchies séparées par subsystem (`/cpu/`, `/memory/`, `/blkio/`)
+- **cgroup v2** (kernel 4.5, 2016) : hiérarchie unifiée, standard actuel
+
+> Un container = un processus Linux + **namespaces** (isolation) + **cgroups** (limitation)
+
+---
+
+## Le filesystem cgroup v2
+
+```bash
+# Détecter la version
+stat -fc %T /sys/fs/cgroup
+# → cgroup2fs (v2)  /  tmpfs (v1)
+
+# Contrôleurs disponibles
+cat /sys/fs/cgroup/cgroup.controllers
+# cpu cpuset io memory pids hugetlb
+
+# Arborescence (CentOS Stream 10)
+ls /sys/fs/cgroup/system.slice/
+# containerd.service/  sshd.service/  kubelet.service/ ...
+
+# Fichiers de contrôle d'un service
+ls /sys/fs/cgroup/system.slice/containerd.service/
+# cgroup.procs  cpu.max  memory.max  memory.current  ...
+```
+
+---
+
+## Container → cgroup avec nerdctl
+
+```bash
+# Lancer un container avec limites
+nerdctl run -d --name demo --cpus 0.5 --memory 128m nginx:alpine
+
+# PID du processus principal
+PID=$(nerdctl inspect -f '{{.State.Pid}}' demo)
+
+# Trouver le cgroup (v2 : entrée "0::")
+CGPATH=$(awk -F: '/^0:/{print $3}' /proc/$PID/cgroup)
+
+# Lire les limites appliquées
+cat /sys/fs/cgroup${CGPATH}/memory.max
+# → 134217728   (= 128 MiB)
+
+cat /sys/fs/cgroup${CGPATH}/cpu.max
+# → 50000 100000   (50 000 µs sur 100 000 µs = 50% d'un CPU)
+
+cat /sys/fs/cgroup${CGPATH}/memory.current
+# → consommation réelle en bytes
+```
+
+---
+
+## Container → cgroup avec Docker
+
+```bash
+docker run -d --name demo2 --cpus 0.5 --memory 128m nginx:alpine
+
+CID=$(docker inspect -f '{{.Id}}' demo2)
+
+# Docker v2 : scopes systemd dans system.slice
+cat /sys/fs/cgroup/system.slice/docker-${CID}.scope/memory.max
+# → 134217728
+
+cat /sys/fs/cgroup/system.slice/docker-${CID}.scope/cpu.max
+# → 50000 100000
+
+# Vue synthétique
+docker stats demo2 --no-stream
+# NAME    CPU %   MEM USAGE / LIMIT
+# demo2   0.01%   3.5MiB / 128MiB
+```
+
+> containerd (nerdctl) et Docker écrivent dans le **même** filesystem cgroup — même kernel, même enforcement
+
+---
+
+## Manipuler les cgroups à la main
+
+```bash
+# Activer les contrôleurs dans la racine
+echo "+memory +cpu" > /sys/fs/cgroup/cgroup.subtree_control
+
+# Créer un cgroup dédié
+mkdir /sys/fs/cgroup/demo-manual
+
+# Limiter la mémoire à 64 MiB
+echo $((64 * 1024 * 1024)) > /sys/fs/cgroup/demo-manual/memory.max
+
+# Limiter le CPU à 25%  (250 ms sur 1 s)
+echo "250000 1000000" > /sys/fs/cgroup/demo-manual/cpu.max
+
+# Placer le shell courant dans ce cgroup
+echo $$ > /sys/fs/cgroup/demo-manual/cgroup.procs
+
+# Provoquer un OOM kill (dépasse 64 MiB)
+stress --vm 1 --vm-bytes 200M   # → Killed
+
+# Sortir + nettoyer
+echo $$ > /sys/fs/cgroup/cgroup.procs
+rmdir /sys/fs/cgroup/demo-manual
+```
+
+---
+
+## Code C — isoler un processus dans un cgroup
+
+```c
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#define CG "/sys/fs/cgroup/demo_c"
+
+static void cg_write(const char *file, const char *val) {
+    char path[256];
+    snprintf(path, sizeof(path), CG "/%s", file);
+    int fd = open(path, O_WRONLY);
+    write(fd, val, strlen(val));  close(fd);
+}
+int main(void) {
+    mkdir(CG, 0755);
+    cg_write("memory.max", "67108864");    /* 64 MiB */
+    cg_write("cpu.max",    "250000 1000000"); /* 25% */
+    pid_t pid = fork();
+    if (pid == 0) {
+        char buf[32];
+        snprintf(buf, sizeof(buf), "%d", getpid());
+        cg_write("cgroup.procs", buf);   /* rejoindre le cgroup */
+        for (volatile long i = 0; i < 2000000000L; i++); /* CPU loop */
+        return 0;
+    }
+    waitpid(pid, NULL, 0);
+    rmdir(CG);
+}
+```
+
+```bash
+gcc -O0 -o cg_demo cg_demo.c && sudo ./cg_demo
+# Observer : top → le fils est limité à ~25% CPU
+```
+
+> C'est exactement ce que font **runc** (via containerd) et **crun** pour chaque container
+
+---
+
+## cgroups dans Kubernetes — QoS classes
+
+kubelet organise les pods dans `/sys/fs/cgroup/kubepods/` selon la **QoS class** :
+
+| QoS class | Condition | Path cgroup | Priorité OOM |
+|-----------|-----------|-------------|--------------|
+| **Guaranteed** | requests == limits (tous) | `kubepods/pod<uid>/` | Dernière victime |
+| **Burstable** | au moins un request défini | `kubepods/burstable/pod<uid>/` | Selon usage |
+| **BestEffort** | aucun request/limit | `kubepods/besteffort/pod<uid>/` | Premier tué |
+
+```bash
+# Sur un nœud worker : inspecter le cgroup d'un container
+crictl inspect <cid> | jq -r '.info.runtimeSpec.linux.cgroupsPath'
+# → /kubepods/burstable/pod<uid>/<cid>
+
+# Vérifier les limites effectives
+cat /sys/fs/cgroup/kubepods/burstable/pod<uid>/memory.max
+```
+
+---
+
+## Résumé — du YAML au noyau
+
+```
+Pod spec (YAML)          kubelet              noyau Linux
+─────────────────   ──────────────────   ──────────────────────
+resources:          crée le cgroup       /sys/fs/cgroup/
+  requests:         écrit les limites      kubepods/burstable/
+    memory: 128Mi   memory.max              pod<uid>/
+    cpu: 500m       cpu.max                   memory.max = 128M
+  limits:                                     cpu.max = 50000
+    memory: 256Mi   ← enforcement →      OOM kill si dépassement
+    cpu: 1          kernel throttle CPU   throttle si > quota
+```
+
+- `requests` = ce que kubelet **réserve** sur le nœud (scheduling)
+- `limits` = ce que le **noyau enforced** via cgroup (runtime)
+- Sans limits → BestEffort → premier tué en cas de pression mémoire
+
+---
+
+<!-- _class: lead -->
+
+# Partie 10
+## Réseau public vs privé (10 min)
+
+---
+
+## Partie 10 - Timeline suggérée
 
 - Architecture sans réseau privé — risques: **4 min**
 - Architecture avec réseau privé — isolation: **4 min**
@@ -3905,12 +4117,12 @@ kubectl get svc mon-app
 
 <!-- _class: lead -->
 
-# Partie 10
+# Partie 11
 ## SKS Exoscale — Kubernetes managé (15 min)
 
 ---
 
-## Partie 10 - Timeline suggérée
+## Partie 11 - Timeline suggérée
 
 - Présentation SKS vs kubeadm: **4 min**
 - Démo live SKS: **7 min**
@@ -4029,6 +4241,323 @@ SKS ne permet pas de joindre des nœuds extérieurs à son control plane :
 
 > L'hybride en production = **deux clusters séparés** reliés par un outil multi-cluster,
 > pas un seul cluster avec des nœuds sur deux infrastructures
+
+---
+
+<!-- _class: lead -->
+
+# Partie 12
+## Observabilité du cluster — kube-prometheus-stack (30 min)
+
+---
+
+## Partie 12 - Timeline suggérée
+
+- Architecture de la stack et composants : **5 min**
+- Installation Helm + vérification : **10 min**
+- Dashboards en ConfigMap : **10 min**
+- Alertes et values production : **5 min**
+
+---
+
+## Pourquoi observer le cluster ?
+
+| Couche | Quoi mesurer | Composant |
+|--------|-------------|-----------|
+| **Nodes** | CPU, RAM, disque, réseau | `node-exporter` (DaemonSet) |
+| **Control plane** | API latence, etcd leader, scheduler queue | métriques internes |
+| **Workloads** | pods running/pending, replicas, PVCs | `kube-state-metrics` |
+| **Containers** | CPU/RAM par container, restarts | `cAdvisor` (intégré kubelet) |
+
+- Ce chapitre = **observabilité infra du cluster**
+- Pas de tracing applicatif (OpenTelemetry = formation séparée)
+- Stack : **kube-prometheus-stack** — chart Helm tout-en-un officiel
+
+---
+
+## Architecture kube-prometheus-stack
+
+<svg width="1100" height="290" viewBox="0 0 900 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+<style>text{font-family:sans-serif}</style>
+
+<!-- Sources de métriques (colonne gauche) -->
+<rect x="10" y="10" width="230" height="220" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5,3"/>
+<text x="125" y="28" text-anchor="middle" fill="#475569" font-size="13" font-weight="bold">Sources de métriques</text>
+
+<rect x="20" y="35" width="210" height="26" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="125" y="53" text-anchor="middle" fill="#1e40af" font-size="12">node-exporter (DaemonSet)</text>
+
+<rect x="20" y="68" width="210" height="26" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="125" y="86" text-anchor="middle" fill="#1e40af" font-size="12">kube-state-metrics</text>
+
+<rect x="20" y="101" width="210" height="26" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="125" y="119" text-anchor="middle" fill="#1e40af" font-size="12">kubelet /metrics/cadvisor</text>
+
+<rect x="20" y="134" width="210" height="26" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="125" y="152" text-anchor="middle" fill="#1e40af" font-size="12">API server · etcd · scheduler</text>
+
+<rect x="20" y="167" width="210" height="26" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="125" y="185" text-anchor="middle" fill="#1e40af" font-size="12">controller-manager</text>
+
+<!-- Arrow → Prometheus -->
+<line x1="240" y1="120" x2="310" y2="120" stroke="#7c3aed" stroke-width="2"/>
+<text x="275" y="113" text-anchor="middle" fill="#7c3aed" font-size="11">scrape</text>
+
+<!-- Prometheus Operator -->
+<rect x="310" y="60" width="200" height="120" rx="8" fill="#faf5ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="410" y="83" text-anchor="middle" fill="#7c3aed" font-size="13" font-weight="bold">Prometheus</text>
+<text x="410" y="102" text-anchor="middle" fill="#7c3aed" font-size="12">stockage TSDB</text>
+<text x="410" y="121" text-anchor="middle" fill="#6b7280" font-size="11">rétention : 7d (défaut)</text>
+<line x1="330" y1="135" x2="490" y2="135" stroke="#c4b5fd" stroke-width="1"/>
+<text x="410" y="152" text-anchor="middle" fill="#7c3aed" font-size="11">Operator + CRDs</text>
+<text x="410" y="168" text-anchor="middle" fill="#7c3aed" font-size="11">ServiceMonitor · PrometheusRule</text>
+
+<!-- Arrows → output -->
+<line x1="510" y1="90" x2="570" y2="70" stroke="#d97706" stroke-width="2"/>
+<line x1="510" y1="120" x2="570" y2="120" stroke="#16a34a" stroke-width="2"/>
+<line x1="510" y1="150" x2="570" y2="165" stroke="#dc2626" stroke-width="2"/>
+
+<!-- Grafana -->
+<rect x="570" y="45" width="160" height="50" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+<text x="650" y="68" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Grafana</text>
+<text x="650" y="85" text-anchor="middle" fill="#d97706" font-size="12">dashboards</text>
+
+<!-- Alertmanager -->
+<rect x="570" y="105" width="160" height="50" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+<text x="650" y="128" text-anchor="middle" fill="#15803d" font-size="13" font-weight="bold">Alertmanager</text>
+<text x="650" y="145" text-anchor="middle" fill="#166534" font-size="12">routing alertes</text>
+
+<!-- Prometheus Operator -->
+<rect x="570" y="160" width="160" height="50" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+<text x="650" y="183" text-anchor="middle" fill="#dc2626" font-size="12" font-weight="bold">Prom. Operator</text>
+<text x="650" y="200" text-anchor="middle" fill="#dc2626" font-size="11">CRD manager</text>
+
+<!-- Namespace label -->
+<text x="450" y="230" text-anchor="middle" fill="#6b7280" font-size="11">namespace : monitoring</text>
+</svg>
+
+---
+
+## Installation — Helm
+
+```bash
+# Ajouter le repo Prometheus Community
+helm repo add prometheus-community \
+  https://prometheus-community.github.io/helm-charts
+helm repo update
+
+# Installer la stack complète dans le namespace monitoring
+helm install kube-prom \
+  prometheus-community/kube-prometheus-stack \
+  --namespace monitoring --create-namespace \
+  --set grafana.adminPassword=admin \
+  --set prometheus.prometheusSpec.retention=7d \
+  --version 65.1.1    # version stable en 2025
+```
+
+- Installe en une commande : Prometheus, Grafana, Alertmanager,
+  node-exporter, kube-state-metrics, Prometheus Operator
+- CRDs créés automatiquement : `ServiceMonitor`, `PrometheusRule`, `Alertmanager`
+
+---
+
+## Vérification de l'installation
+
+```bash
+kubectl get pods -n monitoring
+# NAME                                           READY   STATUS
+# alertmanager-kube-prom-alertmanager-0          2/2     Running
+# kube-prom-grafana-7d9b8f6c4-xyz               3/3     Running
+# kube-prom-kube-state-metrics-...              1/1     Running
+# kube-prom-operator-...                         1/1     Running
+# kube-prom-prometheus-node-exporter-<node>      1/1     Running  ×N
+# prometheus-kube-prom-prometheus-0             2/2     Running
+
+# Accès Grafana (admin / admin)
+kubectl port-forward svc/kube-prom-grafana 3000:80 -n monitoring
+
+# Accès Prometheus UI
+kubectl port-forward svc/kube-prom-kube-prometheus-stack-prometheus \
+  9090 -n monitoring
+```
+
+---
+
+## Dashboards inclus par défaut
+
+| Dashboard Grafana | Ce qu'il montre |
+|-------------------|-----------------|
+| Kubernetes / Compute Resources / Cluster | CPU + RAM global |
+| Kubernetes / Compute Resources / Namespace | Par namespace |
+| Node Exporter / Nodes | CPU, RAM, disque, réseau OS |
+| Kubernetes / Networking / Cluster | Bande passante pods |
+| etcd | Latence, transactions, DB size, leader |
+| Kubernetes / API server | Requêtes/s, latence, error budget |
+
+> Ces dashboards sont gérés en **ConfigMaps** dans le namespace `monitoring`
+> ```bash
+> kubectl get configmap -n monitoring -l grafana_dashboard=1
+> ```
+
+---
+
+## Ajouter un dashboard — ConfigMap
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashboard-nodes-overview
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"     # sidecar Grafana détecte ce label
+data:
+  nodes-overview.json: |
+    {
+      "title": "Cluster — Nodes Overview",
+      "uid": "nodes-overview-v1",
+      "panels": [
+        {
+          "title": "CPU Usage par nœud",
+          "type": "timeseries",
+          "targets": [{
+            "expr": "1 - avg(rate(node_cpu_seconds_total{mode='idle'}[5m])) by (instance)"
+          }]
+        }
+      ]
+    }
+```
+
+- Le sidecar `grafana-sc-dashboard` scanne les ConfigMaps en continu
+- Rechargement automatique — pas de redémarrage Grafana nécessaire
+
+---
+
+## ConfigMap — PromQL essentiels pour les nodes
+
+```yaml
+# Dans la section panels du dashboard JSON
+panels:
+  - title: "CPU Usage"
+    expr: >
+      1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))
+      by (instance)
+
+  - title: "Mémoire utilisée"
+    expr: >
+      1 - node_memory_MemAvailable_bytes
+          / node_memory_MemTotal_bytes
+
+  - title: "Disque utilisé"
+    expr: >
+      1 - node_filesystem_avail_bytes{fstype!="tmpfs"}
+          / node_filesystem_size_bytes
+
+  - title: "Pods running par nœud"
+    expr: kubelet_running_pods
+
+  - title: "Container restarts (1h)"
+    expr: >
+      increase(kube_pod_container_status_restarts_total[1h]) > 0
+```
+
+---
+
+## ConfigMap — PromQL control plane
+
+```yaml
+# API server
+- title: "API server — latence p99"
+  expr: >
+    histogram_quantile(0.99,
+      rate(apiserver_request_duration_seconds_bucket
+           {verb!="WATCH"}[5m]))
+
+# etcd
+- title: "etcd — leader changes"
+  expr: increase(etcd_server_leader_changes_seen_total[1h])
+
+- title: "etcd — fsync latency p99"
+  expr: >
+    histogram_quantile(0.99,
+      rate(etcd_disk_wal_fsync_duration_seconds_bucket[5m]))
+
+# Scheduler
+- title: "Pods en attente de scheduling"
+  expr: scheduler_pending_pods
+
+# Controller Manager
+- title: "Work queue depth"
+  expr: max(workqueue_depth) by (name)
+```
+
+---
+
+## Alertes pré-configurées (~150 règles)
+
+```bash
+kubectl get prometheusrules -n monitoring
+# NAME                                      AGE
+# kube-prom-alertmanager.rules              10m
+# kube-prom-etcd                            10m
+# kube-prom-kubernetes-resources            10m
+# kube-prom-node-exporter                   10m
+# ...
+```
+
+| Alerte | Condition | Sévérité |
+|--------|-----------|----------|
+| `KubeNodeNotReady` | nœud non prêt > 15 min | critical |
+| `KubePodCrashLooping` | CrashLoopBackOff | warning |
+| `NodeFilesystemSpaceFillingUp` | disque > 80% | warning |
+| `etcdMembersDown` | membre etcd down | critical |
+| `CPUThrottlingHigh` | throttling > 25% | warning |
+
+```bash
+kubectl port-forward svc/kube-prom-alertmanager 9093 -n monitoring
+```
+
+---
+
+## Values Helm — configuration production
+
+```yaml
+# values-production.yaml
+prometheus:
+  prometheusSpec:
+    retention: 30d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: fast
+          resources:
+            requests:
+              storage: 50Gi
+    resources:
+      requests: { cpu: 500m, memory: 2Gi }
+      limits:   { cpu: 2,    memory: 4Gi }
+
+grafana:
+  persistence: { enabled: true, size: 5Gi }
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard    # label ConfigMap à surveiller
+
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          resources:
+            requests:
+              storage: 2Gi
+```
+
+```bash
+helm upgrade kube-prom prometheus-community/kube-prometheus-stack \
+  -n monitoring -f values-production.yaml
+```
 
 ---
 
