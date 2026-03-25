@@ -17,6 +17,8 @@ kubectl wait --for=condition=available deployment/app-resilience --timeout=60s
 echo ""
 echo "2. Distribution des pods sur les nœuds:"
 kubectl get pods -l app=app-resilience -o wide
+echo ""
+read -rp "   ↵  Notez la distribution des pods sur les nœuds. Appuyez sur Entrée..."
 
 echo ""
 echo "3. Sélection d'un worker pour simuler la panne:"
@@ -36,24 +38,30 @@ echo ""
 read -p "Appuyez sur Entrée après avoir arrêté kubelet sur le worker..."
 
 echo ""
-echo "6. Observation du nœud (devient NotReady):"
+echo "6. Observation du nœud (devient NotReady après ~40s) :"
 for i in {1..5}; do
-    echo "   Tentative $i/5:"
+    echo "   Tentative $i/5 :"
     kubectl get nodes
     sleep 10
 done
+echo ""
+read -rp "   ↵  Le nœud est NotReady. Les pods sont encore 'Running' — l'API ne sait pas encore. Appuyez sur Entrée..."
 
 echo ""
 echo "7. État des pods après la panne:"
 kubectl get pods -l app=app-resilience -o wide
-echo "   Note: Les pods sur le nœud en panne restent en 'Running' un certain temps"
+echo "   Note: Les pods sur le nœud en panne passent en 'Unknown' puis 'Terminating'"
+echo ""
+read -rp "   ↵  Observez le statut Unknown/Terminating. Appuyez sur Entrée pour attendre l'éviction..."
 
 echo ""
-echo "8. Après ~5 minutes, Kubernetes marquera les pods comme 'Terminating' et les recréera"
+echo "8. Après ~5 minutes, Kubernetes évince les pods et les recrée sur les nœuds sains..."
 echo "   Attente de 1 minute pour observer le début de la transition..."
 sleep 60
 
 kubectl get pods -l app=app-resilience -o wide
+echo ""
+read -rp "   ↵  De nouveaux pods ont été créés sur les nœuds sains. Appuyez sur Entrée..."
 
 echo ""
 echo "9. Récupération: Redémarrage de kubelet sur le worker"
@@ -69,10 +77,14 @@ for i in {1..5}; do
     kubectl get nodes
     sleep 10
 done
+echo ""
+read -rp "   ↵  Le nœud est de nouveau Ready. Les anciens pods reviennent-ils ? Appuyez sur Entrée..."
 
 echo ""
 echo "11. État final des pods:"
 kubectl get pods -l app=app-resilience -o wide
+echo ""
+read -rp "   ↵  Les pods ne reviennent PAS sur worker1 — ils ont été remplacés définitivement. Appuyez sur Entrée..."
 
 echo ""
 echo "Nettoyage..."

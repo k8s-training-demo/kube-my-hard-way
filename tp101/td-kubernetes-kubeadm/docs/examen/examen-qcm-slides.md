@@ -17,7 +17,7 @@ style: |
 # Examen QCM
 ## Docker · Sécurité · Kubernetes
 
-**102 questions**
+**112 questions**
 
 ---
 
@@ -498,12 +498,28 @@ style: |
 
 ---
 
+## ✅ Q51 — Réponse : C
+
+> **etcd**
+
+_etcd stocke l'état du cluster (clé-valeur distribué, base de tout le control plane)._
+
+---
+
 ## Q52. Rôle du kube-scheduler ?
 
 - A) Stocker les données du cluster
 - B) Assigner les pods aux nodes
 - C) Gérer les secrets
 - D) Exposer l'API
+
+---
+
+## ✅ Q52 — Réponse : B
+
+> **Assigner les pods aux nodes**
+
+_Le scheduler assigne les pods aux nodes selon les ressources disponibles et les contraintes de placement._
 
 ---
 
@@ -516,12 +532,28 @@ style: |
 
 ---
 
+## ✅ Q53 — Réponse : B
+
+> **Pod**
+
+_Pod est la plus petite unité déployable (peut contenir plusieurs containers partageant le même réseau et stockage)._
+
+---
+
 ## Q54. Lister tous les pods dans tous les namespaces ?
 
 - A) `kubectl get pods`
 - B) `kubectl get pods --all-namespaces`
 - C) `kubectl get pods -all`
 - D) `kubectl list pods --global`
+
+---
+
+## ✅ Q54 — Réponse : B
+
+> **`kubectl get pods --all-namespaces`**
+
+_`kubectl get pods` liste les pods du namespace courant. `--all-namespaces` (ou `-A`) étend la recherche à tous les namespaces._
 
 ---
 
@@ -534,12 +566,28 @@ style: |
 
 ---
 
+## ✅ Q55 — Réponse : C
+
+> **Deployment**
+
+_Un Service expose les pods via un label selector, stable même si les pods changent. Un Deployment gère le cycle de vie des pods._
+
+---
+
 ## Q56. Exposer un déploiement en tant que service ?
 
 - A) `kubectl expose deployment nom --port=80`
 - B) `kubectl service create nom`
 - C) `kubectl publish deployment nom`
 - D) `kubectl network deployment nom`
+
+---
+
+## ✅ Q56 — Réponse : A
+
+> **`kubectl expose deployment nom --port=80`**
+
+_ClusterIP est le type par défaut, accessible uniquement dans le cluster. `kubectl expose` crée le Service automatiquement._
 
 ---
 
@@ -552,12 +600,28 @@ style: |
 
 ---
 
+## ✅ Q57 — Réponse : B
+
+> **NodePort**
+
+_`kubectl apply -f file.yaml` crée ou met à jour les ressources. NodePort expose l'application sur un port fixe de chaque node._
+
+---
+
 ## Q58. Type de Service par défaut ?
 
 - A) NodePort
 - B) LoadBalancer
 - C) ClusterIP
 - D) ExternalName
+
+---
+
+## ✅ Q58 — Réponse : C
+
+> **ClusterIP**
+
+_Les namespaces isolent les ressources dans un même cluster. ClusterIP est le type de Service par défaut, accessible uniquement en interne._
 
 ---
 
@@ -570,12 +634,28 @@ style: |
 
 ---
 
+## ✅ Q59 — Réponse : B
+
+> **Un ensemble de pods identiques maintenus à un nombre défini**
+
+_Un Deployment gère le cycle de vie des pods avec rolling updates et rollback. Il s'appuie sur un ReplicaSet pour maintenir le nombre désiré de pods identiques._
+
+---
+
 ## Q60. Appliquer un fichier de configuration YAML ?
 
 - A) `kubectl create -f fichier.yaml`
 - B) `kubectl apply -f fichier.yaml`
 - C) `kubectl deploy -f fichier.yaml`
 - D) Les deux A et B sont valides
+
+---
+
+## ✅ Q60 — Réponse : B
+
+> **`kubectl apply -f fichier.yaml`**
+
+_Les labels sont des paires clé-valeur pour sélectionner et organiser les ressources. `kubectl apply` crée ou met à jour de façon déclarative._
 
 ---
 
@@ -588,12 +668,28 @@ style: |
 
 ---
 
+## ✅ Q61 — Réponse : B
+
+> **Une isolation logique des ressources dans un cluster**
+
+_ReplicaSet maintient le nombre désiré de pods identiques. Les namespaces permettent de séparer des équipes ou des environnements dans un même cluster._
+
+---
+
 ## Q62. Voir les logs d'un pod ?
 
 - A) `kubectl logs nom-pod`
 - B) `kubectl get logs nom-pod`
 - C) `kubectl describe logs nom-pod`
 - D) `kubectl show logs nom-pod`
+
+---
+
+## ✅ Q62 — Réponse : A
+
+> **`kubectl logs nom-pod`**
+
+_`kubectl delete pod` supprime un pod (le Deployment en recrée un automatiquement pour maintenir le nombre de replicas)._
 
 ---
 
@@ -606,12 +702,28 @@ style: |
 
 ---
 
+## ✅ Q63 — Réponse : B
+
+> **`kubectl exec -it nom-pod -- /bin/sh`**
+
+_Les annotations stockent des métadonnées non-sélectables (outils, audits), contrairement aux labels qui servent à sélectionner les ressources._
+
+---
+
 ## Q64. Qu'est-ce qu'un ConfigMap ?
 
 - A) Une carte du cluster
 - B) Un objet pour stocker des données de configuration non sensibles
 - C) Un fichier de logs
 - D) Une configuration réseau
+
+---
+
+## ✅ Q64 — Réponse : B
+
+> **Un objet pour stocker des données de configuration non sensibles**
+
+_ConfigMap stocke des données de configuration non-sensibles en clé-valeur, injectables comme variables d'environnement ou fichiers montés._
 
 ---
 
@@ -624,12 +736,28 @@ style: |
 
 ---
 
+## ✅ Q65 — Réponse : B
+
+> **Secret est encodé en base64 et conçu pour les données sensibles**
+
+_Secret encode les données en base64 et est conçu pour les données sensibles (mots de passe, tokens, certificats)._
+
+---
+
 ## Q66. Qu'est-ce qu'un DaemonSet ?
 
 - A) Un pod qui s'exécute sur tous les nodes (ou un sous-ensemble)
 - B) Un démon système
 - C) Un service en arrière-plan
 - D) Un type de conteneur
+
+---
+
+## ✅ Q66 — Réponse : A
+
+> **Un pod qui s'exécute sur tous les nodes (ou un sous-ensemble)**
+
+_DaemonSet assure qu'un pod tourne sur chaque node (ou un sous-ensemble défini par un nodeSelector). Utile pour les agents de monitoring ou CNI._
 
 ---
 
@@ -642,12 +770,28 @@ style: |
 
 ---
 
+## ✅ Q67 — Réponse : A
+
+> **Un ensemble de pods avec identité et stockage persistants**
+
+_StatefulSet gère des pods avec identité stable (nom ordonné) et stockage persistant, idéal pour les bases de données._
+
+---
+
 ## Q68. Mettre à l'échelle un deployment à 5 replicas ?
 
 - A) `kubectl scale deployment nom --replicas=5`
 - B) `kubectl resize deployment nom -r 5`
 - C) `kubectl set replicas deployment nom 5`
 - D) `kubectl update deployment nom --count=5`
+
+---
+
+## ✅ Q68 — Réponse : A
+
+> **`kubectl scale deployment nom --replicas=5`**
+
+_`kubectl scale deployment/app --replicas=5` met à l'échelle un deployment immédiatement._
 
 ---
 
@@ -660,12 +804,28 @@ style: |
 
 ---
 
+## ✅ Q69 — Réponse : B
+
+> **Un objet gérant l'accès externe HTTP/HTTPS aux services**
+
+_Ingress gère le trafic HTTP/HTTPS externe vers les services internes, avec routing par path ou hostname. Nécessite un Ingress Controller._
+
+---
+
 ## Q70. Composant qui s'exécute sur chaque node worker ?
 
 - A) kube-apiserver
 - B) kubelet
 - C) etcd
 - D) kube-scheduler
+
+---
+
+## ✅ Q70 — Réponse : B
+
+> **kubelet**
+
+_kubelet s'exécute sur chaque node worker et gère les pods. kube-apiserver, etcd et kube-scheduler sont des composants du Control Plane._
 
 ---
 
@@ -678,12 +838,28 @@ style: |
 
 ---
 
+## ✅ Q71 — Réponse : B
+
+> **S'assurer que les conteneurs sont en cours d'exécution dans les pods**
+
+_kubelet s'assure que les containers des pods tournent selon les specs reçues de l'API server, et rapporte leur état._
+
+---
+
 ## Q72. Qu'est-ce que kube-proxy ?
 
 - A) Un proxy HTTP
 - B) Un composant gérant les règles réseau pour les Services
 - C) Un cache d'images
 - D) Un outil de monitoring
+
+---
+
+## ✅ Q72 — Réponse : B
+
+> **Un composant gérant les règles réseau pour les Services**
+
+_kube-proxy maintient les règles réseau (iptables/ipvs) pour les Services, permettant le routage du trafic vers les pods appropriés._
 
 ---
 
@@ -696,6 +872,14 @@ style: |
 
 ---
 
+## ✅ Q73 — Réponse : B
+
+> **`kubectl describe pod nom`**
+
+_`kubectl describe pod` donne tous les détails d'un pod (events, conditions, volumes, probes). Indispensable pour le debug._
+
+---
+
 ## Q74. Qu'est-ce qu'un PersistentVolume (PV) ?
 
 - A) Un volume temporaire
@@ -705,12 +889,28 @@ style: |
 
 ---
 
+## ✅ Q74 — Réponse : B
+
+> **Une ressource de stockage provisionnée dans le cluster**
+
+_PersistentVolume est une ressource de stockage provisionnée dans le cluster, indépendante du cycle de vie des pods._
+
+---
+
 ## Q75. Qu'est-ce qu'un PersistentVolumeClaim (PVC) ?
 
 - A) Une demande de stockage par un utilisateur/pod
 - B) Un volume créé automatiquement
 - C) Un type de ConfigMap
 - D) Un backup de volume
+
+---
+
+## ✅ Q75 — Réponse : A
+
+> **Une demande de stockage par un utilisateur/pod**
+
+_PersistentVolumeClaim est la demande de stockage faite par un pod. Kubernetes lie automatiquement le PVC à un PV compatible._
 
 ---
 
@@ -729,12 +929,28 @@ style: |
 
 ---
 
+## ✅ Q76 — Réponse : B
+
+> **Vérifie si le conteneur doit être redémarré**
+
+_La probe liveness vérifie si le container est vivant. Si elle échoue, kubelet redémarre le container._
+
+---
+
 ## Q77. Qu'est-ce qu'une probe "readiness" ?
 
 - A) Vérifie si l'application est prête à recevoir du trafic
 - B) Vérifie si le conteneur doit être redémarré
 - C) Vérifie l'utilisation mémoire
 - D) Vérifie le stockage
+
+---
+
+## ✅ Q77 — Réponse : A
+
+> **Vérifie si l'application est prête à recevoir du trafic**
+
+_La probe readiness vérifie si le container est prêt à recevoir du trafic. Si elle échoue, le pod est retiré des endpoints du Service._
 
 ---
 
@@ -747,12 +963,28 @@ style: |
 
 ---
 
+## ✅ Q78 — Réponse : B
+
+> **Le conteneur est redémarré**
+
+_Si liveness échoue, kubelet redémarre le container selon la restartPolicy du pod (Always par défaut)._
+
+---
+
 ## Q79. Stratégie de déploiement mettant à jour les pods progressivement ?
 
 - A) Recreate
 - B) RollingUpdate
 - C) BlueGreen
 - D) Canary
+
+---
+
+## ✅ Q79 — Réponse : B
+
+> **RollingUpdate**
+
+_RollingUpdate met à jour les pods progressivement sans downtime, en contrôlant maxSurge et maxUnavailable._
 
 ---
 
@@ -765,12 +997,28 @@ style: |
 
 ---
 
+## ✅ Q80 — Réponse : B
+
+> **Supprime tous les anciens pods avant de créer les nouveaux**
+
+_Recreate arrête tous les pods puis en recrée de nouveaux — cela provoque un downtime, mais garantit qu'aucun pod de l'ancienne version ne tourne._
+
+---
+
 ## Q81. Annuler un déploiement en cours ?
 
 - A) `kubectl rollout undo deployment nom`
 - B) `kubectl cancel deployment nom`
 - C) `kubectl revert deployment nom`
 - D) `kubectl rollback deployment nom`
+
+---
+
+## ✅ Q81 — Réponse : A
+
+> **`kubectl rollout undo deployment nom`**
+
+_`kubectl rollout undo deployment/app` annule le dernier déploiement et revient à la révision précédente._
 
 ---
 
@@ -783,12 +1031,28 @@ style: |
 
 ---
 
+## ✅ Q82 — Réponse : B
+
+> **Un objet qui ajuste automatiquement le nombre de replicas**
+
+_HPA scale automatiquement le nombre de pods selon les métriques (CPU, mémoire, métriques custom)._
+
+---
+
 ## Q83. Métrique sur laquelle un HPA se base par défaut ?
 
-- A) Utilisation disque
-- B) Utilisation CPU
+- A) Utilisation CPU
+- B) Utilisation disque
 - C) Nombre de requêtes
 - D) Latence réseau
+
+---
+
+## ✅ Q83 — Réponse : A
+
+> **Utilisation CPU**
+
+_CPU est la métrique par défaut du HPA. Elle nécessite que le Metrics Server soit installé dans le cluster._
 
 ---
 
@@ -801,12 +1065,28 @@ style: |
 
 ---
 
+## ✅ Q84 — Réponse : B
+
+> **Des limites sur les ressources consommables par namespace**
+
+_ResourceQuota limite la consommation totale de ressources par namespace (CPU, mémoire, nombre d'objets)._
+
+---
+
 ## Q85. Différence entre "requests" et "limits" pour les ressources ?
 
 - A) Aucune différence
 - B) requests = minimum garanti, limits = maximum autorisé
 - C) limits = minimum, requests = maximum
 - D) requests concerne la CPU, limits la mémoire
+
+---
+
+## ✅ Q85 — Réponse : B
+
+> **requests = minimum garanti, limits = maximum autorisé**
+
+_requests = garanti par le scheduler pour le placement, limits = maximum que le container peut consommer._
 
 ---
 
@@ -819,12 +1099,28 @@ style: |
 
 ---
 
+## ✅ Q86 — Réponse : B
+
+> **Il est terminé (OOMKilled)**
+
+_Le container est OOMKilled si il dépasse sa limite mémoire. Le kernel Linux tue le process pour protéger le node._
+
+---
+
 ## Q87. Qu'est-ce qu'un LimitRange ?
 
 - A) Un range d'adresses IP
 - B) Des valeurs par défaut et limites pour les ressources dans un namespace
 - C) Un intervalle de ports
 - D) Une plage de versions
+
+---
+
+## ✅ Q87 — Réponse : B
+
+> **Des valeurs par défaut et limites pour les ressources dans un namespace**
+
+_LimitRange définit les valeurs par défaut et limites par container dans un namespace, évitant les pods sans requests/limits._
 
 ---
 
@@ -837,12 +1133,28 @@ style: |
 
 ---
 
+## ✅ Q88 — Réponse : B
+
+> **Helm**
+
+_Helm est le gestionnaire de packages Kubernetes, permettant d'installer et gérer des applications complexes via des Charts._
+
+---
+
 ## Q89. Qu'est-ce qu'un Helm Chart ?
 
 - A) Un graphique de monitoring
 - B) Un package de ressources Kubernetes
 - C) Un diagramme d'architecture
 - D) Un outil de visualisation
+
+---
+
+## ✅ Q89 — Réponse : B
+
+> **Un package de ressources Kubernetes**
+
+_Un Helm Chart est un ensemble de fichiers décrivant des ressources Kubernetes, avec templates et valeurs configurables._
 
 ---
 
@@ -855,12 +1167,28 @@ style: |
 
 ---
 
+## ✅ Q90 — Réponse : B
+
+> **Role-Based Access Control pour la gestion des permissions**
+
+_RBAC contrôle les autorisations d'accès aux ressources Kubernetes selon les rôles attribués aux utilisateurs et ServiceAccounts._
+
+---
+
 ## Q91. Objets principaux de RBAC ?
 
 - A) Users et Groups
 - B) Role, ClusterRole, RoleBinding, ClusterRoleBinding
 - C) Pods et Services
 - D) Namespaces et Nodes
+
+---
+
+## ✅ Q91 — Réponse : B
+
+> **Role, ClusterRole, RoleBinding, ClusterRoleBinding**
+
+_Ces quatre objets constituent le système RBAC : les Roles définissent les permissions, les Bindings les assignent aux sujets._
 
 ---
 
@@ -873,12 +1201,28 @@ style: |
 
 ---
 
+## ✅ Q92 — Réponse : B
+
+> **Role est limité à un namespace, ClusterRole est global**
+
+_Role est limité à un namespace, ClusterRole s'applique à tout le cluster (et peut aussi être utilisé dans un namespace via RoleBinding)._
+
+---
+
 ## Q93. Qu'est-ce qu'un ServiceAccount ?
 
 - A) Un compte utilisateur
 - B) Une identité pour les pods interagissant avec l'API
 - C) Un type de Service
 - D) Un compte de facturation
+
+---
+
+## ✅ Q93 — Réponse : B
+
+> **Une identité pour les pods interagissant avec l'API**
+
+_ServiceAccount est une identité pour les pods qui doivent interagir avec l'API Kubernetes (ex: opérateurs, agents de monitoring)._
 
 ---
 
@@ -891,12 +1235,28 @@ style: |
 
 ---
 
+## ✅ Q94 — Réponse : B
+
+> **Utiliser des labels cohérents et standardisés (app, version, env)**
+
+_Utiliser des labels cohérents (app, version, env) facilite la sélection, le monitoring et la gestion du cycle de vie des ressources._
+
+---
+
 ## Q95. Qu'est-ce que l'affinité de pod (Pod Affinity) ?
 
 - A) Une préférence pour un type de node
 - B) Des règles pour placer des pods ensemble ou séparément
 - C) Une connexion entre pods
 - D) Un type de réseau
+
+---
+
+## ✅ Q95 — Réponse : B
+
+> **Des règles pour placer des pods ensemble ou séparément**
+
+_Pod Affinity attire les pods vers des nodes où certains pods tournent déjà. Pod Anti-Affinity fait l'inverse pour la haute disponibilité._
 
 ---
 
@@ -909,12 +1269,28 @@ style: |
 
 ---
 
+## ✅ Q96 — Réponse : B
+
+> **Une marque qui repousse les pods sans tolération correspondante**
+
+_Un Taint empêche les pods sans toleration correspondante d'être schedulés sur le node. Utilisé pour réserver des nodes spéciaux._
+
+---
+
 ## Q97. Comment un pod peut-il être schedulé sur un node avec un taint ?
 
 - A) Avec un label correspondant
 - B) Avec une toleration correspondante
 - C) En étant privileged
 - D) Impossible
+
+---
+
+## ✅ Q97 — Réponse : B
+
+> **Avec une toleration correspondante**
+
+_Le pod doit avoir une toleration correspondant au taint (key, value, effect) pour être accepté sur un node tainté._
 
 ---
 
@@ -927,12 +1303,28 @@ style: |
 
 ---
 
+## ✅ Q98 — Réponse : B
+
+> **La gestion de plusieurs clusters Kubernetes**
+
+_Federation permet de gérer plusieurs clusters Kubernetes comme un seul, pour la haute disponibilité multi-régions._
+
+---
+
 ## Q99. Bonne pratique pour les health checks ?
 
 - A) Ne pas utiliser de health checks
 - B) Configurer livenessProbe et readinessProbe appropriées
 - C) Utiliser uniquement livenessProbe
 - D) Vérifier uniquement le port
+
+---
+
+## ✅ Q99 — Réponse : B
+
+> **Configurer livenessProbe et readinessProbe appropriées**
+
+_Définir liveness ET readiness probes pour chaque container assure un redémarrage automatique et un trafic correctement routé._
 
 ---
 
@@ -945,12 +1337,28 @@ style: |
 
 ---
 
+## ✅ Q100 — Réponse : B
+
+> **kubectl describe, logs, events, et outils comme k9s**
+
+_`kubectl describe`, `kubectl logs`, `kubectl get events` sont les outils de base. k9s offre une interface TUI très pratique._
+
+---
+
 ## Q101. Rôle du Controller Manager et du Scheduler ?
 
 - A) Le Controller Manager place les pods, le Scheduler les crée
 - B) Ils travaillent en séquence : Controller Manager attend que le Scheduler ait fini
 - C) Controller Manager crée les pods (sans nœud), Scheduler les assigne — en parallèle sur l'API
 - D) Le Scheduler crée les pods, le Controller Manager les place
+
+---
+
+## ✅ Q101 — Réponse : C
+
+> **Controller Manager crée les pods (sans nœud), Scheduler les assigne — en parallèle sur l'API**
+
+_Le Controller Manager et le Scheduler s'exécutent en parallèle : le CM détecte les états désirés et crée les pods, le Scheduler les assigne aux nodes._
 
 ---
 
@@ -963,6 +1371,394 @@ style: |
 
 ---
 
+## ✅ Q102 — Réponse : A
+
+> **Les DaemonSet ignorent toutes les règles de placement et les taints**
+
+_Un DaemonSet tourne sur un nœud cordonné car le DaemonSet controller bypasse le scheduler et ajoute automatiquement les tolerations pour `node.kubernetes.io/unschedulable`._
+
+---
+
+# PARTIE 5
+## Architecture Container Runtime
+### Questions 103 → 112
+
+---
+
+## Q103. VRAI ou FAUX ?
+
+> _nerdctl est un remplacement de docker qui communique directement avec containerd_
+
+<div style="display:flex;gap:12px;align-items:center;margin:16px 0;font-size:0.85em">
+  <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:8px;padding:8px 14px">nerdctl</div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#dbeafe;border:2px solid #2563eb;border-radius:8px;padding:8px 14px">containerd</div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#f3e8ff;border:2px solid #9333ea;border-radius:8px;padding:8px 14px">runc</div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#fef9c3;border:2px solid #ca8a04;border-radius:8px;padding:8px 14px">container</div>
+</div>
+
+- A) VRAI
+- B) FAUX
+
+---
+
+## ✅ Q103 — Réponse : A — VRAI
+
+> **nerdctl communique directement avec containerd**
+
+<div style="display:flex;gap:12px;align-items:center;margin:12px 0;font-size:0.85em">
+  <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:8px;padding:8px 14px">nerdctl</div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#dbeafe;border:2px solid #2563eb;border-radius:8px;padding:8px 14px">containerd</div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#f3e8ff;border:2px solid #9333ea;border-radius:8px;padding:8px 14px">runc</div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#fef9c3;border:2px solid #ca8a04;border-radius:8px;padding:8px 14px">container</div>
+</div>
+
+_nerdctl est une CLI compatible Docker qui parle directement à containerd via son socket (sans Docker daemon). Syntaxe identique à docker._
+
+---
+
+## Q104. VRAI ou FAUX ?
+
+> _Dans Kubernetes, kubelet appelle Docker pour créer les containers_
+
+<div style="display:flex;gap:12px;align-items:center;margin:16px 0;font-size:0.85em">
+  <div style="background:#fee2e2;border:2px solid #dc2626;border-radius:8px;padding:8px 14px;text-decoration:line-through;color:#dc2626">kubelet</div>
+  <div style="font-size:1.4em;color:#dc2626">→</div>
+  <div style="background:#fee2e2;border:2px solid #dc2626;border-radius:8px;padding:8px 14px;text-decoration:line-through;color:#dc2626">dockershim</div>
+  <div style="font-size:1.4em;color:#dc2626">→</div>
+  <div style="background:#fee2e2;border:2px solid #dc2626;border-radius:8px;padding:8px 14px;text-decoration:line-through;color:#dc2626">Docker</div>
+  <div style="font-size:1.4em;color:#dc2626">→</div>
+  <div style="background:#fee2e2;border:2px solid #dc2626;border-radius:8px;padding:8px 14px;color:#dc2626">containerd</div>
+</div>
+
+- A) VRAI
+- B) FAUX
+
+---
+
+## ✅ Q104 — Réponse : B — FAUX
+
+> **Depuis K8s 1.24, kubelet utilise le CRI directement (sans Docker)**
+
+<div style="display:flex;gap:8px;align-items:center;margin:12px 0;font-size:0.8em">
+  <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:8px;padding:6px 12px">kubelet</div>
+  <div style="font-size:1.3em">→</div>
+  <div style="background:#dbeafe;border:2px solid #2563eb;border-radius:8px;padding:6px 12px">CRI (gRPC)</div>
+  <div style="font-size:1.3em">→</div>
+  <div style="background:#f3e8ff;border:2px solid #9333ea;border-radius:8px;padding:6px 12px">containerd</div>
+  <div style="font-size:1.3em">→</div>
+  <div style="background:#fef9c3;border:2px solid #ca8a04;border-radius:8px;padding:6px 12px">runc</div>
+  <div style="font-size:1.3em">→</div>
+  <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:8px;padding:6px 12px">container</div>
+</div>
+
+_Depuis K8s 1.24, dockershim est supprimé. kubelet utilise le CRI (Container Runtime Interface) pour parler directement à containerd._
+
+---
+
+## Q105. VRAI ou FAUX ?
+
+> _containerd et runc ont le même rôle_
+
+<div style="display:flex;gap:16px;margin:16px 0;font-size:0.85em">
+  <div style="background:#dbeafe;border:2px solid #2563eb;border-radius:8px;padding:10px 16px;text-align:center">
+    <strong>containerd</strong><br>
+    <span style="font-size:0.85em;color:#555">high-level runtime<br>images · snapshots · namespaces</span>
+  </div>
+  <div style="display:flex;align-items:center;font-size:1.4em">≠</div>
+  <div style="background:#f3e8ff;border:2px solid #9333ea;border-radius:8px;padding:10px 16px;text-align:center">
+    <strong>runc</strong><br>
+    <span style="font-size:0.85em;color:#555">low-level runtime<br>namespaces Linux · cgroups · OCI</span>
+  </div>
+</div>
+
+- A) VRAI
+- B) FAUX
+
+---
+
+## ✅ Q105 — Réponse : B — FAUX
+
+> **containerd et runc ont des rôles distincts et complémentaires**
+
+<div style="display:flex;gap:16px;margin:12px 0;font-size:0.85em">
+  <div style="background:#dbeafe;border:2px solid #2563eb;border-radius:8px;padding:10px 16px;text-align:center">
+    <strong>containerd</strong><br>
+    <span style="font-size:0.85em;color:#555">high-level runtime<br>images · snapshots · namespaces</span>
+  </div>
+  <div style="display:flex;align-items:center;font-size:1.4em">→</div>
+  <div style="background:#f3e8ff;border:2px solid #9333ea;border-radius:8px;padding:10px 16px;text-align:center">
+    <strong>runc</strong><br>
+    <span style="font-size:0.85em;color:#555">low-level runtime<br>namespaces Linux · cgroups · OCI</span>
+  </div>
+</div>
+
+_containerd gère le cycle de vie à haut niveau. runc exécute concrètement le process en utilisant les namespaces/cgroups Linux._
+
+---
+
+## Q106. VRAI ou FAUX ?
+
+> _Une RuntimeClass permet d'utiliser différents runtimes selon le pod_
+
+<div style="display:flex;gap:12px;align-items:center;margin:16px 0;font-size:0.85em">
+  <div style="background:#fef9c3;border:2px solid #ca8a04;border-radius:8px;padding:8px 14px">Pod spec<br><code>runtimeClassName: gvisor</code></div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#dbeafe;border:2px solid #2563eb;border-radius:8px;padding:8px 14px">RuntimeClass<br><code>handler: runsc</code></div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#f3e8ff;border:2px solid #9333ea;border-radius:8px;padding:8px 14px">gVisor / kata-containers / runc</div>
+</div>
+
+- A) VRAI
+- B) FAUX
+
+---
+
+## ✅ Q106 — Réponse : A — VRAI
+
+> **RuntimeClass permet de spécifier quel runtime utiliser par pod**
+
+<div style="display:flex;gap:12px;align-items:center;margin:12px 0;font-size:0.85em">
+  <div style="background:#fef9c3;border:2px solid #ca8a04;border-radius:8px;padding:8px 14px">Pod spec<br><code>runtimeClassName: gvisor</code></div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#dbeafe;border:2px solid #2563eb;border-radius:8px;padding:8px 14px">RuntimeClass<br><code>handler: runsc</code></div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:8px;padding:8px 14px">gVisor / kata / runc</div>
+</div>
+
+_RuntimeClass permet de spécifier dans le pod spec quel runtime utiliser (runc, gVisor/runsc, kata-containers...) selon les besoins d'isolation._
+
+---
+
+## Q107. VRAI ou FAUX ?
+
+> _gVisor offre une isolation équivalente à une VM_
+
+<div style="display:flex;gap:8px;align-items:center;margin:16px 0;font-size:0.8em;flex-wrap:wrap">
+  <div style="background:#fef9c3;border:2px solid #ca8a04;border-radius:8px;padding:8px 12px;text-align:center"><strong>runc</strong><br>syscalls directs</div>
+  <div style="font-size:1.2em">←</div>
+  <div style="background:#dbeafe;border:2px solid #2563eb;border-radius:8px;padding:8px 12px;text-align:center"><strong>gVisor</strong><br>kernel userspace</div>
+  <div style="font-size:1.2em">←</div>
+  <div style="background:#f3e8ff;border:2px solid #9333ea;border-radius:8px;padding:8px 12px;text-align:center"><strong>kata</strong><br>micro-VM / hyperviseur</div>
+</div>
+<div style="font-size:0.75em;color:#555;margin-top:4px">Isolation croissante →</div>
+
+- A) VRAI
+- B) FAUX
+
+---
+
+## ✅ Q107 — Réponse : B — FAUX
+
+> **gVisor offre une meilleure isolation que runc, mais moins forte qu'une VM**
+
+<div style="display:flex;gap:8px;align-items:center;margin:12px 0;font-size:0.8em;flex-wrap:wrap">
+  <div style="background:#fef9c3;border:2px solid #ca8a04;border-radius:8px;padding:8px 12px;text-align:center"><strong>runc</strong><br>syscalls directs<br><em>isolation minimale</em></div>
+  <div style="font-size:1.2em">→</div>
+  <div style="background:#dbeafe;border:2px solid #2563eb;border-radius:8px;padding:8px 12px;text-align:center"><strong>gVisor</strong><br>kernel userspace<br><em>isolation intermédiaire</em></div>
+  <div style="font-size:1.2em">→</div>
+  <div style="background:#f3e8ff;border:2px solid #9333ea;border-radius:8px;padding:8px 12px;text-align:center"><strong>kata</strong><br>micro-VM / hyperviseur<br><em>isolation maximale</em></div>
+</div>
+
+_gVisor intercepte les syscalls dans un kernel userspace (meilleure isolation que runc), mais kata-containers utilise un hyperviseur complet — isolation VM réelle._
+
+---
+
+## Q108. VRAI ou FAUX ?
+
+> _nerdctl peut utiliser des fichiers Docker Compose_
+
+<div style="display:flex;gap:12px;align-items:center;margin:16px 0;font-size:0.85em">
+  <div style="background:#fef9c3;border:2px solid #ca8a04;border-radius:8px;padding:8px 14px"><code>docker-compose.yml</code></div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:8px;padding:8px 14px"><code>nerdctl compose up</code></div>
+  <div style="font-size:1.4em">✓</div>
+</div>
+
+- A) VRAI
+- B) FAUX
+
+---
+
+## ✅ Q108 — Réponse : A — VRAI
+
+> **`nerdctl compose up` fonctionne avec les fichiers docker-compose.yml**
+
+<div style="display:flex;gap:12px;align-items:center;margin:12px 0;font-size:0.85em">
+  <div style="background:#fef9c3;border:2px solid #ca8a04;border-radius:8px;padding:8px 14px"><code>docker-compose.yml</code></div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:8px;padding:8px 14px"><code>nerdctl compose up</code></div>
+</div>
+
+_`nerdctl compose up` fonctionne avec les fichiers docker-compose.yml standards. nerdctl vise une compatibilité totale avec l'écosystème Docker._
+
+---
+
+## Q109. VRAI ou FAUX ?
+
+> _Avec kata-containers, chaque pod tourne dans une vraie VM_
+
+<div style="display:flex;gap:12px;align-items:center;margin:16px 0;font-size:0.85em">
+  <div style="background:#dbeafe;border:2px solid #2563eb;border-radius:8px;padding:8px 14px">Pod</div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#f3e8ff;border:2px solid #9333ea;border-radius:8px;padding:8px 14px">kata-containers</div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#fef9c3;border:2px solid #ca8a04;border-radius:8px;padding:8px 14px">micro-VM<br>(QEMU/KVM)</div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:8px;padding:8px 14px">container</div>
+</div>
+
+- A) VRAI
+- B) FAUX
+
+---
+
+## ✅ Q109 — Réponse : A — VRAI
+
+> **kata-containers lance un micro-VM (QEMU/KVM) par pod**
+
+<div style="display:flex;gap:12px;align-items:center;margin:12px 0;font-size:0.85em">
+  <div style="background:#dbeafe;border:2px solid #2563eb;border-radius:8px;padding:8px 14px">Pod</div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#f3e8ff;border:2px solid #9333ea;border-radius:8px;padding:8px 14px">kata-containers</div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#fef9c3;border:2px solid #ca8a04;border-radius:8px;padding:8px 14px">micro-VM<br>(QEMU/KVM)</div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:8px;padding:8px 14px">container</div>
+</div>
+
+_kata-containers lance un micro-VM (QEMU/KVM) par pod — isolation maximale au prix d'un overhead plus élevé (démarrage ~1s vs ~50ms pour runc)._
+
+---
+
+## Q110. VRAI ou FAUX ?
+
+> _Le socket de containerd est `/var/run/docker.sock`_
+
+<div style="display:flex;gap:16px;margin:16px 0;font-size:0.85em">
+  <div style="background:#fee2e2;border:2px solid #dc2626;border-radius:8px;padding:10px 16px;text-align:center">
+    <strong style="color:#dc2626">✗ Docker (ancien)</strong><br>
+    <code>/var/run/docker.sock</code>
+  </div>
+  <div style="display:flex;align-items:center;font-size:1.4em">≠</div>
+  <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:8px;padding:10px 16px;text-align:center">
+    <strong style="color:#16a34a">✓ containerd</strong><br>
+    <code>/run/containerd/containerd.sock</code>
+  </div>
+</div>
+
+- A) VRAI
+- B) FAUX
+
+---
+
+## ✅ Q110 — Réponse : B — FAUX
+
+> **Le socket de containerd est `/run/containerd/containerd.sock`**
+
+<div style="display:flex;gap:16px;margin:12px 0;font-size:0.85em">
+  <div style="background:#fee2e2;border:2px solid #dc2626;border-radius:8px;padding:10px 16px;text-align:center">
+    <strong style="color:#dc2626">✗ Docker daemon</strong><br>
+    <code>/var/run/docker.sock</code>
+  </div>
+  <div style="display:flex;align-items:center;font-size:1.4em">≠</div>
+  <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:8px;padding:10px 16px;text-align:center">
+    <strong style="color:#16a34a">✓ containerd</strong><br>
+    <code>/run/containerd/containerd.sock</code>
+  </div>
+</div>
+
+_`/var/run/docker.sock` est celui du Docker daemon (non utilisé dans K8s moderne). containerd utilise `/run/containerd/containerd.sock`._
+
+---
+
+## Q111. VRAI ou FAUX ?
+
+> _Dans l'architecture CRI, kubelet communique avec containerd via gRPC_
+
+<div style="display:flex;gap:12px;align-items:center;margin:16px 0;font-size:0.85em">
+  <div style="background:#dbeafe;border:2px solid #2563eb;border-radius:8px;padding:8px 14px">kubelet</div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#fef9c3;border:2px solid #ca8a04;border-radius:8px;padding:8px 14px">gRPC<br>(CRI)</div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#f3e8ff;border:2px solid #9333ea;border-radius:8px;padding:8px 14px">containerd<br><code>.sock</code></div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:8px;padding:8px 14px">runc</div>
+</div>
+
+- A) VRAI
+- B) FAUX
+
+---
+
+## ✅ Q111 — Réponse : A — VRAI
+
+> **CRI est une interface gRPC entre kubelet et le container runtime**
+
+<div style="display:flex;gap:12px;align-items:center;margin:12px 0;font-size:0.85em">
+  <div style="background:#dbeafe;border:2px solid #2563eb;border-radius:8px;padding:8px 14px">kubelet</div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#fef9c3;border:2px solid #ca8a04;border-radius:8px;padding:8px 14px">gRPC (CRI)<br>RunPodSandbox<br>CreateContainer</div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#f3e8ff;border:2px solid #9333ea;border-radius:8px;padding:8px 14px">containerd</div>
+  <div style="font-size:1.4em">→</div>
+  <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:8px;padding:8px 14px">runc</div>
+</div>
+
+_CRI est une interface gRPC. kubelet appelle RunPodSandbox, CreateContainer, StartContainer via gRPC sur le socket containerd._
+
+---
+
+## Q112. VRAI ou FAUX ?
+
+> _Ce schéma est correct pour K8s 1.34 :_
+
+<div style="display:flex;gap:10px;align-items:center;margin:12px 0;font-size:0.82em">
+  <div style="background:#fee2e2;border:2px solid #dc2626;border-radius:8px;padding:7px 12px;color:#dc2626">kubelet</div>
+  <div style="font-size:1.3em;color:#dc2626">→</div>
+  <div style="background:#fee2e2;border:2px solid #dc2626;border-radius:8px;padding:7px 12px;color:#dc2626">dockershim</div>
+  <div style="font-size:1.3em;color:#dc2626">→</div>
+  <div style="background:#fee2e2;border:2px solid #dc2626;border-radius:8px;padding:7px 12px;color:#dc2626">Docker</div>
+  <div style="font-size:1.3em;color:#dc2626">→</div>
+  <div style="background:#fee2e2;border:2px solid #dc2626;border-radius:8px;padding:7px 12px;color:#dc2626">containerd</div>
+  <div style="font-size:1.3em;color:#dc2626">→</div>
+  <div style="background:#fee2e2;border:2px solid #dc2626;border-radius:8px;padding:7px 12px;color:#dc2626">runc</div>
+</div>
+
+- A) VRAI
+- B) FAUX
+
+---
+
+## ✅ Q112 — Réponse : B — FAUX
+
+> **dockershim a été supprimé en K8s 1.24 — le schéma correct est :**
+
+<div style="display:flex;gap:10px;align-items:center;margin:10px 0;font-size:0.82em">
+  <div style="background:#fee2e2;border:2px solid #dc2626;border-radius:8px;padding:6px 10px;color:#dc2626;text-decoration:line-through">kubelet → dockershim → Docker → containerd → runc</div>
+</div>
+
+<div style="display:flex;gap:10px;align-items:center;margin:10px 0;font-size:0.82em">
+  <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:8px;padding:7px 12px">kubelet</div>
+  <div style="font-size:1.3em">→</div>
+  <div style="background:#dbeafe;border:2px solid #2563eb;border-radius:8px;padding:7px 12px">CRI (gRPC)</div>
+  <div style="font-size:1.3em">→</div>
+  <div style="background:#f3e8ff;border:2px solid #9333ea;border-radius:8px;padding:7px 12px">containerd</div>
+  <div style="font-size:1.3em">→</div>
+  <div style="background:#fef9c3;border:2px solid #ca8a04;border-radius:8px;padding:7px 12px">runc</div>
+  <div style="font-size:1.3em">→</div>
+  <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:8px;padding:7px 12px">container</div>
+</div>
+
+_dockershim supprimé en K8s 1.24. Chemin correct : kubelet → CRI → containerd → runc (sans Docker ni dockershim)._
+
+---
+
 # Fin du QCM
 
-**102 questions — Bonne chance !**
+**112 questions — Bonne chance !**

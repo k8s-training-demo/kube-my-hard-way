@@ -21,6 +21,8 @@ echo ""
 echo "2. Vérification du DaemonSet:"
 kubectl get daemonset node-exporter
 kubectl get pods -l app=node-exporter -o wide
+echo ""
+read -rp "   ↵  Observez : 1 pod DaemonSet par nœud. Appuyez sur Entrée..."
 
 echo ""
 echo "3. Les DaemonSets s'exécutent sur TOUS les nœuds (y compris le master si toléré)"
@@ -33,6 +35,8 @@ echo "   Nœud sélectionné: $WORKER_NODE"
 echo ""
 echo "5. Pods sur ce nœud (incluant DaemonSet):"
 kubectl get pods -o wide --field-selector spec.nodeName=$WORKER_NODE
+echo ""
+read -rp "   ↵  Notez le pod DaemonSet présent sur ce nœud. Appuyez sur Entrée..."
 
 echo ""
 echo "6. Tentative de drain SANS --ignore-daemonsets:"
@@ -41,9 +45,11 @@ kubectl drain $WORKER_NODE --delete-emptydir-data --timeout=30s 2>&1 || true
 
 echo ""
 echo "   ❌ Échec attendu: les DaemonSets bloquent le drain"
+read -rp "   ↵  Lisez l'erreur : 'cannot delete DaemonSet-managed Pods'. Appuyez sur Entrée..."
 
 echo ""
 echo "7. Drain AVEC --ignore-daemonsets:"
+read -rp "   ↵  Prêt à relancer avec --ignore-daemonsets ? Appuyez sur Entrée..."
 kubectl drain $WORKER_NODE \
     --ignore-daemonsets \
     --delete-emptydir-data \
@@ -56,7 +62,8 @@ kubectl get node $WORKER_NODE
 echo ""
 echo "9. Le pod DaemonSet reste sur le nœud drainé:"
 kubectl get pods -l app=node-exporter -o wide
-echo "   Note: Le pod DaemonSet sur $WORKER_NODE est toujours là!"
+echo ""
+read -rp "   ↵  Le pod DaemonSet est toujours sur $WORKER_NODE — c'est voulu. Appuyez sur Entrée..."
 
 echo ""
 echo "10. Uncordon du nœud:"
