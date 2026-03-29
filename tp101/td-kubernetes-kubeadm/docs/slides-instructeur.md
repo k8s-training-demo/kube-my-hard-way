@@ -2444,12 +2444,11 @@ pre { font-size: 13px; margin-top: 6px; }
 
 ## IPIP vs VXLAN — encapsulation et cloud firewalls
 
-<svg width="1100" height="235" viewBox="0 0 1100 235" xmlns="http://www.w3.org/2000/svg">
+<svg width="1100" height="235" viewBox="0 0 1100 235" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
 <defs>
   <marker id="arrgray" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6b7280"/></marker>
   <marker id="arrgreen" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#16a34a"/></marker>
 </defs>
-<style>text{font-family:sans-serif}</style>
 
 <!-- ── ROW 1 : IPIP ── -->
 <text x="44" y="34" text-anchor="middle" fill="#dc2626" font-size="14" font-weight="bold">❌ IPIP</text>
