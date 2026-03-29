@@ -92,24 +92,15 @@ EOF
 
 sudo sysctl --system
 
-# Configurer le firewall (ports Kubernetes)
-# POURQUOI: Kubernetes nécessite plusieurs ports pour la communication entre composants
-echo "Configuration du firewall..."
-# Détecter si c'est un master ou un worker (basé sur le hostname ou argument)
-if [[ "$NODE_ROLE" == "master" ]]; then
-    echo "  Configuration des ports pour le Control Plane..."
-    sudo firewall-cmd --permanent --add-port=6443/tcp    # API Server
-    sudo firewall-cmd --permanent --add-port=2379-2380/tcp # etcd
-    sudo firewall-cmd --permanent --add-port=10250/tcp   # kubelet API
-    sudo firewall-cmd --permanent --add-port=10259/tcp   # kube-scheduler
-    sudo firewall-cmd --permanent --add-port=10257/tcp   # kube-controller-manager
-else
-    echo "  Configuration des ports pour Worker..."
-    sudo firewall-cmd --permanent --add-port=10250/tcp   # kubelet API
-    sudo firewall-cmd --permanent --add-port=10256/tcp   # kube-proxy
-    sudo firewall-cmd --permanent --add-port=30000-32767/tcp # NodePort Services
-fi
-sudo firewall-cmd --reload
+# Désactiver firewalld
+# POURQUOI: Sur Exoscale (et la plupart des cloud providers), le filtrage réseau est
+#           géré par les security groups au niveau hyperviseur. firewalld actif en doublon
+#           bloque le trafic inter-pods (VXLAN UDP 4789, BGP TCP 179, etc.) localement
+#           sur le nœud, même si le security group l'autorise.
+echo "Désactivation de firewalld (géré par le security group Exoscale)..."
+sudo systemctl stop firewalld 2>/dev/null || true
+sudo systemctl disable firewalld 2>/dev/null || true
+echo "  ✓ firewalld désactivé"
 
 # Installation de containerd depuis le repo Docker
 # POURQUOI: containerd.io du repo Docker est plus récent et mieux maintenu que celui des repos CentOS
