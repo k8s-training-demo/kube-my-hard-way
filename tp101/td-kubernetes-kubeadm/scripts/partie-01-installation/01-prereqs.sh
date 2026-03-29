@@ -5,7 +5,52 @@
 
 set -e
 
-echo "=== Installation des pré-requis Kubernetes sur CentOS 10 ==="
+# --- Détermination du rôle du nœud ---
+# Priorité : option --role > argument positionnel > autodetect via hostname
+NODE_ROLE=""
+
+usage() {
+    echo "Usage: $0 [--role master|worker] | [master|worker]"
+    echo "  --role master|worker  : forcer le rôle explicitement"
+    echo "  master|worker         : argument positionnel (compatibilité)"
+    echo "  (aucun argument)      : autodetect via hostname (*master*, *control* → master)"
+    exit 1
+}
+
+# Parsing des arguments
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --role)
+            shift
+            case "$1" in
+                master|worker) NODE_ROLE="$1" ;;
+                *) echo "Erreur: --role attend 'master' ou 'worker', reçu '$1'"; usage ;;
+            esac
+            shift
+            ;;
+        master|worker)
+            NODE_ROLE="$1"
+            shift
+            ;;
+        -h|--help) usage ;;
+        *) echo "Argument inconnu: $1"; usage ;;
+    esac
+done
+
+# Autodetect si aucun rôle fourni
+if [[ -z "$NODE_ROLE" ]]; then
+    if [[ "$(hostname)" == *"master"* ]] || [[ "$(hostname)" == *"control"* ]]; then
+        NODE_ROLE="master"
+        echo "Autodetect: rôle 'master' détecté via hostname ($(hostname))"
+    else
+        NODE_ROLE="worker"
+        echo "Autodetect: rôle 'worker' (hostname: $(hostname) ne contient pas 'master'/'control')"
+    fi
+else
+    echo "Rôle: '$NODE_ROLE' (explicite)"
+fi
+
+echo "=== Installation des pré-requis Kubernetes sur CentOS 10 [rôle: $NODE_ROLE] ==="
 
 # Désactiver le swap (requis par Kubernetes)
 # POURQUOI: Kubernetes doit connaître la RAM réelle disponible pour le scheduling.
@@ -51,7 +96,7 @@ sudo sysctl --system
 # POURQUOI: Kubernetes nécessite plusieurs ports pour la communication entre composants
 echo "Configuration du firewall..."
 # Détecter si c'est un master ou un worker (basé sur le hostname ou argument)
-if [[ "$1" == "master" ]] || [[ "$(hostname)" == *"master"* ]] || [[ "$(hostname)" == *"control"* ]]; then
+if [[ "$NODE_ROLE" == "master" ]]; then
     echo "  Configuration des ports pour le Control Plane..."
     sudo firewall-cmd --permanent --add-port=6443/tcp    # API Server
     sudo firewall-cmd --permanent --add-port=2379-2380/tcp # etcd
@@ -104,7 +149,7 @@ gpgkey=https://pkgs.k8s.io/core:/stable:/v1.34/rpm/repodata/repomd.xml.key
 exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
 EOF
 
-if [[ "$1" == "master" ]] || [[ "$(hostname)" == *"master"* ]] || [[ "$(hostname)" == *"control"* ]]; then
+if [[ "$NODE_ROLE" == "master" ]]; then
     echo "Installation de kubeadm, kubelet, kubectl (control plane)..."
     sudo dnf install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
 else
@@ -117,7 +162,7 @@ fi
 #           L'upgrade doit être fait de manière contrôlée via kubeadm upgrade.
 echo "Verrouillage des versions..."
 sudo dnf install -y 'dnf-command(versionlock)' 2>/dev/null || true
-if [[ "$1" == "master" ]] || [[ "$(hostname)" == *"master"* ]] || [[ "$(hostname)" == *"control"* ]]; then
+if [[ "$NODE_ROLE" == "master" ]]; then
     sudo dnf versionlock add kubelet kubeadm kubectl 2>/dev/null || echo "Note: versionlock non disponible, pensez à surveiller les mises à jour"
 else
     sudo dnf versionlock add kubelet kubeadm 2>/dev/null || echo "Note: versionlock non disponible, pensez à surveiller les mises à jour"

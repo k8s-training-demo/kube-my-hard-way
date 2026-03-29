@@ -18,7 +18,7 @@ A practical lab covering **the full lifecycle of a Kubernetes cluster** built by
 
 | | |
 |---|---|
-| **Total duration** | ~5h30 (modules 2–12 + HA) |
+| **Total duration** | ~5h30 (modules 1–12 + HA) |
 | **Level** | Advanced |
 | **Target OS** | CentOS Stream 10 |
 | **Infrastructure** | 3 VMs — DigitalOcean or Exoscale |
@@ -31,23 +31,23 @@ A practical lab covering **the full lifecycle of a Kubernetes cluster** built by
 
 | Module | Topic | Duration |
 |--------|-------|----------|
-| [2 — Cluster Installation](#module-2--cluster-installation) | containerd · kubeadm · kubelet · Flannel | 35 min |
-| [3 — Kubelet & Static Pods](#module-3--kubelet--static-pods) | configuration · reconciliation loop · CRI | 30 min |
-| [4 — Taints & Tolerations](#module-4--taints--tolerations) | advanced scheduling · NoSchedule · NoExecute | 30 min |
-| [5 — CNI Migration](#module-5--cni-migration) | Flannel → Calico · VXLAN · overlay networks | 25 min |
-| [6 — Drain & Maintenance](#module-6--drain--maintenance) | PDB · DaemonSets · node failure simulation | 20 min |
-| [7 — etcd & etcdctl](#module-7--etcd--etcdctl) | backup · restore · member list · stacked vs external | 25 min |
-| [8 — Cluster Upgrade](#module-8--cluster-upgrade) | 1.34 → 1.35 · mandatory upgrade order | 25 min |
-| [9 — RuntimeClass & gVisor](#module-9--runtimeclass--gvisor) | sandbox isolation · KVM · containerd shims | 25 min |
-| [10 — Multi-Master Control Plane](#module-10--multi-master-control-plane) | 3 masters · etcd quorum · worker promotion | 30 min |
-| [11 — cgroups](#module-11--cgroups) | v2 · QoS classes · kernel memory management | 20 min |
-| [12 — Public vs Private Networking](#module-12--public-vs-private-networking) | architecture · DIY load balancer · Exoscale | 10 min |
-| [13 — SKS Exoscale](#module-13--sks-exoscale) | managed Kubernetes vs kubeadm | 15 min |
-| [14 — kube-prometheus-stack](#module-14--kube-prometheus-stack) | Grafana · Prometheus · pre-built alerts | 30 min |
+| [1 — Cluster Installation](#module-1--cluster-installation) | containerd · kubeadm · kubelet · Flannel | 35 min |
+| [2 — Kubelet & Static Pods](#module-2--kubelet--static-pods) | configuration · reconciliation loop · CRI | 30 min |
+| [3 — Taints & Tolerations](#module-3--taints--tolerations) | advanced scheduling · NoSchedule · NoExecute | 30 min |
+| [4 — CNI Migration](#module-4--cni-migration) | Flannel → Calico · VXLAN · overlay networks | 25 min |
+| [5 — Drain & Maintenance](#module-5--drain--maintenance) | PDB · DaemonSets · node failure simulation | 20 min |
+| [6 — etcd & etcdctl](#module-6--etcd--etcdctl) | backup · restore · member list · stacked vs external | 25 min |
+| [7 — Cluster Upgrade](#module-7--cluster-upgrade) | 1.34 → 1.35 · mandatory upgrade order | 25 min |
+| [8 — RuntimeClass & gVisor](#module-8--runtimeclass--gvisor) | sandbox isolation · KVM · containerd shims | 25 min |
+| [9 — Multi-Master Control Plane](#module-9--multi-master-control-plane) | 3 masters · etcd quorum · worker promotion | 30 min |
+| [10 — cgroups](#module-10--cgroups) | v2 · QoS classes · kernel memory management | 20 min |
+| [11 — Public vs Private Networking](#module-11--public-vs-private-networking) | architecture · DIY load balancer · Exoscale | 10 min |
+| [12 — SKS Exoscale](#module-12--sks-exoscale) | managed Kubernetes vs kubeadm | 15 min |
+| [13 — kube-prometheus-stack](#module-13--kube-prometheus-stack) | Grafana · Prometheus · pre-built alerts | 30 min |
 
 ---
 
-## Module 2 — Cluster Installation
+## Module 1 — Cluster Installation
 
 Install all components from scratch and bootstrap a working 3-node cluster.
 
@@ -62,7 +62,7 @@ Install all components from scratch and bootstrap a working 3-node cluster.
 
 ---
 
-## Module 3 — Kubelet & Static Pods
+## Module 2 — Kubelet & Static Pods
 
 Understand the kubelet as the node agent and explore static pods as the foundation of the control plane itself.
 
@@ -76,7 +76,7 @@ Understand the kubelet as the node agent and explore static pods as the foundati
 
 ---
 
-## Module 4 — Taints & Tolerations
+## Module 3 — Taints & Tolerations
 
 Control which pods land on which nodes using Kubernetes' push-based scheduling mechanism.
 
@@ -90,7 +90,7 @@ Control which pods land on which nodes using Kubernetes' push-based scheduling m
 
 ---
 
-## Module 5 — CNI Migration
+## Module 4 — CNI Migration
 
 Live-migrate the cluster network from Flannel to Calico without losing connectivity.
 
@@ -103,7 +103,7 @@ Live-migrate the cluster network from Flannel to Calico without losing connectiv
 
 ---
 
-## Module 6 — Drain & Maintenance
+## Module 5 — Drain & Maintenance
 
 Safely take nodes out of service without disrupting running workloads.
 
@@ -116,7 +116,7 @@ Safely take nodes out of service without disrupting running workloads.
 
 ---
 
-## Module 7 — etcd & etcdctl
+## Module 6 — etcd & etcdctl
 
 Understand etcd as the single source of truth for the cluster, and learn to back it up and restore it before any upgrade.
 
@@ -131,7 +131,7 @@ Understand etcd as the single source of truth for the cluster, and learn to back
 
 ---
 
-## Module 8 — Cluster Upgrade
+## Module 7 — Cluster Upgrade
 
 Upgrade a live cluster following the mandatory component order.
 
@@ -145,7 +145,7 @@ Upgrade a live cluster following the mandatory component order.
 
 ---
 
-## Module 9 — RuntimeClass & gVisor
+## Module 8 — RuntimeClass & gVisor
 
 Run untrusted workloads with stronger isolation using a second container runtime.
 
@@ -159,7 +159,7 @@ Run untrusted workloads with stronger isolation using a second container runtime
 
 ---
 
-## Module 10 — Multi-Master Control Plane
+## Module 9 — Multi-Master Control Plane
 
 Transform the existing `1 master + 2 workers` topology into **3 nodes each running the full control plane stack** — API server, scheduler, controller-manager, etcd, and kubelet.
 
@@ -185,7 +185,7 @@ This is not a production recommendation (no real load balancer in front of the A
 
 ---
 
-## Module 11 — cgroups
+## Module 10 — cgroups
 
 Understand how Kubernetes resource limits actually work at the kernel level.
 
@@ -199,7 +199,7 @@ Understand how Kubernetes resource limits actually work at the kernel level.
 
 ---
 
-## Module 12 — Public vs Private Networking
+## Module 11 — Public vs Private Networking
 
 Understand the network architecture trade-offs when running Kubernetes on cloud VMs.
 
@@ -210,7 +210,7 @@ Understand the network architecture trade-offs when running Kubernetes on cloud 
 
 ---
 
-## Module 13 — SKS Exoscale
+## Module 12 — SKS Exoscale
 
 Compare a managed Kubernetes service with the kubeadm cluster built in this lab.
 
@@ -221,7 +221,7 @@ Compare a managed Kubernetes service with the kubeadm cluster built in this lab.
 
 ---
 
-## Module 14 — kube-prometheus-stack
+## Module 13 — kube-prometheus-stack
 
 Deploy a full observability stack on the cluster using Helm.
 

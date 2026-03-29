@@ -129,46 +129,26 @@ exo compute sks create tp-k8s --zone de-fra-1 \
 
 ---
 
-## Timeline du TD - Vue globale
-
-| Partie | Contenu | Durée |
-|--------|---------|-------|
-| 0 | Introduction | 5 min |
-| 1 | **Nouveautés K8s 1.30-1.34** | 45 min |
-| 2 | Installation cluster | 35 min |
-| 3 | Kubelet & Static Pods | 30 min |
-| 4 | Taints & Tolerations | 20 min |
-| 5 | Migration CNI | 25 min |
-| 6 | Drain & Maintenance | 20 min |
-| 7 | Upgrade cluster | 25 min |
-| 8 | RuntimeClass & gVisor | 25 min |
-| 9 | Réseau privé & SKS Exoscale | 20 min |
-
-**Total:** ~3h55 (modulable selon niveau du groupe)
-
----
-
 <!-- _class: toc -->
 
-## Navigation rapide
+## Plan du TD — ~5h30
 
-| Partie | Contenu | Slide |
-|--------|---------|-------|
-| [Partie 0](#8) | Introduction & Objectifs | [→ Aller](#8) |
-| [Partie 2](#10) | Installation cluster kubeadm | [→ Aller](#10) |
-| [Partie 3](#48) | Kubelet & Static Pods | [→ Aller](#48) |
-| [Partie 4](#90) | Taints & Tolerations | [→ Aller](#90) |
-| [Partie 5](#119) | Migration CNI | [→ Aller](#119) |
-| [Partie 6](#130) | Drain & Maintenance | [→ Aller](#130) |
-| [Partie 7](#145) | etcd & etcdctl | [→ Aller](#145) |
-| [Partie 8](#153) | Upgrade cluster | [→ Aller](#153) |
-| [Partie 9](#162) | RuntimeClass & gVisor | [→ Aller](#162) |
-| [Partie 10](#177) | cgroups — le moteur des containers | [→ Aller](#177) |
-| [Partie 11](#187) | Réseau public vs privé | [→ Aller](#187) |
-| [Partie 12](#198) | SKS Exoscale — Kubernetes managé | [→ Aller](#198) |
-| [Partie 13](#205) | Observabilité — kube-prometheus-stack | [→ Aller](#205) |
-| Partie 1 | Nouveautés K8s 1.30-1.35 — fichier séparé [`slides-nouveautes-k8s.md`](slides-nouveautes-k8s.md) | — |
-| [Partie Bonus](#344) | **HA Control Plane — 3 nœuds maîtres** (avant suppression cluster) | [→ Aller](#344) |
+| Partie | Contenu | Durée | Nav |
+|--------|---------|------:|-----|
+| [0](#8) | Introduction & Objectifs | 5 min | [→](#8) |
+| [1](#10) | Installation cluster kubeadm | 35 min | [→](#10) |
+| [2](#48) | Kubelet & Static Pods | 30 min | [→](#48) |
+| [3](#90) | Taints & Tolerations | 30 min | [→](#90) |
+| [4](#119) | Migration CNI | 25 min | [→](#119) |
+| [5](#130) | Drain & Maintenance | 20 min | [→](#130) |
+| [6](#145) | etcd & etcdctl | 25 min | [→](#145) |
+| [7](#153) | Upgrade cluster | 25 min | [→](#153) |
+| [8](#162) | RuntimeClass & gVisor | 25 min | [→](#162) |
+| [9](#177) | cgroups | 20 min | [→](#177) |
+| [10](#187) | Réseau public vs privé | 10 min | [→](#187) |
+| [11](#198) | SKS Exoscale | 15 min | [→](#198) |
+| [12](#205) | Observabilité — kube-prometheus-stack | 30 min | [→](#205) |
+| [Bonus](#247) | HA Control Plane | 30 min | [→](#247) |
 
 ---
 
@@ -202,7 +182,7 @@ exo compute sks create tp-k8s --zone de-fra-1 \
 
 <!-- _class: lead -->
 
-# Partie 2
+# Partie 1
 ## Installation du cluster (35 min)
 
 ---
@@ -933,7 +913,7 @@ kubectl get events --all-namespaces \
 
 <!-- _class: lead -->
 
-# Partie 3
+# Partie 2
 ## Kubelet et Static Pods (30 min)
 
 ---
@@ -1733,12 +1713,12 @@ Demander aux étudiants de créer leur propre static pod personnalisé
 
 <!-- _class: lead -->
 
-# Partie 4
+# Partie 3
 ## Taints et Tolerations (30 min)
 
 ---
 
-## Partie 4 - Timeline suggérée
+## Partie 3 - Timeline suggérée
 
 - Theorie Taints/Tolerations: **15 min**
 - Exploration: **5 min**
@@ -2336,14 +2316,14 @@ spec:
 
 <!-- _class: lead -->
 
-# Partie 5
+# Partie 4
 ## Migration CNI (25 min)
 
 ⚠️ **PARTIE LA PLUS CRITIQUE DU TD**
 
 ---
 
-## Partie 5 - Timeline suggérée
+## Partie 4 - Timeline suggérée
 
 - Backup: **3 min**
 - Drain: **5 min**
@@ -2538,7 +2518,7 @@ cd ../../validation && ./validate-partie.sh 4
 
 <!-- _class: lead -->
 
-# Partie 6
+# Partie 5
 ## Drain et Maintenance (20 min)
 
 ---
@@ -2870,7 +2850,7 @@ cd ../../validation && ./validate-partie.sh 5
 
 <!-- _class: lead -->
 
-# Partie 7
+# Partie 6
 ## etcd & etcdctl — La source de vérité du cluster
 
 ---
@@ -3051,7 +3031,7 @@ sudo mv /tmp/etcd.yaml /etc/kubernetes/manifests/
 
 ### Quand utiliser etcdctl en TD ?
 
-- **Avant l'upgrade** (Partie 7) → snapshot obligatoire
+- **Avant l'upgrade** (Partie 6) → snapshot obligatoire
 - **Curiosité pédagogique** → `get / --prefix --keys-only` pour voir l'état brut
 - **Scénario de panne** → restauration (optionnel si temps)
 
@@ -3059,12 +3039,12 @@ sudo mv /tmp/etcd.yaml /etc/kubernetes/manifests/
 
 <!-- _class: lead -->
 
-# Partie 8
+# Partie 7
 ## Upgrade du Cluster (25 min)
 
 ---
 
-## Partie 8 - Timeline suggérée
+## Partie 7 - Timeline suggérée
 
 - Check versions: **3 min**
 - Upgrade control plane: **7 min**
@@ -3187,12 +3167,12 @@ cd ../../validation && ./validate-partie.sh 6
 
 <!-- _class: lead -->
 
-# Partie 9
+# Partie 8
 ## RuntimeClass & gVisor (25 min)
 
 ---
 
-## Partie 9 - Timeline suggérée
+## Partie 8 - Timeline suggérée
 
 - Install gVisor sur les nœuds: **7 min**
 - Création RuntimeClass: **3 min**
@@ -3511,12 +3491,12 @@ spec:
 
 <!-- _class: lead -->
 
-# Partie 10
+# Partie 9
 ## cgroups — le moteur des containers (20 min)
 
 ---
 
-## Partie 10 - Timeline suggérée
+## Partie 9 - Timeline suggérée
 
 - Qu'est-ce qu'un cgroup : **5 min**
 - Démo nerdctl + Docker : **5 min**
@@ -3723,12 +3703,12 @@ resources:          crée le cgroup       /sys/fs/cgroup/
 
 <!-- _class: lead -->
 
-# Partie 11
+# Partie 10
 ## Réseau public vs privé (10 min)
 
 ---
 
-## Partie 11 - Timeline suggérée
+## Partie 10 - Timeline suggérée
 
 - Architecture sans réseau privé — risques: **4 min**
 - Architecture avec réseau privé — isolation: **4 min**
@@ -4197,12 +4177,12 @@ kubectl get svc mon-app
 
 <!-- _class: lead -->
 
-# Partie 12
+# Partie 11
 ## SKS Exoscale — Kubernetes managé (15 min)
 
 ---
 
-## Partie 12 - Timeline suggérée
+## Partie 11 - Timeline suggérée
 
 - Présentation SKS vs kubeadm: **4 min**
 - Démo live SKS: **7 min**
@@ -4326,12 +4306,12 @@ SKS ne permet pas de joindre des nœuds extérieurs à son control plane :
 
 <!-- _class: lead -->
 
-# Partie 13
+# Partie 12
 ## Observabilité du cluster — kube-prometheus-stack (30 min)
 
 ---
 
-## Partie 13 - Timeline suggérée
+## Partie 12 - Timeline suggérée
 
 - Architecture de la stack et composants : **5 min**
 - Installation Helm + vérification : **10 min**
