@@ -2571,7 +2571,17 @@ cd ../../validation && ./validate-partie.sh 4
 
 ---
 
-## Partie 5 - Timeline suggérée
+## Partie 5 - Avant de commencer
+
+**Vérifier la répartition des pods sur les nœuds :**
+
+```bash
+kubectl get pods -o wide --all-namespaces | grep -v kube-system
+```
+
+Confirmer que des pods tournent sur **worker1 et worker2** — le drain n'a d'effet visible que si des pods sont présents sur le nœud drainé.
+
+### Timeline suggérée
 
 - PodDisruptionBudget: **7 min**
 - DaemonSets: **7 min**
