@@ -2521,6 +2521,29 @@ kubectl rollout restart daemonset/calico-node -n kube-system
 
 ---
 
+## IP protocol number 4 — pas ISO-TP4, mais IP-in-IP
+
+**"Protocol 4"** dans le header IP = numéro de protocole IANA de la payload, **pas** une version d'ISO.
+
+| N° | Protocole | Utilisé par |
+|----|-----------|-------------|
+| 1  | ICMP | ping, traceroute |
+| 4  | **IPIP** (IP-in-IP, RFC 2003) | Calico mode IPIP, tunl0 |
+| 6  | TCP | HTTP, HTTPS, SSH… |
+| 17 | UDP | DNS, VXLAN (port 4789), Flannel (port 8472) |
+| 41 | IPv6-in-IPv4 | tunnels 6to4 |
+| 47 | GRE | VPN, certains CNI |
+
+**Pourquoi les security groups bloquent IPIP :**
+- Les règles SG cloud opèrent sur TCP / UDP / ICMP uniquement
+- Il n'existe pas de règle "autoriser protocol 4"
+- Le paquet IPIP passe le SG → **DROP silencieux**, sans log, sans ICMP unreachable
+- VXLAN utilise UDP 4789 → tombe dans une règle UDP existante → **ALLOW**
+
+> ⚠️ ISO-TP4 (Transport Protocol class 4, OSI années 80) est sans rapport — coïncidence de numérotation
+
+---
+
 ## 5.5 - Uncordon et validation
 
 ### 📝 EXERCICE ÉLÈVE
