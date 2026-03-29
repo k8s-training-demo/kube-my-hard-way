@@ -131,24 +131,26 @@ exo compute sks create tp-k8s --zone de-fra-1 \
 
 <!-- _class: toc -->
 
-## Plan du TD — ~5h30
+## 🗺️ Plan du TD — ~5h30
 
-| Partie | Contenu | Durée | Nav |
-|--------|---------|------:|-----|
-| [0](#8) | Introduction & Objectifs | 5 min | [→](#8) |
-| [1](#10) | Installation cluster kubeadm | 35 min | [→](#10) |
-| [2](#48) | Kubelet & Static Pods | 30 min | [→](#48) |
-| [3](#90) | Taints & Tolerations | 30 min | [→](#90) |
-| [4](#119) | Migration CNI | 25 min | [→](#119) |
-| [5](#130) | Drain & Maintenance | 20 min | [→](#130) |
-| [6](#145) | etcd & etcdctl | 25 min | [→](#145) |
-| [7](#153) | Upgrade cluster | 25 min | [→](#153) |
-| [8](#162) | RuntimeClass & gVisor | 25 min | [→](#162) |
-| [9](#177) | cgroups | 20 min | [→](#177) |
-| [10](#187) | Réseau public vs privé | 10 min | [→](#187) |
-| [11](#198) | SKS Exoscale | 15 min | [→](#198) |
-| [12](#205) | Observabilité — kube-prometheus-stack | 30 min | [→](#205) |
-| [Bonus](#247) | HA Control Plane | 30 min | [→](#247) |
+<style scoped>table { font-size: 14px; } th, td { padding: 3px 10px; }</style>
+
+| # | Contenu | ⏱️ | |
+|---|---------|---:|---|
+| [0](#8) | 👋 Introduction & Objectifs | 5 min | [→](#8) |
+| [1](#10) | 🔧 Installation cluster kubeadm | 35 min | [→](#10) |
+| [2](#48) | ⚙️ Kubelet & Static Pods | 30 min | [→](#48) |
+| [3](#90) | 🏷️ Taints & Tolerations | 30 min | [→](#90) |
+| [4](#119) | 🌐 Migration CNI | 25 min | [→](#119) |
+| [5](#130) | 🔩 Drain & Maintenance | 20 min | [→](#130) |
+| [6](#145) | 🗄️ etcd & etcdctl | 25 min | [→](#145) |
+| [7](#153) | ⬆️ Upgrade cluster | 25 min | [→](#153) |
+| [8](#162) | 🛡️ RuntimeClass & gVisor | 25 min | [→](#162) |
+| [9](#177) | 📦 cgroups | 20 min | [→](#177) |
+| [10](#187) | 🔀 Réseau public vs privé | 10 min | [→](#187) |
+| [11](#198) | ☁️ SKS Exoscale | 15 min | [→](#198) |
+| [12](#205) | 📊 Observabilité — kube-prometheus-stack | 30 min | [→](#205) |
+| [★](#247) | 🏆 HA Control Plane *(bonus)* | 30 min | [→](#247) |
 
 ---
 
@@ -203,8 +205,16 @@ exo compute sks create tp-k8s --zone de-fra-1 \
 **Script à exécuter sur TOUS les nœuds:**
 ```bash
 cd scripts/partie-01-installation
+
+# Option explicite (recommandée si hostname générique)
+./01-prereqs.sh --role master   # sur le control plane
+./01-prereqs.sh --role worker   # sur les workers
+
+# Autodetect via hostname (hostname contient "master" ou "control")
 ./01-prereqs.sh
 ```
+
+> 💡 L'autodetect installe `kubectl` uniquement sur le master.
 
 **Questions à poser:**
 1. Pourquoi désactiver le swap ?
