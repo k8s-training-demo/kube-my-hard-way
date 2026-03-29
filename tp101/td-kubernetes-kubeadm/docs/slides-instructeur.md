@@ -2908,6 +2908,25 @@ cd ../../validation && ./validate-partie.sh 5
 
 ---
 
+## Variante — Power off via l'API Exoscale
+
+Au lieu de `systemctl stop kubelet` sur le worker, vous pouvez **éteindre la VM directement** via l'API ou la console Exoscale.
+
+| | `systemctl stop kubelet` | Power off Exoscale |
+|--|--|--|
+| Arrêt kubelet | graceful | brutal (coupure réseau) |
+| Pods reçoivent SIGTERM | ✅ | ❌ |
+| Node → NotReady | ~40s | ~40s |
+| Pods évincés après | ~5 min | ~5 min |
+| PDB respecté | ❌ panne involontaire | ❌ panne involontaire |
+| Réalisme | Bon | **Meilleur** |
+
+**Les deux sont des pannes non-volontaires** — Kubernetes ne reçoit aucun signal, le node-controller attend `node-monitor-grace-period` avant de déclarer le nœud `NotReady`.
+
+La récupération se fait en rallumant la VM via l'API Exoscale — kubelet redémarre automatiquement au boot.
+
+---
+
 <!-- _class: lead -->
 
 # Partie 6
