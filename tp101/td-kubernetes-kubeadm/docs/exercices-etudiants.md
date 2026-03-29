@@ -390,7 +390,7 @@ Effectuer une mise à jour sécurisée du cluster Kubernetes (control plane + wo
 Sur le master :
 
 ```bash
-cd ../scripts/partie-06-upgrade
+cd ../scripts/partie-07-upgrade
 ./01-check-versions.sh
 ```
 
@@ -558,7 +558,7 @@ Comprendre le concept de **RuntimeClass** Kubernetes et mettre en place **gVisor
 > **À exécuter sur TOUS les nœuds (master + workers)**
 
 ```bash
-bash /root/scripts/partie-07-runtimeclass/01-install-gvisor.sh
+bash /root/scripts/partie-08-runtimeclass/01-install-gvisor.sh
 ```
 
 Ce script :
@@ -573,7 +573,7 @@ Ce script :
 > **À exécuter sur le MASTER**
 
 ```bash
-bash /root/scripts/partie-07-runtimeclass/02-create-runtimeclass.sh
+bash /root/scripts/partie-08-runtimeclass/02-create-runtimeclass.sh
 ```
 
 Une `RuntimeClass` est un objet Kubernetes qui fait le lien entre un nom logique (`gvisor`) et le handler configuré dans containerd (`runsc`) :
@@ -596,7 +596,7 @@ kubectl get runtimeclass
 > **À exécuter sur le MASTER**
 
 ```bash
-bash /root/scripts/partie-07-runtimeclass/03-test-isolation.sh
+bash /root/scripts/partie-08-runtimeclass/03-test-isolation.sh
 ```
 
 Ce script déploie deux pods côte à côte et compare ce qu'ils voient :
@@ -622,7 +622,7 @@ spec:
 ### 7.4 Déploiement d'une application avec RuntimeClass
 
 ```bash
-bash /root/scripts/partie-07-runtimeclass/04-deploy-with-runtimeclass.sh
+bash /root/scripts/partie-08-runtimeclass/04-deploy-with-runtimeclass.sh
 ```
 
 Ce script montre :
@@ -639,7 +639,7 @@ done
 ### 7.5 Comparaison de performance
 
 ```bash
-bash /root/scripts/partie-07-runtimeclass/05-performance-comparison.sh
+bash /root/scripts/partie-08-runtimeclass/05-performance-comparison.sh
 ```
 
 gVisor intercepte chaque syscall → overhead systématique. Résultats typiques sur ce cluster :

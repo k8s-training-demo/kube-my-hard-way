@@ -3151,7 +3151,7 @@ sudo mv /tmp/etcd.yaml /etc/kubernetes/manifests/
 ### 📝 EXERCICE ÉLÈVE
 **Script sur le MASTER:**
 ```bash
-cd scripts/partie-06-upgrade
+cd scripts/partie-07-upgrade
 ./01-check-versions.sh
 ```
 
@@ -3396,7 +3396,7 @@ Copier une config gVisor/kata depuis internet → souvent écrite pour 1.x
 ### 📝 EXERCICE ÉLÈVE — Sur TOUS les nœuds
 
 ```bash
-cd scripts/partie-07-runtimeclass
+cd scripts/partie-08-runtimeclass
 ./01-install-gvisor.sh
 ```
 

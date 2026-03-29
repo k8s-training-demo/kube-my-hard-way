@@ -13,7 +13,24 @@ if ! [ -f /etc/kubernetes/pki/etcd/ca.crt ]; then
     false
 fi
 
-echo "1. Variables d'environnement obligatoires:"
+echo "1. Installation d'etcdctl:"
+# etcdctl est fourni dans le package etcd-client sur certaines distros,
+# mais sur CentOS/RHEL la façon la plus fiable est de l'extraire depuis l'image etcd du cluster.
+if ! command -v etcdctl &>/dev/null; then
+    echo "   etcdctl absent — installation depuis l'image etcd du cluster..."
+    ETCD_VERSION=$(kubectl -n kube-system get pod -l component=etcd -o jsonpath='{.items[0].spec.containers[0].image}' | cut -d: -f2)
+    echo "   Version etcd du cluster : $ETCD_VERSION"
+    # Extraire etcdctl depuis le conteneur etcd en cours d'exécution
+    ETCD_POD=$(kubectl -n kube-system get pod -l component=etcd -o jsonpath='{.items[0].metadata.name}')
+    kubectl -n kube-system cp "${ETCD_POD}:/usr/local/bin/etcdctl" /usr/local/bin/etcdctl
+    chmod +x /usr/local/bin/etcdctl
+    echo "   ✓ etcdctl installé dans /usr/local/bin/etcdctl"
+else
+    echo "   ✓ etcdctl déjà présent : $(which etcdctl)"
+fi
+echo ""
+
+echo "2. Variables d'environnement obligatoires:"
 echo ""
 echo "   # Copiez-collez ces exports dans votre shell :"
 echo "   export ETCDCTL_API=3"
@@ -30,7 +47,7 @@ export ETCDCTL_CERT=/etc/kubernetes/pki/etcd/server.crt
 export ETCDCTL_KEY=/etc/kubernetes/pki/etcd/server.key
 export ETCDCTL_ENDPOINTS=https://127.0.0.1:2379
 
-echo "2. Vérification des certificats:"
+echo "3. Vérification des certificats:"
 for f in "$ETCDCTL_CACERT" "$ETCDCTL_CERT" "$ETCDCTL_KEY"; do
     if [ -f "$f" ]; then
         echo "   ✓ $f"
@@ -41,11 +58,11 @@ for f in "$ETCDCTL_CACERT" "$ETCDCTL_CERT" "$ETCDCTL_KEY"; do
 done
 
 echo ""
-echo "3. Test de connexion à etcd:"
+echo "4. Test de connexion à etcd:"
 etcdctl endpoint health
 echo ""
 
-echo "4. Version d'etcd:"
+echo "5. Version d'etcd:"
 etcdctl version
 echo ""
 
