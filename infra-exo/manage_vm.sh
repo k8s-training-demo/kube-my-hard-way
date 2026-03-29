@@ -22,12 +22,28 @@ DELETE_ALL=false
 
 # Fonction d'usage
 usage() {
-    echo "Usage: $0 --tags \"tag1,tag2\" [--count N] [--delete] [--all] [--init <path_cle>]"
-    echo "  --init       Initialiser le chemin de la clé SSH dans .env et quitter"
-    echo "  --tags, -t   Liste des tags (séparés par des virgules) [Requis sauf si --delete --all]"
-    echo "  --count, -c  Nombre de VMs à créer (défaut: 1)"
-    echo "  --delete, -d Supprimer les VMs basées sur les tags"
-    echo "  --all        Supprimer TOUTES les VMs (requiert --delete)"
+    cat << EOF
+Usage: $0 --tags "tag1,tag2" [--count N] [--delete] [--all] [--init <path_cle>]
+
+Options:
+  --tags, -t   Liste des tags (séparés par des virgules) [Requis sauf si --delete --all]
+  --count, -c  Nombre de VMs à créer (défaut: 1)
+  --delete, -d Supprimer les VMs basées sur les tags
+  --all        Supprimer TOUTES les VMs (requiert --delete)
+  --init PATH  Enregistrer le chemin de la clé SSH dans .env et quitter
+
+Clé SSH :
+  La clé ./vm_key est générée automatiquement au premier lancement si absente.
+  Pour utiliser une clé existante :
+    $0 --init /chemin/vers/ma_cle
+  La clé privée (vm_key) est ignorée par git — ne jamais la commiter manuellement.
+
+Exemples:
+  $0 --tags "tp-k8s" --count 3          # créer 3 VMs
+  $0 --tags "tp-k8s" --delete           # supprimer par tag
+  $0 --delete --all                     # supprimer toutes les VMs
+  $0 --init ~/.ssh/id_ed25519           # utiliser une clé existante
+EOF
     exit 1
 }
 

@@ -19,16 +19,16 @@ Scripts use `doctl` (DigitalOcean CLI) and require the env var `DIGITALOCEAN_ACC
 ./infra-do/check_do.sh <tag>
 
 # Create VMs (CentOS Stream 10, fra1 region, s-2vcpu-8gb-amd size)
-./infra-do/create_vm.sh --tags "tag1,tag2" --count 3
+./infra-do/manage_vm.sh --tags "tag1,tag2" --count 3
 
 # Delete VMs by tag
-./infra-do/create_vm.sh --tags "tag1" --delete
+./infra-do/manage_vm.sh --tags "tag1" --delete
 
 # Delete ALL VMs (interactive confirmation required)
-./infra-do/create_vm.sh --delete --all
+./infra-do/manage_vm.sh --delete --all
 
 # Initialize SSH key path in .env
-./infra-do/create_vm.sh --init /path/to/key
+./infra-do/manage_vm.sh --init /path/to/key
 ```
 
 The SSH key (`infra-do/vm_key`) is auto-generated on first run if absent. Key configuration can be overridden via `infra-do/.env` (`KEY_NAME=...`).
@@ -50,16 +50,16 @@ Différences internes vs DigitalOcean :
 ./infra-exo/check_exo.sh <tag>
 
 # Create VMs
-./infra-exo/create_vm.sh --tags "tag1,tag2" --count 3
+./infra-exo/manage_vm.sh --tags "tag1,tag2" --count 3
 
 # Delete VMs by tag
-./infra-exo/create_vm.sh --tags "tag1" --delete
+./infra-exo/manage_vm.sh --tags "tag1" --delete
 
 # Delete ALL VMs (interactive confirmation required)
-./infra-exo/create_vm.sh --delete --all
+./infra-exo/manage_vm.sh --delete --all
 
 # Initialize SSH key path in .env
-./infra-exo/create_vm.sh --init /path/to/key
+./infra-exo/manage_vm.sh --init /path/to/key
 ```
 
 Optional: set `SECURITY_GROUP` in `infra-exo/.env` to attach a pre-existing Exoscale security group (needed for inbound SSH/Kubernetes ports).

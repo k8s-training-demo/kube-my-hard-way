@@ -18,8 +18,8 @@ if [ -f .env ]; then
 fi
 
 # ── Couleurs ──────────────────────────────────────────────────────────────────
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
-BLUE='\033[0;34m'; CYAN='\033[0;36m'; BOLD='\033[1m'; RESET='\033[0m'
+RED=$'\033[0;31m'; GREEN=$'\033[0;32m'; YELLOW=$'\033[1;33m'
+BLUE=$'\033[0;34m'; CYAN=$'\033[0;36m'; BOLD=$'\033[1m'; RESET=$'\033[0m'
 
 # ── Help ──────────────────────────────────────────────────────────────────────
 usage() {
@@ -70,6 +70,12 @@ ${BOLD}Configuration (.env):${RESET}
   SECURITY_GROUP     Security group à attacher (ex: tp-k8s)
   PRIVATE_NETWORK    Réseau privé Exoscale (optionnel)
   KEY_NAME           Chemin vers la clé SSH locale (défaut: ./vm_key)
+
+${BOLD}Clé SSH :${RESET}
+  La clé ./vm_key est générée automatiquement au premier lancement si absente.
+  Pour utiliser une clé existante, définir dans .env :
+    echo 'KEY_NAME="/chemin/vers/ma_cle"' >> .env
+  La clé privée (vm_key) est ignorée par git — ne jamais la commiter manuellement.
 
 EOF
     exit 0
@@ -288,48 +294,93 @@ SG_ARGS=()
 PN_ARGS=()
 [ -n "$PRIVATE_NETWORK" ] && PN_ARGS+=("--private-network" "$PRIVATE_NETWORK")
 
+# ── Helpers d'affichage ───────────────────────────────────────────────────────
+SPINNER_CHARS='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+
+_build_bar() {
+    local current=$1 total=$2 width=36
+    local filled=$(( total > 0 ? current * width / total : 0 ))
+    local empty=$(( width - filled ))
+    local bar="" i
+    for ((i=0; i<filled; i++)); do bar+="█"; done
+    for ((i=0; i<empty; i++)); do bar+="░"; done
+    printf '%s' "$bar"
+}
+
+_draw_progress() {
+    local pct=$(( TOTAL > 0 ? DONE * 100 / TOTAL : 0 ))
+    printf "\033[u  ${BOLD}Progression${RESET} [%s] ${GREEN}${BOLD}%d${RESET}/%d VMs (%d%%)\n\n" \
+        "$(_build_bar "$DONE" "$TOTAL")" "$DONE" "$TOTAL" "$pct"
+    [ "$VM_LINES" -gt 0 ] && printf "\033[%dB\r" "$VM_LINES"
+    return 0
+}
+
+_spinner_run() {
+    local label="$1"; shift
+    local spin_i=0 rc
+    "$@" >/dev/null 2>&1 &
+    local pid=$!
+    while kill -0 "$pid" 2>/dev/null; do
+        printf "\r\033[K  ${CYAN}%s${RESET} %s" "${SPINNER_CHARS:$spin_i:1}" "$label"
+        spin_i=$(( (spin_i + 1) % ${#SPINNER_CHARS} ))
+        sleep 0.1
+    done
+    wait "$pid"; rc=$?
+    printf "\r\033[K"
+    return $rc
+}
+
 # ── Boucle de création ────────────────────────────────────────────────────────
 TMPDIR_DATA=$(mktemp -d)
 DONE=0
+VM_LINES=0
+
+printf "\r\033[s"
+_draw_progress
 
 for n in $(seq -w 1 "$STUDENTS"); do
     tag="${PREFIX}-${n}"
-    label_str="${tag}=true,${PREFIX}=true"   # label étudiant + label classe
+    label_str="${tag}=true,${PREFIX}=true"
     student_file="${TMPDIR_DATA}/${tag}"
-
-    echo ""
-    echo -e "${BOLD}━━━ 👤 Étudiant ${n}/${STUDENTS}  (tag: ${tag}) ━━━━━━━━━━━━━━━━${RESET}"
 
     for ((v=1; v<=VMS_PER_STUDENT; v++)); do
         role=$(role_name "$v" "$VMS_PER_STUDENT")
         vm_name="vm-${tag}-${role}"
         DONE=$(( DONE + 1 ))
 
-        echo -ne "  [${DONE}/${TOTAL}] 🛠  ${vm_name} (${role})… "
-
-        exo compute instance create "$vm_name" \
-            -z "$ZONE" \
-            --template "$TEMPLATE" \
-            --instance-type "$INSTANCE_TYPE" \
-            --ssh-key "$SSH_KEY_NAME" \
-            --label "$label_str" \
-            "${SG_ARGS[@]}" \
-            "${PN_ARGS[@]}" > /dev/null
+        _spinner_run "[${DONE}/${TOTAL}] ${vm_name}" \
+            exo compute instance create "$vm_name" \
+                -z "$ZONE" \
+                --template "$TEMPLATE" \
+                --instance-type "$INSTANCE_TYPE" \
+                --ssh-key "$SSH_KEY_NAME" \
+                --label "$label_str" \
+                "${SG_ARGS[@]}" \
+                "${PN_ARGS[@]}" && create_rc=0 || create_rc=$?
 
         IP=$(exo compute instance show "$vm_name" -z "$ZONE" \
              --output-template '{{.IPAddress}}' 2>/dev/null)
 
-        if [ -z "$IP" ] || [ "$IP" = "<nil>" ]; then
+        if [ $create_rc -ne 0 ]; then
             IP="N/A"
-            echo -e "${YELLOW}⚠️  IP non récupérée${RESET}"
+            printf "  ${RED}✗${RESET}  [%d/%d] %-26s ${RED}erreur création${RESET}\n" \
+                "$DONE" "$TOTAL" "$vm_name"
+        elif [ -z "$IP" ] || [ "$IP" = "<nil>" ]; then
+            IP="N/A"
+            printf "  ${YELLOW}⚠${RESET}  [%d/%d] %-26s ${YELLOW}IP non récupérée${RESET}\n" \
+                "$DONE" "$TOTAL" "$vm_name"
         else
-            echo -e "${GREEN}✅ $IP${RESET}"
+            printf "  ${GREEN}✓${RESET}  [%d/%d] %-26s ${BOLD}%s${RESET}\n" \
+                "$DONE" "$TOTAL" "$vm_name" "$IP"
         fi
 
-        # Une ligne par VM : "vm_name|role|ip"
+        VM_LINES=$(( VM_LINES + 1 ))
         echo "${vm_name}|${role}|${IP}" >> "$student_file"
+        _draw_progress
     done
 done
+
+echo ""
 
 # ── Génération du Markdown ────────────────────────────────────────────────────
 echo ""

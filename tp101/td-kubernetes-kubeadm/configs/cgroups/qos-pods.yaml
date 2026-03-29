@@ -1,0 +1,54 @@
+---
+# Pod Guaranteed : requests == limits sur tous les containers
+apiVersion: v1
+kind: Pod
+metadata:
+  name: qos-guaranteed
+  labels:
+    partie: "9-cgroups"
+    qos: guaranteed
+spec:
+  containers:
+  - name: app
+    image: nginx:alpine
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "64Mi"
+        cpu: "250m"
+---
+# Pod Burstable : requests < limits (ou seulement requests)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: qos-burstable
+  labels:
+    partie: "9-cgroups"
+    qos: burstable
+spec:
+  containers:
+  - name: app
+    image: nginx:alpine
+    resources:
+      requests:
+        memory: "32Mi"
+        cpu: "100m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+---
+# Pod BestEffort : aucun request ni limit
+apiVersion: v1
+kind: Pod
+metadata:
+  name: qos-besteffort
+  labels:
+    partie: "9-cgroups"
+    qos: besteffort
+spec:
+  containers:
+  - name: app
+    image: nginx:alpine
+    # Pas de resources → BestEffort, premier tué en cas de pression mémoire

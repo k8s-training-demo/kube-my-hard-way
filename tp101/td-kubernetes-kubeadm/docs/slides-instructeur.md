@@ -2259,11 +2259,11 @@ spec:
 
 ---
 
-## Partie 4 - Timeline suggérée
+## Partie 5 - Timeline suggérée
 
 - Backup: **3 min**
 - Drain: **5 min**
-- Suppression Flannel: **5 min**
+- Retrait Flannel: **5 min**
 - Installation Calico: **7 min**
 - Validation: **5 min**
 
@@ -2360,7 +2360,7 @@ spec:
 
 ---
 
-## 4.1 - Backup
+## 5.1 - Backup
 
 ![bg right:40% fit](diagrams/cni-migration.png)
 
@@ -2373,7 +2373,7 @@ cd scripts/partie4-migration-cni
 
 ---
 
-## 4.2 - Drain progressif
+## 5.2 - Drain progressif
 
 ### 📝 EXERCICE ÉLÈVE
 **Script sur le MASTER:**
@@ -2398,30 +2398,26 @@ kubectl drain <node> --force --delete-emptydir-data
 
 ---
 
-## 4.3 - Suppression de Flannel
+## 5.3 - Retrait de Flannel ⚠️ ordre impératif
 
 ### 📝 EXERCICE ÉLÈVE
-**Script sur le MASTER:**
+**Script sur le MASTER puis sur chaque NŒUD:**
 ```bash
-./03-remove-flannel.sh
+./03-remove-flannel.sh master   # depuis le master
+sudo ./03-remove-flannel.sh node  # sur chaque nœud
 ```
 
-### Points critiques
+### Pourquoi en deux temps ?
 
-1. **Ne PAS redémarrer kubelet** entre suppression Flannel et installation Calico
-   - Les pods perdront leur connectivité
-   - Le nœud deviendra NotReady
+- **`master`** : supprime les ressources Kubernetes (DaemonSet, ConfigMap…)
+- **`node`** : nettoie les interfaces réseau (`flannel.1`) et les règles iptables locales
 
-2. **Nettoyage complet des interfaces**
-   ```bash
-   ip link show  # Vérifier flannel.1 supprimé
-   ```
-
-3. **Nettoyage iptables**
+### ⛔ Ne PAS redémarrer kubelet avant d'avoir installé Calico
+Kubelet sans CNI = nœud `NotReady`, tous les pods perdent leur connectivité
 
 ---
 
-## 4.4 - Installation de Calico
+## 5.4 - Installation de Calico
 
 ### 📝 EXERCICE ÉLÈVE
 **Script sur le MASTER:**
@@ -2438,7 +2434,7 @@ kubectl get pods -n kube-system -l k8s-app=calico-node
 
 ---
 
-## 4.5 - Validation post-migration
+## 5.5 - Validation post-migration
 
 ### 📝 EXERCICE ÉLÈVE
 ```bash
@@ -2823,7 +2819,7 @@ cd ../../validation && ./validate-partie.sh 5
 ### 📝 EXERCICE ÉLÈVE
 **Script sur le MASTER:**
 ```bash
-cd scripts/partie6-upgrade-cluster
+cd scripts/partie6-upgrade
 ./01-check-versions.sh
 ```
 

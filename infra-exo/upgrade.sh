@@ -77,3 +77,4 @@ echo "✓ Control plane upgradé avec succès!"
 echo ""
 echo "NOTE: Les kubelet des nœuds sont toujours à l'ancienne version"
 echo "      Ils doivent être upgradés séparément"
+
