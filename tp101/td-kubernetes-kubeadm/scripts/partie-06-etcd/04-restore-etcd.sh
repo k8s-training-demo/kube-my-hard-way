@@ -82,18 +82,24 @@ echo "   etcd redémarré — attente 10s..."
 mv /tmp/kube-apiserver.yaml.bak /etc/kubernetes/manifests/kube-apiserver.yaml
 
 echo ""
-echo "6. Attente de la disponibilité de l'API Server..."
-for i in {1..12}; do
-    if kubectl get nodes &>/dev/null; then
+echo "6. Redémarrage de kubelet (nécessaire pour que l'API Server charge le bon état RBAC) :"
+sleep 5
+systemctl restart kubelet
+echo "   ✓ kubelet redémarré"
+
+echo ""
+echo "7. Attente de la disponibilité de l'API Server..."
+for i in {1..15}; do
+    if kubectl get nodes &>/dev/null 2>&1; then
         echo "   ✓ API Server disponible (tentative $i)"
         break
     fi
-    echo "   Tentative $i/12 — attente 10s..."
+    echo "   Tentative $i/15 — attente 10s..."
     sleep 10
 done
 
 echo ""
-echo "7. Vérification post-restauration:"
+echo "8. Vérification post-restauration:"
 etcdctl \
     --cacert=/etc/kubernetes/pki/etcd/ca.crt \
     --cert=/etc/kubernetes/pki/etcd/server.crt \
@@ -104,7 +110,7 @@ etcdctl \
 kubectl get nodes
 
 echo ""
-echo "8. Vérification : les objets créés après le backup ont disparu :"
+echo "9. Vérification : les objets créés après le backup ont disparu :"
 echo ""
 echo "   Namespaces présents (etcd-demo-* doit être ABSENT) :"
 kubectl get namespaces | grep -v "etcd-demo-" || true

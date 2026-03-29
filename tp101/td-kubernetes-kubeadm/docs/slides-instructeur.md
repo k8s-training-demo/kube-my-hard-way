@@ -2934,6 +2934,27 @@ La récupération se fait en rallumant la VM via l'API Exoscale — kubelet red�
 
 ---
 
+## Partie 6 - Timeline suggérée
+
+- Setup etcdctl + etcdutl : **3 min**
+- Inspection du cluster (tableau de bord) : **5 min**
+- Backup snapshot : **3 min**
+- Démo pre-restore (créer des objets) : **3 min**
+- Restauration + vérification : **10 min**
+
+```
+cd scripts/partie-06-etcd
+./01-setup-etcdctl.sh        # install binaires + variables
+./02-inspect-etcd.sh         # tableau de bord + exploration des clés
+./03-backup-etcd.sh          # snapshot obligatoire
+./03b-demo-before-restore.sh # créer des objets POST-backup
+sudo ./04-restore-etcd.sh /var/backup/etcd/snapshot-*.db
+```
+
+> ⚠️ etcd 3.6 : `etcdctl` uniquement pour `snapshot save` — `etcdutl` pour `status` et `restore`
+
+---
+
 ## etcd — rôle dans Kubernetes
 
 ### L'unique source de vérité
@@ -2989,29 +3010,27 @@ Master nodes          etcd cluster
 
 ## etcdctl — setup et authentification
 
-### Variables d'environnement obligatoires
+### Variables d'environnement (etcd 3.6)
 
 ```bash
-# API v3 obligatoire (v2 = legacy)
-export ETCDCTL_API=3
-
-# Certificats TLS (kubeadm stacked)
+# ETCDCTL_API=3 n'est plus nécessaire depuis etcd 3.6 (v3 par défaut)
 export ETCDCTL_CACERT=/etc/kubernetes/pki/etcd/ca.crt
 export ETCDCTL_CERT=/etc/kubernetes/pki/etcd/server.crt
 export ETCDCTL_KEY=/etc/kubernetes/pki/etcd/server.key
-
-# Endpoint local
 export ETCDCTL_ENDPOINTS=https://127.0.0.1:2379
 ```
 
-### Vérifier que tout fonctionne
+### Deux binaires dans etcd 3.6
+
+| Binaire | Usage |
+|---------|-------|
+| `etcdctl` | Opérations cluster : `get`, `put`, `endpoint health`, `snapshot save` |
+| `etcdutl` | Opérations locales : `snapshot status`, `snapshot restore` |
 
 ```bash
+./01-setup-etcdctl.sh   # installe les deux depuis les releases GitHub
 etcdctl endpoint health
-# 127.0.0.1:2379 is healthy: committed revision: 42156
 ```
-
-⚠️ Sans `ETCDCTL_API=3` → erreurs cryptiques ou réponses vides
 
 ---
 
@@ -3048,26 +3067,46 @@ etcdctl get /registry/pods/default/mon-pod
 ### Procédure obligatoire avant tout upgrade
 
 ```bash
-# 1. Créer le répertoire de backup
-sudo mkdir -p /var/backup/etcd
-
-# 2. Snapshot
-sudo ETCDCTL_API=3 etcdctl snapshot save /var/backup/etcd/snapshot-$(date +%Y%m%d-%H%M).db \
-  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
-  --cert=/etc/kubernetes/pki/etcd/server.crt \
-  --key=/etc/kubernetes/pki/etcd/server.key \
-  --endpoints=https://127.0.0.1:2379
-
-# 3. Vérifier le snapshot
-sudo ETCDCTL_API=3 etcdctl snapshot status /var/backup/etcd/snapshot-*.db \
-  --write-out=table
+./03-backup-etcd.sh          # destination par défaut : /var/backup/etcd/
+./03-backup-etcd.sh /mnt/nfs # ou chemin personnalisé
 ```
 
-**Output attendu :**
+Sous le capot :
+```bash
+etcdctl snapshot save /var/backup/etcd/snapshot-20260329-143000.db \
+  --cacert=... --cert=... --key=... --endpoints=https://127.0.0.1:2379
+
+# Vérification (etcdutl en 3.6, pas etcdctl)
+etcdutl snapshot status snapshot.db --write-out=table
+# HASH       REVISION  TOTAL KEYS  TOTAL SIZE
+# a1b2c3d4   42156     1247        8.2 MB
 ```
-HASH       REVISION  TOTAL KEYS  TOTAL SIZE
-a1b2c3d4   42156     1247        8.2 MB
+
+> `etcdctl snapshot save` → OK  |  `etcdutl snapshot status/restore` → etcd 3.6
+
+---
+
+## Démo : preuve de la restauration
+
+### Séquence pédagogique
+
+```bash
+./03-backup-etcd.sh               # 1. snapshot de l'état actuel
+./03b-demo-before-restore.sh      # 2. créer des objets POST-backup
 ```
+
+`03b` crée dans un namespace horodaté :
+- `configmap/demo-config` avec `message="CE CONFIGMAP DOIT DISPARAITRE"`
+- `deployment/demo-nginx` (2 replicas)
+
+```bash
+kubectl get ns | grep etcd-demo   # visible avant restore
+sudo ./04-restore-etcd.sh /var/backup/etcd/snapshot-*.db
+kubectl get ns | grep etcd-demo   # ABSENT après restore ✓
+```
+
+> Les étudiants voient concrètement que etcd est **la seule source de vérité** —
+> tout objet absent du snapshot est définitivement perdu
 
 ---
 
@@ -3076,43 +3115,44 @@ a1b2c3d4   42156     1247        8.2 MB
 ### Scénario : cluster cassé, etcd corrompu
 
 ```bash
-# 1. Arrêter l'API server (pod statique → déplacer le manifest)
-sudo mv /etc/kubernetes/manifests/etcd.yaml /tmp/
-
-# 2. Restaurer le snapshot
-sudo ETCDCTL_API=3 etcdctl snapshot restore /var/backup/etcd/snapshot.db \
-  --data-dir=/var/lib/etcd-restored \
-  --name=master \
-  --initial-cluster=master=https://127.0.0.1:2380 \
-  --initial-advertise-peer-urls=https://127.0.0.1:2380
-
-# 3. Pointer etcd vers le nouveau data-dir
-# Modifier /tmp/etcd.yaml : --data-dir=/var/lib/etcd-restored
-
-# 4. Remettre le manifest → etcd redémarre
-sudo mv /tmp/etcd.yaml /etc/kubernetes/manifests/
+sudo ./04-restore-etcd.sh /var/backup/etcd/snapshot.db
 ```
 
-⚠️ La restauration **revert l'état complet** — tous les objets créés après le snapshot sont perdus
+Sous le capot (etcd 3.6) :
+```bash
+# Déplacer les manifests statiques (arrête etcd + API server)
+mv /etc/kubernetes/manifests/etcd.yaml /tmp/etcd.yaml.bak
+
+# Restaurer (etcdutl, pas etcdctl)
+etcdutl snapshot restore snapshot.db \
+  --data-dir=/var/lib/etcd-restored --name=master \
+  --initial-cluster=master=https://<IP>:2380
+
+# Patcher le manifest → nouveau data-dir → remettre en place
+```
+
+⚠️ La restauration **revert l'état complet** — tous les objets post-snapshot sont perdus
 
 ---
 
 ## etcdctl — points instructeur
 
-### Pièges fréquents
+### Pièges fréquents (etcd 3.6)
 
 | Piège | Symptôme | Fix |
 |-------|----------|-----|
-| `ETCDCTL_API` non défini | `Error: unknown command` | `export ETCDCTL_API=3` |
+| `etcdctl snapshot restore` | `unknown flag: --data-dir` | Utiliser `etcdutl snapshot restore` |
+| `etcdctl snapshot status` | Help affiché, pas de status | Utiliser `etcdutl snapshot status` |
+| `sudo etcdctl` | `command not found` | Utiliser le chemin absolu ou `export PATH="/usr/local/bin:$PATH"` |
+| Post-restore `kubectl` | `Forbidden: nodes is forbidden` | `sudo systemctl restart kubelet` |
 | Mauvais certificat | `x509: certificate signed by unknown authority` | Vérifier les 3 chemins PKI |
-| etcd pod stacked | `connection refused` pendant restore | Déplacer le manifest d'abord |
-| data-dir existant | `member already exists` | Supprimer `/var/lib/etcd` avant restore |
+| etcd pod stacked | `connection refused` pendant restore | Déplacer le manifest statique d'abord |
 
 ### Quand utiliser etcdctl en TD ?
 
-- **Avant l'upgrade** (Partie 6) → snapshot obligatoire
+- **Avant l'upgrade** (Partie 7) → snapshot obligatoire
 - **Curiosité pédagogique** → `get / --prefix --keys-only` pour voir l'état brut
-- **Scénario de panne** → restauration (optionnel si temps)
+- **Scénario de panne** → restauration avec démo 03b pour rendre visible le revert
 
 ---
 
