@@ -44,7 +44,7 @@ Installer et initialiser un cluster Kubernetes avec 1 master et 2 workers, avec 
 Exécutez le script d'installation des prérequis sur chaque nœud :
 
 ```bash
-cd td-kubernetes-kubeadm/scripts/partie1-installation
+cd td-kubernetes-kubeadm/scripts/partie-01-installation
 ./01-prereqs.sh
 ```
 
@@ -129,7 +129,7 @@ sudo cat /var/lib/kubelet/config.yaml
 ### 2.2 Modification de la configuration kubelet
 
 ```bash
-cd ../scripts/partie2-kubelet-static-pods
+cd ../scripts/partie-02-kubelet-static-pods
 ./01-modify-kubelet-config.sh
 ```
 
@@ -193,7 +193,7 @@ Comprendre les mécanismes de taints et tolerations pour contrôler le schedulin
 Sur le master :
 
 ```bash
-cd ../scripts/partie3-taints-tolerations
+cd ../scripts/partie-03-taints-tolerations
 ./01-explore-default-taints.sh
 ```
 
@@ -254,7 +254,7 @@ Comprendre l'architecture plugable du réseau Kubernetes et effectuer une migrat
 Sur le master :
 
 ```bash
-cd ../scripts/partie4-migration-cni
+cd ../scripts/partie-04-migration-cni
 ./01-backup-cluster-state.sh
 ```
 
@@ -337,7 +337,7 @@ Maîtriser les opérations de maintenance sur les nœuds avec drain, cordon et g
 Sur le master :
 
 ```bash
-cd ../scripts/partie5-drain-maintenance
+cd ../scripts/partie-05-drain-maintenance
 ./01-drain-with-pdb.sh
 ```
 
@@ -390,7 +390,7 @@ Effectuer une mise à jour sécurisée du cluster Kubernetes (control plane + wo
 Sur le master :
 
 ```bash
-cd ../scripts/partie6-upgrade
+cd ../scripts/partie-06-upgrade
 ./01-check-versions.sh
 ```
 
@@ -558,7 +558,7 @@ Comprendre le concept de **RuntimeClass** Kubernetes et mettre en place **gVisor
 > **À exécuter sur TOUS les nœuds (master + workers)**
 
 ```bash
-bash /root/scripts/partie7-runtimeclass/01-install-gvisor.sh
+bash /root/scripts/partie-07-runtimeclass/01-install-gvisor.sh
 ```
 
 Ce script :
@@ -573,7 +573,7 @@ Ce script :
 > **À exécuter sur le MASTER**
 
 ```bash
-bash /root/scripts/partie7-runtimeclass/02-create-runtimeclass.sh
+bash /root/scripts/partie-07-runtimeclass/02-create-runtimeclass.sh
 ```
 
 Une `RuntimeClass` est un objet Kubernetes qui fait le lien entre un nom logique (`gvisor`) et le handler configuré dans containerd (`runsc`) :
@@ -596,7 +596,7 @@ kubectl get runtimeclass
 > **À exécuter sur le MASTER**
 
 ```bash
-bash /root/scripts/partie7-runtimeclass/03-test-isolation.sh
+bash /root/scripts/partie-07-runtimeclass/03-test-isolation.sh
 ```
 
 Ce script déploie deux pods côte à côte et compare ce qu'ils voient :
@@ -622,7 +622,7 @@ spec:
 ### 7.4 Déploiement d'une application avec RuntimeClass
 
 ```bash
-bash /root/scripts/partie7-runtimeclass/04-deploy-with-runtimeclass.sh
+bash /root/scripts/partie-07-runtimeclass/04-deploy-with-runtimeclass.sh
 ```
 
 Ce script montre :
@@ -639,7 +639,7 @@ done
 ### 7.5 Comparaison de performance
 
 ```bash
-bash /root/scripts/partie7-runtimeclass/05-performance-comparison.sh
+bash /root/scripts/partie-07-runtimeclass/05-performance-comparison.sh
 ```
 
 gVisor intercepte chaque syscall → overhead systématique. Résultats typiques sur ce cluster :

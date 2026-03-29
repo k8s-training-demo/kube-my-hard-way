@@ -24,12 +24,12 @@ Ce TD pratique couvre l'ensemble du cycle de vie d'un cluster Kubernetes, de l'i
 ```
 td-kubernetes-kubeadm/
 ├── scripts/
-│   ├── partie1-installation/          # Installation du cluster de base
-│   ├── partie2-kubelet-static-pods/   # Configuration kubelet et static pods
-│   ├── partie3-taints-tolerations/    # Scheduling avec taints
-│   ├── partie4-migration-cni/         # Migration Flannel → Calico
-│   ├── partie5-drain-maintenance/     # Maintenance des nœuds
-│   └── partie6-upgrade/               # Mise à jour du cluster
+│   ├── partie-01-installation/          # Installation du cluster de base
+│   ├── partie-02-kubelet-static-pods/   # Configuration kubelet et static pods
+│   ├── partie-03-taints-tolerations/    # Scheduling avec taints
+│   ├── partie-04-migration-cni/         # Migration Flannel → Calico
+│   ├── partie-05-drain-maintenance/     # Maintenance des nœuds
+│   └── partie-06-upgrade/               # Mise à jour du cluster
 ├── configs/
 │   ├── kubelet/                       # Configurations kubelet
 │   ├── static-pods/                   # Manifests de static pods

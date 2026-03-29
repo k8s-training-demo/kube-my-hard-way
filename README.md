@@ -58,7 +58,7 @@ Install all components from scratch and bootstrap a working 3-node cluster.
 - Workers joining the cluster
 - Flannel CNI installation and cluster verification
 
-**Scripts:** `scripts/partie1-installation/`
+**Scripts:** `scripts/partie-01-installation/`
 
 ---
 
@@ -72,7 +72,7 @@ Understand the kubelet as the node agent and explore static pods as the foundati
 - How `kube-apiserver`, `etcd`, `kube-scheduler` are themselves static pods
 - Static pod behavior: resurrection after manual deletion
 
-**Scripts:** `scripts/partie2-kubelet-static-pods/`
+**Scripts:** `scripts/partie-02-kubelet-static-pods/`
 
 ---
 
@@ -86,7 +86,7 @@ Control which pods land on which nodes using Kubernetes' push-based scheduling m
 - Real-world use cases: GPU nodes, spot instances, dedicated infra nodes
 - `tolerationSeconds` and eviction delay
 
-**Scripts:** `scripts/partie3-taints-tolerations/`
+**Scripts:** `scripts/partie-03-taints-tolerations/`
 
 ---
 
@@ -99,7 +99,7 @@ Live-migrate the cluster network from Flannel to Calico without losing connectiv
 - Drain → remove Flannel → install Calico → uncordon: the mandatory sequence
 - Validating pod-to-pod connectivity post-migration
 
-**Scripts:** `scripts/partie4-migration-cni/`
+**Scripts:** `scripts/partie-04-migration-cni/`
 
 ---
 
@@ -112,7 +112,7 @@ Safely take nodes out of service without disrupting running workloads.
 - DaemonSets and drain: why `--ignore-daemonsets` is required
 - Simulating a node failure and observing Kubernetes recovery timeline
 
-**Scripts:** `scripts/partie5-drain-maintenance/`
+**Scripts:** `scripts/partie-05-drain-maintenance/`
 
 ---
 
@@ -127,7 +127,7 @@ Understand etcd as the single source of truth for the cluster, and learn to back
 - Snapshot backup (`etcdctl snapshot save`) — mandatory before an upgrade
 - Restoring a cluster from a snapshot: stop API server → restore → point etcd at new data-dir
 
-**Scripts:** (covered in slides — `scripts/partie6-upgrade/` for the backup step)
+**Scripts:** (covered in slides — `scripts/partie-06-upgrade/` for the backup step)
 
 ---
 
@@ -141,7 +141,7 @@ Upgrade a live cluster following the mandatory component order.
 - Rolling worker upgrade: drain → upgrade → uncordon
 - Post-upgrade validation
 
-**Scripts:** `scripts/partie6-upgrade/`
+**Scripts:** `scripts/partie-06-upgrade/`
 
 ---
 
@@ -155,7 +155,7 @@ Run untrusted workloads with stronger isolation using a second container runtime
 - Creating a `RuntimeClass` resource to link Kubernetes to gVisor
 - Demonstrating syscall isolation and measuring performance overhead
 
-**Scripts:** `scripts/partie7-runtimeclass/`
+**Scripts:** `scripts/partie-07-runtimeclass/`
 
 ---
 
@@ -195,7 +195,7 @@ Understand how Kubernetes resource limits actually work at the kernel level.
 - What happens at the kernel level when a pod hits its memory limit
 - Writing a C snippet that manually creates a cgroup
 
-**Scripts:** `scripts/partie9-cgroups/`
+**Scripts:** `scripts/partie-09-cgroups/`
 
 ---
 
@@ -231,7 +231,7 @@ Deploy a full observability stack on the cluster using Helm.
 - Writing custom PromQL queries and adding dashboards via ConfigMap
 - ~150 pre-configured alert rules
 
-**Scripts:** `scripts/partie12-prometheus/`
+**Scripts:** `scripts/partie-12-prometheus/`
 
 ---
 
@@ -253,16 +253,16 @@ Deploy a full observability stack on the cluster using Helm.
 git clone https://github.com/k8s-training-demo/kube-my-hard-way
 cd kube-my-hard-way/tp101/td-kubernetes-kubeadm/scripts
 
-./partie1-installation/01-prereqs.sh
+./partie-01-installation/01-prereqs.sh
 ```
 
 ### 3 — Bootstrap the cluster (master only)
 
 ```bash
-./partie1-installation/02-init-control-plane.sh
-./partie1-installation/03-join-workers.sh       # paste the kubeadm join output
-./partie1-installation/04-install-flannel.sh
-./partie1-installation/05-verify-cluster.sh
+./partie-01-installation/02-init-control-plane.sh
+./partie-01-installation/03-join-workers.sh       # paste the kubeadm join output
+./partie-01-installation/04-install-flannel.sh
+./partie-01-installation/05-verify-cluster.sh
 ```
 
 ---
@@ -275,15 +275,15 @@ kube-my-hard-way/
 ├── infra-exo/                         ← Exoscale provisioning (exo CLI)
 └── tp101/td-kubernetes-kubeadm/
     ├── scripts/
-    │   ├── partie1-installation/
-    │   ├── partie2-kubelet-static-pods/
-    │   ├── partie3-taints-tolerations/
-    │   ├── partie4-migration-cni/
-    │   ├── partie5-drain-maintenance/
-    │   ├── partie6-upgrade/
-    │   ├── partie7-runtimeclass/
-    │   ├── partie9-cgroups/
-    │   ├── partie12-prometheus/
+    │   ├── partie-01-installation/
+    │   ├── partie-02-kubelet-static-pods/
+    │   ├── partie-03-taints-tolerations/
+    │   ├── partie-04-migration-cni/
+    │   ├── partie-05-drain-maintenance/
+    │   ├── partie-06-upgrade/
+    │   ├── partie-07-runtimeclass/
+    │   ├── partie-09-cgroups/
+    │   ├── partie-12-prometheus/
     │   └── partie-bonus-ha/
     ├── configs/
     ├── validation/

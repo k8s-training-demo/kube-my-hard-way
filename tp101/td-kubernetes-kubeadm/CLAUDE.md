@@ -20,7 +20,7 @@ cd validation && ./validate-partie.sh <1-6>
 cd validation && ./validate-all.sh
 ```
 
-Scripts in `scripts/partie4-migration-cni/03-remove-flannel.sh` take a positional argument:
+Scripts in `scripts/partie-04-migration-cni/03-remove-flannel.sh` take a positional argument:
 ```bash
 ./03-remove-flannel.sh master   # run on control plane
 sudo ./03-remove-flannel.sh node  # run on each node (requires root)
