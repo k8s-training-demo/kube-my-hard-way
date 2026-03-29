@@ -4,7 +4,6 @@
 
 set -e
 
-export ETCDCTL_API=3
 export ETCDCTL_CACERT=/etc/kubernetes/pki/etcd/ca.crt
 export ETCDCTL_CERT=/etc/kubernetes/pki/etcd/server.crt
 export ETCDCTL_KEY=/etc/kubernetes/pki/etcd/server.key
@@ -74,7 +73,13 @@ POD=$(etcdctl get /registry/pods/kube-system --prefix --keys-only | head -1)
 if [ -n "$POD" ]; then
     echo "   Clé: $POD"
     echo "   (données binaires protobuf — l'API Server les désérialise pour kubectl)"
-    etcdctl get "$POD" | strings | grep -E '"kind"|"name"|"namespace"' | head -5 || true
+    etcdctl get "$POD" | python3 -c "
+import sys, re
+data = sys.stdin.buffer.read()
+words = re.findall(rb'[\x20-\x7e]{4,}', data)
+for w in words[:20]:
+    print(w.decode())
+" | grep -E 'kind|name|namespace|default|kube' | head -8 || true
 fi
 echo ""
 read -rp "   ↵  Ce que kubectl retourne = désérialisation de ces données. Appuyez sur Entrée..."

@@ -41,7 +41,7 @@ echo ""
 echo "2. Variables d'environnement obligatoires:"
 echo ""
 echo "   # Copiez-collez ces exports dans votre shell :"
-echo "   export ETCDCTL_API=3"
+echo "   # ETCDCTL_API=3 n'est plus nécessaire depuis etcd 3.6 (v3 par défaut)"
 echo "   export ETCDCTL_CACERT=/etc/kubernetes/pki/etcd/ca.crt"
 echo "   export ETCDCTL_CERT=/etc/kubernetes/pki/etcd/server.crt"
 echo "   export ETCDCTL_KEY=/etc/kubernetes/pki/etcd/server.key"
@@ -49,7 +49,6 @@ echo "   export ETCDCTL_ENDPOINTS=https://127.0.0.1:2379"
 echo ""
 
 # Les appliquer pour ce script
-export ETCDCTL_API=3
 export ETCDCTL_CACERT=/etc/kubernetes/pki/etcd/ca.crt
 export ETCDCTL_CERT=/etc/kubernetes/pki/etcd/server.crt
 export ETCDCTL_KEY=/etc/kubernetes/pki/etcd/server.key
@@ -85,7 +84,6 @@ echo ""
 # Générer un fichier source pratique
 cat <<'EOF' | sudo tee /etc/profile.d/etcdctl.sh > /dev/null
 # etcdctl environment — généré par partie-06-etcd/01-setup-etcdctl.sh
-export ETCDCTL_API=3
 export ETCDCTL_CACERT=/etc/kubernetes/pki/etcd/ca.crt
 export ETCDCTL_CERT=/etc/kubernetes/pki/etcd/server.crt
 export ETCDCTL_KEY=/etc/kubernetes/pki/etcd/server.key

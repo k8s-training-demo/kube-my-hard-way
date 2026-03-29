@@ -8,7 +8,6 @@ set -e
 BACKUP_DIR="${1:-/var/backup/etcd}"
 SNAPSHOT_FILE="$BACKUP_DIR/snapshot-$(date +%Y%m%d-%H%M%S).db"
 
-export ETCDCTL_API=3
 export ETCDCTL_CACERT=/etc/kubernetes/pki/etcd/ca.crt
 export ETCDCTL_CERT=/etc/kubernetes/pki/etcd/server.crt
 export ETCDCTL_KEY=/etc/kubernetes/pki/etcd/server.key
@@ -27,7 +26,7 @@ echo "   Destination: $SNAPSHOT_FILE"
 echo ""
 
 echo "3. Création du snapshot:"
-sudo ETCDCTL_API=3 etcdctl snapshot save "$SNAPSHOT_FILE" \
+sudo etcdctl snapshot save "$SNAPSHOT_FILE" \
     --cacert=/etc/kubernetes/pki/etcd/ca.crt \
     --cert=/etc/kubernetes/pki/etcd/server.crt \
     --key=/etc/kubernetes/pki/etcd/server.key \
@@ -35,7 +34,7 @@ sudo ETCDCTL_API=3 etcdctl snapshot save "$SNAPSHOT_FILE" \
 
 echo ""
 echo "4. Vérification de l'intégrité du snapshot:"
-sudo ETCDCTL_API=3 etcdctl snapshot status "$SNAPSHOT_FILE" --write-out=table
+sudo etcdctl snapshot status "$SNAPSHOT_FILE" --write-out=table
 
 echo ""
 echo "5. Taille du fichier:"
