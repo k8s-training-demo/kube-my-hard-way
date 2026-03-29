@@ -13,11 +13,14 @@ if ! [ -f /etc/kubernetes/pki/etcd/ca.crt ]; then
     false
 fi
 
-echo "1. Installation d'etcdctl:"
-# etcdctl est fourni dans le package etcd-client sur certaines distros,
-# mais sur CentOS/RHEL la façon la plus fiable est de l'extraire depuis l'image etcd du cluster.
-if ! command -v etcdctl &>/dev/null; then
-    echo "   etcdctl absent — téléchargement depuis les releases GitHub etcd..."
+echo "1. Installation d'etcdctl + etcdutl:"
+# Vérifier si les deux binaires sont présents
+NEED_INSTALL=0
+command -v etcdctl &>/dev/null && echo "   ✓ etcdctl déjà présent" || NEED_INSTALL=1
+command -v etcdutl &>/dev/null && echo "   ✓ etcdutl déjà présent"  || NEED_INSTALL=1
+
+if [ "$NEED_INSTALL" -eq 1 ]; then
+    echo "   Binaire(s) manquant(s) — téléchargement depuis les releases GitHub etcd..."
     # Extraire la version depuis l'image etcd du cluster (ex: 3.6.5-0 → 3.6.5)
     RAW_VERSION=$(kubectl -n kube-system get pod -l component=etcd \
         -o jsonpath='{.items[0].spec.containers[0].image}' | cut -d: -f2)
@@ -34,8 +37,6 @@ if ! command -v etcdctl &>/dev/null; then
     rm -f "/tmp/${ARCHIVE}"
     chmod +x /usr/local/bin/etcdctl /usr/local/bin/etcdutl
     echo "   ✓ etcdctl + etcdutl installés dans /usr/local/bin/"
-else
-    echo "   ✓ etcdctl déjà présent : $(which etcdctl)"
 fi
 echo ""
 
