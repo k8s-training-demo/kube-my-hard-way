@@ -44,7 +44,20 @@ if [[ "$IPIP_MODE" == "Always" ]] || [[ "$VXLAN_MODE" != "Always" ]]; then
     NEEDS_FIX=true
 fi
 
-# c) Redémarrer si des corrections ont été appliquées
+# c) Retirer les probes BIRD du DaemonSet si elles sont encore présentes
+LIVENESS_CMD=$(kubectl get daemonset calico-node -n kube-system \
+    -o jsonpath='{.spec.template.spec.containers[0].livenessProbe.exec.command}' 2>/dev/null || echo "")
+if echo "$LIVENESS_CMD" | grep -q "bird"; then
+    echo "   ⚠️  Probes BIRD détectées dans le DaemonSet — retrait..."
+    kubectl -n kube-system patch daemonset calico-node --type=json -p='[
+      {"op":"replace","path":"/spec/template/spec/containers/0/livenessProbe/exec/command","value":["/bin/calico-node","-felix-live"]},
+      {"op":"replace","path":"/spec/template/spec/containers/0/readinessProbe/exec/command","value":["/bin/calico-node","-felix-ready"]}
+    ]'
+    echo "   ✓ Probes BIRD retirées (felix-only)"
+    NEEDS_FIX=true
+fi
+
+# d) Redémarrer si des corrections ont été appliquées
 if [[ "$NEEDS_FIX" == "true" ]]; then
     kubectl rollout restart daemonset/calico-node -n kube-system
     echo "   Attente du redémarrage des calico-node..."
