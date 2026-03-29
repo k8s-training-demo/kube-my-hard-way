@@ -2437,63 +2437,93 @@ sudo systemctl start kubelet
 
 ---
 
-## IPIP vs VXLAN — pourquoi ça change tout sur Exoscale
+## IPIP vs VXLAN — encapsulation et cloud firewalls
 
-<svg width="1100" height="290" viewBox="0 0 1100 290" xmlns="http://www.w3.org/2000/svg">
+<svg width="1100" height="235" viewBox="0 0 1100 235" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="arrgray" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6b7280"/></marker>
+  <marker id="arrgreen" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#16a34a"/></marker>
+</defs>
 <style>text{font-family:sans-serif}</style>
 
-<!-- Titre IPIP -->
-<text x="250" y="24" text-anchor="middle" fill="#dc2626" font-size="16" font-weight="bold">Mode IPIP — ❌ bloqué sur Exoscale</text>
+<!-- ── ROW 1 : IPIP ── -->
+<text x="44" y="34" text-anchor="middle" fill="#dc2626" font-size="14" font-weight="bold">❌ IPIP</text>
+<text x="44" y="50" text-anchor="middle" fill="#dc2626" font-size="11">IP proto 4</text>
 
-<!-- Paquet IPIP -->
-<rect x="30" y="38" width="440" height="48" rx="6" fill="#fecaca" stroke="#dc2626" stroke-width="2"/>
-<text x="250" y="57" text-anchor="middle" fill="#7f1d1d" font-size="12" font-weight="bold">Outer IP header</text>
-<text x="250" y="76" text-anchor="middle" fill="#991b1b" font-size="11">src: 10.0.0.1 (node A) → dst: 10.0.0.2 (node B)  |  proto: 4 (IPIP)</text>
+<!-- Node A -->
+<rect x="84" y="12" width="88" height="64" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="128" y="31" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Node A</text>
+<text x="128" y="47" text-anchor="middle" fill="#1d4ed8" font-size="10">10.0.0.1</text>
+<text x="128" y="62" text-anchor="middle" fill="#0369a1" font-size="10">pod 10.244.0.1</text>
+<line x1="174" y1="44" x2="192" y2="44" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrgray)"/>
 
-<rect x="30" y="90" width="440" height="48" rx="6" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
-<text x="250" y="109" text-anchor="middle" fill="#7f1d1d" font-size="12" font-weight="bold">Inner IP + data (pod→pod)</text>
-<text x="250" y="128" text-anchor="middle" fill="#991b1b" font-size="11">src: 10.244.0.1 (pod A) → dst: 10.244.1.1 (pod B)</text>
+<!-- Packet IPIP: 2 couches emboîtées -->
+<rect x="195" y="12" width="500" height="64" rx="6" fill="#fecaca" stroke="#dc2626" stroke-width="2"/>
+<text x="445" y="29" text-anchor="middle" fill="#7f1d1d" font-size="11" font-weight="bold">IP outer — src 10.0.0.1 → dst 10.0.0.2 | protocol: 4 (IP-in-IP)</text>
+<rect x="207" y="34" width="476" height="35" rx="4" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
+<text x="445" y="50" text-anchor="middle" fill="#991b1b" font-size="11" font-weight="bold">IP inner — 10.244.0.1 (pod A) → 10.244.1.1 (pod B)</text>
+<text x="445" y="63" text-anchor="middle" fill="#b91c1c" font-size="10">payload</text>
+<line x1="697" y1="44" x2="715" y2="44" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrgray)"/>
 
-<!-- Firewall bloquant -->
-<rect x="100" y="155" width="300" height="42" rx="8" fill="#fca5a5" stroke="#dc2626" stroke-width="2.5"/>
-<text x="250" y="172" text-anchor="middle" fill="#7f1d1d" font-size="13" font-weight="bold">🔥 Security Group Exoscale</text>
-<text x="250" y="190" text-anchor="middle" fill="#7f1d1d" font-size="12">IP protocol 4 → DROP ❌</text>
+<!-- Firewall IPIP bloquant -->
+<rect x="718" y="12" width="148" height="64" rx="8" fill="#fca5a5" stroke="#dc2626" stroke-width="2.5"/>
+<text x="792" y="32" text-anchor="middle" fill="#7f1d1d" font-size="12" font-weight="bold">🔥 Security</text>
+<text x="792" y="48" text-anchor="middle" fill="#7f1d1d" font-size="12" font-weight="bold">Group</text>
+<text x="792" y="67" text-anchor="middle" fill="#dc2626" font-size="12" font-weight="bold">proto 4 → DROP</text>
+<line x1="868" y1="44" x2="882" y2="44" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5,3"/>
 
-<text x="250" y="225" text-anchor="middle" fill="#dc2626" font-size="12">calico-node reste 0/1 — tunnel ne s'établit pas</text>
-<text x="250" y="245" text-anchor="middle" fill="#9f1239" font-size="11" font-style="italic">proto 4 = encapsulation directe IP dans IP, rare,</text>
-<text x="250" y="262" text-anchor="middle" fill="#9f1239" font-size="11" font-style="italic">bloqué par défaut sur la plupart des clouds</text>
+<!-- Node B grisé -->
+<rect x="884" y="12" width="88" height="64" rx="8" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
+<text x="928" y="31" text-anchor="middle" fill="#9ca3af" font-size="13" font-weight="bold">Node B</text>
+<text x="928" y="47" text-anchor="middle" fill="#9ca3af" font-size="10">injoignable</text>
+<text x="928" y="63" text-anchor="middle" fill="#ef4444" font-size="11" font-weight="bold">calico 0/1 ✗</text>
 
-<!-- Séparateur -->
-<line x1="550" y1="30" x2="550" y2="275" stroke="#d1d5db" stroke-width="2" stroke-dasharray="6,4"/>
+<text x="540" y="93" text-anchor="middle" fill="#dc2626" font-size="11" font-style="italic">Security group bloque IP protocol 4 → tunnel Calico ne s'établit pas → calico-node reste 0/1</text>
 
-<!-- Titre VXLAN -->
-<text x="820" y="24" text-anchor="middle" fill="#16a34a" font-size="16" font-weight="bold">Mode VXLAN — ✅ fonctionne partout</text>
+<!-- ── SEPARATOR ── -->
+<line x1="20" y1="104" x2="1080" y2="104" stroke="#e5e7eb" stroke-width="1.5" stroke-dasharray="8,4"/>
 
-<!-- Paquet VXLAN -->
-<rect x="580" y="38" width="480" height="36" rx="6" fill="#bbf7d0" stroke="#16a34a" stroke-width="2"/>
-<text x="820" y="53" text-anchor="middle" fill="#14532d" font-size="12" font-weight="bold">Outer IP header</text>
-<text x="820" y="68" text-anchor="middle" fill="#15803d" font-size="11">src: 10.0.0.1 (node A) → dst: 10.0.0.2 (node B)</text>
+<!-- ── ROW 2 : VXLAN ── -->
+<text x="44" y="132" text-anchor="middle" fill="#16a34a" font-size="14" font-weight="bold">✅ VXLAN</text>
+<text x="44" y="148" text-anchor="middle" fill="#16a34a" font-size="11">UDP 4789</text>
 
-<rect x="580" y="78" width="480" height="28" rx="6" fill="#bbf7d0" stroke="#16a34a" stroke-width="1.5"/>
-<text x="820" y="97" text-anchor="middle" fill="#14532d" font-size="12" font-weight="bold">UDP header — port 4789</text>
+<!-- Node A -->
+<rect x="84" y="113" width="88" height="98" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="128" y="133" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Node A</text>
+<text x="128" y="150" text-anchor="middle" fill="#1d4ed8" font-size="10">10.0.0.1</text>
+<text x="128" y="166" text-anchor="middle" fill="#0369a1" font-size="10">pod 10.244.0.1</text>
+<line x1="174" y1="162" x2="192" y2="162" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrgray)"/>
 
-<rect x="580" y="110" width="480" height="28" rx="6" fill="#d1fae5" stroke="#22c55e" stroke-width="1.5"/>
-<text x="820" y="129" text-anchor="middle" fill="#14532d" font-size="11">VXLAN header (VNI)</text>
+<!-- Packet VXLAN: 4 couches emboîtées -->
+<rect x="195" y="113" width="500" height="98" rx="6" fill="#bbf7d0" stroke="#16a34a" stroke-width="2"/>
+<text x="445" y="129" text-anchor="middle" fill="#14532d" font-size="11" font-weight="bold">IP outer — src: 10.0.0.1 → dst: 10.0.0.2</text>
+<rect x="207" y="134" width="476" height="71" rx="4" fill="#d1fae5" stroke="#22c55e" stroke-width="1.5"/>
+<text x="445" y="149" text-anchor="middle" fill="#166534" font-size="11" font-weight="bold">UDP header — port: 4789</text>
+<rect x="219" y="154" width="452" height="45" rx="4" fill="#ecfdf5" stroke="#34d399" stroke-width="1.5"/>
+<text x="445" y="168" text-anchor="middle" fill="#166534" font-size="11">VXLAN header (VNI)</text>
+<rect x="231" y="172" width="428" height="22" rx="3" fill="#f0fdf4" stroke="#6ee7b7" stroke-width="1.5"/>
+<text x="445" y="187" text-anchor="middle" fill="#14532d" font-size="11">IP inner — 10.244.0.1 (pod A) → 10.244.1.1 (pod B) + payload</text>
+<line x1="697" y1="162" x2="715" y2="162" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrgray)"/>
 
-<rect x="580" y="142" width="480" height="36" rx="6" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
-<text x="820" y="157" text-anchor="middle" fill="#14532d" font-size="12" font-weight="bold">Inner IP + data (pod→pod)</text>
-<text x="820" y="172" text-anchor="middle" fill="#15803d" font-size="11">src: 10.244.0.1 (pod A) → dst: 10.244.1.1 (pod B)</text>
+<!-- Firewall VXLAN passant -->
+<rect x="718" y="113" width="148" height="98" rx="8" fill="#bbf7d0" stroke="#16a34a" stroke-width="2.5"/>
+<text x="792" y="148" text-anchor="middle" fill="#14532d" font-size="12" font-weight="bold">🔥 Security</text>
+<text x="792" y="165" text-anchor="middle" fill="#14532d" font-size="12" font-weight="bold">Group</text>
+<text x="792" y="194" text-anchor="middle" fill="#16a34a" font-size="12" font-weight="bold">UDP 4789 → ALLOW</text>
+<line x1="868" y1="162" x2="882" y2="162" stroke="#16a34a" stroke-width="2" marker-end="url(#arrgreen)"/>
 
-<!-- Firewall laissant passer -->
-<rect x="670" y="195" width="300" height="42" rx="8" fill="#bbf7d0" stroke="#16a34a" stroke-width="2.5"/>
-<text x="820" y="212" text-anchor="middle" fill="#14532d" font-size="13" font-weight="bold">🔥 Security Group Exoscale</text>
-<text x="820" y="230" text-anchor="middle" fill="#14532d" font-size="12">UDP 4789 → ALLOW ✅</text>
+<!-- Node B vert -->
+<rect x="884" y="113" width="88" height="98" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+<text x="928" y="133" text-anchor="middle" fill="#14532d" font-size="13" font-weight="bold">Node B</text>
+<text x="928" y="150" text-anchor="middle" fill="#166534" font-size="10">10.0.0.2</text>
+<text x="928" y="166" text-anchor="middle" fill="#0369a1" font-size="10">pod 10.244.1.1</text>
+<text x="928" y="200" text-anchor="middle" fill="#16a34a" font-size="12" font-weight="bold">calico 1/1 ✓</text>
 
-<text x="820" y="262" text-anchor="middle" fill="#15803d" font-size="12">UDP est standard — autorisé par défaut</text>
+<text x="540" y="226" text-anchor="middle" fill="#16a34a" font-size="11" font-style="italic">UDP est autorisé par défaut → tunnel VXLAN établi → calico-node passe Ready 1/1</text>
 </svg>
 
 ```bash
-# Si calico-node restent 0/1 après installation — patch manuel :
+# Patch manuel si calico-node restent 0/1 (IPIP installé sans VXLAN) :
 kubectl patch ippools default-ipv4-ippool --type=merge \
   -p '{"spec": {"ipipMode": "Never", "vxlanMode": "Always"}}'
 kubectl rollout restart daemonset/calico-node -n kube-system

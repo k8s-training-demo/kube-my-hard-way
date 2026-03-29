@@ -18,21 +18,40 @@ trap cleanup ERR
 echo "=== Uncordon des nœuds et validation ==="
 echo ""
 
-# ─── Étape 0 : vérifier le mode encapsulation Calico ───────────────────────
+# ─── Étape 0 : vérifier le mode encapsulation Calico (backend + IPPool) ────
 echo "0. Vérification du mode encapsulation Calico..."
+NEEDS_FIX=false
+
+# a) Vérifier le backend ConfigMap (bird → BIRD/BGP démarré, vxlan → VXLAN pur)
+BACKEND=$(kubectl get cm calico-config -n kube-system -o jsonpath='{.data.calico_backend}' 2>/dev/null || echo "")
+if [[ "$BACKEND" != "vxlan" ]]; then
+    echo "   ⚠️  Backend Calico = '$BACKEND' (BIRD/BGP) — passage en 'vxlan'..."
+    kubectl patch cm calico-config -n kube-system --type=merge \
+        -p '{"data":{"calico_backend":"vxlan"}}'
+    echo "   ✓ Backend changé → vxlan (BIRD ne démarrera plus)"
+    NEEDS_FIX=true
+fi
+
+# b) Vérifier l'IPPool (ipipMode/vxlanMode)
 IPIP_MODE=$(kubectl get ippools default-ipv4-ippool -o jsonpath='{.spec.ipipMode}' 2>/dev/null || echo "")
 VXLAN_MODE=$(kubectl get ippools default-ipv4-ippool -o jsonpath='{.spec.vxlanMode}' 2>/dev/null || echo "")
 
 if [[ "$IPIP_MODE" == "Always" ]] || [[ "$VXLAN_MODE" != "Always" ]]; then
-    echo "   ⚠️  Calico en mode IPIP (bloqué sur Exoscale/cloud) — passage en VXLAN..."
+    echo "   ⚠️  IPPool : ipipMode=$IPIP_MODE, vxlanMode=$VXLAN_MODE — correction..."
     kubectl patch ippools default-ipv4-ippool --type=merge \
         -p '{"spec": {"ipipMode": "Never", "vxlanMode": "Always"}}'
+    echo "   ✓ IPPool corrigé → VXLAN Always"
+    NEEDS_FIX=true
+fi
+
+# c) Redémarrer si des corrections ont été appliquées
+if [[ "$NEEDS_FIX" == "true" ]]; then
     kubectl rollout restart daemonset/calico-node -n kube-system
     echo "   Attente du redémarrage des calico-node..."
-    kubectl rollout status daemonset/calico-node -n kube-system --timeout=120s
+    kubectl rollout status daemonset/calico-node -n kube-system --timeout=180s
     echo "   ✓ Mode VXLAN activé"
 else
-    echo "   ✓ Calico déjà en mode VXLAN"
+    echo "   ✓ Calico déjà en mode VXLAN complet (backend + IPPool)"
 fi
 echo ""
 # ───────────────────────────────────────────────────────────────────────────

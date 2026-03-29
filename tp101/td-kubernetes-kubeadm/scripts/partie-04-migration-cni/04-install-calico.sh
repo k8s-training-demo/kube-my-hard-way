@@ -83,30 +83,44 @@ echo ""
 echo "3. Configuration du mode réseau (VXLAN pour Exoscale/cloud providers):"
 
 # Sur Exoscale et la plupart des cloud providers, IPIP (IP protocol 4) est bloqué
-# par les security groups. On force VXLAN dès le départ dans le manifest.
-echo "   Passage en mode VXLAN (compatibilité cloud — IPIP bloqué sur Exoscale)..."
-# Désactiver IPIP dans les variables d'environnement du DaemonSet calico-node
+# par les security groups. BGP peering échoue aussi sans connectivité directe.
+# On force VXLAN dès le départ dans le manifest : backend + env vars.
+echo "   Passage en mode VXLAN (compatibilité cloud — IPIP/BGP bloqué sur Exoscale)..."
+
+# a) Changer le backend de "bird" (BGP) à "vxlan" dans le ConfigMap calico-config
+#    Sans ceci, BIRD démarre et la readiness probe échoue ("BGP not established")
+sed -i 's/calico_backend: "bird"/calico_backend: "vxlan"/' calico.yaml
+echo "   ✓ Backend changé : bird → vxlan (BIRD ne démarrera pas)"
+
+# b) Désactiver IPIP dans les variables d'environnement du DaemonSet calico-node
 sed -i 's/value: "Always"$/value: "Never"/' calico.yaml
-# Activer VXLAN en ajoutant la variable après CALICO_IPV4POOL_IPIP
+
+# c) Activer VXLAN env var + retirer BIRD des probes liveness/readiness
+#    En mode VXLAN, BIRD ne démarre pas → les probes -bird-live/-bird-ready échouent toujours
 python3 - <<'PYEOF'
-import re, sys
+import re
 
 with open('calico.yaml', 'r') as f:
     content = f.read()
 
-# Vérifier si CALICO_IPV4POOL_VXLAN est déjà présent
+# Ajouter CALICO_IPV4POOL_VXLAN=Always si absent
 if 'CALICO_IPV4POOL_VXLAN' not in content:
-    # Insérer CALICO_IPV4POOL_VXLAN: Always après CALICO_IPV4POOL_IPIP block
     content = re.sub(
         r'(name: CALICO_IPV4POOL_IPIP\n\s+value: "Never")',
         r'\1\n            - name: CALICO_IPV4POOL_VXLAN\n              value: "Always"',
         content
     )
-    with open('calico.yaml', 'w') as f:
-        f.write(content)
-    print("   ✓ VXLAN activé dans le manifest")
+    print("   ✓ CALICO_IPV4POOL_VXLAN=Always ajouté")
 else:
-    print("   ✓ VXLAN déjà configuré dans le manifest")
+    print("   ✓ CALICO_IPV4POOL_VXLAN déjà configuré")
+
+# Retirer -bird-live et -bird-ready des probes (BIRD ne tourne pas en VXLAN)
+content = content.replace('-felix-live\n              - -bird-live', '-felix-live')
+content = content.replace('-felix-ready\n              - -bird-ready', '-felix-ready')
+print("   ✓ Probes BIRD retirées (felix-only)")
+
+with open('calico.yaml', 'w') as f:
+    f.write(content)
 PYEOF
 echo ""
 
