@@ -2,7 +2,7 @@
 
 # 🚢 Kubernetes — My Hard Way
 
-**Hands-on kubeadm lab from scratch** — CentOS Stream 10 — 12 modules + HA Bonus
+**Hands-on kubeadm lab from scratch** — CentOS Stream 10 — 13 modules
 
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-1.34_→_1.35-326CE5?style=flat-square&logo=kubernetes&logoColor=white)](https://kubernetes.io)
 [![OS](https://img.shields.io/badge/CentOS_Stream_10-EE0000?style=flat-square&logo=redhat&logoColor=white)](https://centos.org)
@@ -18,7 +18,7 @@ A practical lab covering **the full lifecycle of a Kubernetes cluster** built by
 
 | | |
 |---|---|
-| **Total duration** | ~5h (modules 2–12 + Bonus) |
+| **Total duration** | ~5h30 (modules 2–12 + HA) |
 | **Level** | Advanced |
 | **Target OS** | CentOS Stream 10 |
 | **Infrastructure** | 3 VMs — DigitalOcean or Exoscale |
@@ -38,11 +38,11 @@ A practical lab covering **the full lifecycle of a Kubernetes cluster** built by
 | [6 — Drain & Maintenance](#module-6--drain--maintenance) | PDB · DaemonSets · node failure simulation | 20 min |
 | [7 — Cluster Upgrade](#module-7--cluster-upgrade) | 1.34 → 1.35 · mandatory upgrade order | 25 min |
 | [8 — RuntimeClass & gVisor](#module-8--runtimeclass--gvisor) | sandbox isolation · KVM · containerd shims | 25 min |
+| [HA — Multi-Master Control Plane](#ha--multi-master-control-plane) | 3 masters · etcd quorum · worker promotion | 30 min |
 | [9 — cgroups](#module-9--cgroups) | v2 · QoS classes · kernel memory management | 20 min |
 | [10 — Public vs Private Networking](#module-10--public-vs-private-networking) | architecture · DIY load balancer · Exoscale | 10 min |
 | [11 — SKS Exoscale](#module-11--sks-exoscale) | managed Kubernetes vs kubeadm | 15 min |
 | [12 — kube-prometheus-stack](#module-12--kube-prometheus-stack) | Grafana · Prometheus · pre-built alerts | 30 min |
-| [Bonus — HA Control Plane](#bonus--ha-control-plane) | 3 masters · etcd quorum · worker promotion | 30 min |
 
 ---
 
@@ -143,6 +143,32 @@ Run untrusted workloads with stronger isolation using a second container runtime
 
 ---
 
+## HA — Multi-Master Control Plane
+
+Transform the existing `1 master + 2 workers` topology into **3 nodes each running the full control plane stack** — API server, scheduler, controller-manager, etcd, and kubelet.
+
+This is not a production recommendation (no real load balancer in front of the API servers), but it demonstrates the mechanics of multi-master Kubernetes and etcd quorum.
+
+**What changes:**
+- etcd goes from 1 member to 3 — the cluster now tolerates losing 1 node
+- All 3 nodes run `kube-apiserver`, `kube-scheduler`, `kube-controller-manager`
+- The `NoSchedule` taint is removed so application pods schedule on all nodes
+
+**Key constraint:** `--control-plane-endpoint` must be set at `kubeadm init` time. Without it the API server certificate only covers the original master's IP and adding further control planes requires a full cluster reset.
+
+**Scripts:** `scripts/partie-bonus-ha/`
+
+| Step | Script | Node |
+|------|--------|------|
+| 1 | `00-reinit-master.sh` | master |
+| 2 | `scp /tmp/ha-join-info.sh` | master → each worker |
+| 3 | `01-promote-worker.sh` | worker1 |
+| 4 | `01-promote-worker.sh` | worker2 |
+| 5 | `02-allow-scheduling.sh` | master |
+| 6 | `03-validate-ha.sh` | master |
+
+---
+
 ## Module 9 — cgroups
 
 Understand how Kubernetes resource limits actually work at the kernel level.
@@ -190,34 +216,6 @@ Deploy a full observability stack on the cluster using Helm.
 - ~150 pre-configured alert rules
 
 **Scripts:** `scripts/partie12-prometheus/`
-
----
-
-## Bonus — HA Control Plane
-
-> Last exercise before cluster teardown.
-
-Transform the existing `1 master + 2 workers` topology into **3 nodes each running the full control plane stack** — API server, scheduler, controller-manager, etcd, and kubelet.
-
-This is not a production recommendation (no real load balancer in front of the API servers), but it demonstrates the mechanics of multi-master Kubernetes and etcd quorum.
-
-**What changes:**
-- etcd goes from 1 member to 3 — the cluster now tolerates losing 1 node
-- All 3 nodes run `kube-apiserver`, `kube-scheduler`, `kube-controller-manager`
-- The `NoSchedule` taint is removed so application pods schedule on all nodes
-
-**Key constraint:** `--control-plane-endpoint` must be set at `kubeadm init` time. Without it the API server certificate only covers the original master's IP and adding further control planes requires a full cluster reset.
-
-**Scripts:** `scripts/partie-bonus-ha/`
-
-| Step | Script | Node |
-|------|--------|------|
-| 1 | `00-reinit-master.sh` | master |
-| 2 | `scp /tmp/ha-join-info.sh` | master → each worker |
-| 3 | `01-promote-worker.sh` | worker1 |
-| 4 | `01-promote-worker.sh` | worker2 |
-| 5 | `02-allow-scheduling.sh` | master |
-| 6 | `03-validate-ha.sh` | master |
 
 ---
 
