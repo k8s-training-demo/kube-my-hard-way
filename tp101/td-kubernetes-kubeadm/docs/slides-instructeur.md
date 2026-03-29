@@ -3227,13 +3227,12 @@ cd ../../validation && ./validate-partie.sh 6
 - CVE kernel = **tous les containers exposés**
 - Attaque kernel: escalade de privilèges possible
 
-<svg width="760" height="185" viewBox="0 0 760 185" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+<svg width="760" height="185" viewBox="0 0 760 185" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" font-family="sans-serif">
 <defs>
 <marker id="p8a1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6b7280"/></marker>
 <marker id="p8a2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#ef4444"/></marker>
 <marker id="p8a3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16a34a"/></marker>
 </defs>
-<style>text{font-family:sans-serif;font-size:13px}</style>
 <text x="150" y="16" text-anchor="middle" font-size="14" font-weight="bold" fill="#dc2626">runc (défaut)</text>
 <rect x="15" y="24" width="120" height="40" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="75" y="49" text-anchor="middle" fill="#1d4ed8" font-weight="bold">Container A</text>
@@ -3277,9 +3276,8 @@ cd ../../validation && ./validate-partie.sh 6
 - ~70% des syscalls Linux implémentés
 - Composant clé: **Sentry** (kernel en Go/userspace)
 
-<svg width="740" height="80" viewBox="0 0 740 80" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+<svg width="740" height="80" viewBox="0 0 740 80" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" font-family="sans-serif">
 <defs><marker id="p8a4" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6b7280"/></marker></defs>
-<style>text{font-family:sans-serif;font-size:13px}</style>
 <rect x="5" y="20" width="80" height="38" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="45" y="44" text-anchor="middle" fill="#1d4ed8" font-weight="bold">App</text>
 <line x1="85" y1="39" x2="148" y2="39" stroke="#6b7280" stroke-width="1.5" marker-end="url(#p8a4)"/>
@@ -3373,9 +3371,8 @@ cd scripts/partie-07-runtimeclass
 
 ## RuntimeClass — Le lien K8s ↔ containerd
 
-<svg width="740" height="68" viewBox="0 0 740 68" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+<svg width="740" height="68" viewBox="0 0 740 68" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" font-family="sans-serif">
 <defs><marker id="p8a5" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6b7280"/></marker></defs>
-<style>text{font-family:sans-serif;font-size:12px}</style>
 <rect x="5" y="13" width="155" height="42" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
 <text x="82" y="31" text-anchor="middle" fill="#5b21b6" font-weight="bold">Pod spec</text>
 <text x="82" y="47" text-anchor="middle" fill="#5b21b6" font-size="11">runtimeClassName: gvisor</text>
@@ -3836,8 +3833,7 @@ kubeadm join <lb>:6443 --token ... --control-plane --certificate-key <key>
 
 ## Architecture sans réseau privé — les risques
 
-<svg width="1100" height="300" viewBox="0 0 880 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
-<style>text{font-family:sans-serif}</style>
+<svg width="1100" height="300" viewBox="0 0 880 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" font-family="sans-serif">
 
 <!-- Master node -->
 <rect x="10" y="15" width="260" height="140" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
@@ -3888,8 +3884,7 @@ kubeadm join <lb>:6443 --token ... --control-plane --certificate-key <key>
 
 ## Architecture avec réseau privé — isolation
 
-<svg width="1100" height="300" viewBox="0 0 880 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
-<style>text{font-family:sans-serif}</style>
+<svg width="1100" height="300" viewBox="0 0 880 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" font-family="sans-serif">
 
 <!-- Master node -->
 <rect x="10" y="15" width="260" height="140" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
@@ -3953,8 +3948,7 @@ kubeadm join <lb>:6443 --token ... --control-plane --certificate-key <key>
 
 ## Un LB DIY — ce que ça implique vraiment
 
-<svg width="1100" height="320" viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
-<style>text{font-family:sans-serif}</style>
+<svg width="1100" height="320" viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" font-family="sans-serif">
 
 <!-- VIP flottante (au-dessus de LB-2) -->
 <rect x="340" y="8" width="220" height="36" rx="8" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
@@ -4012,8 +4006,7 @@ kubeadm join <lb>:6443 --token ... --control-plane --certificate-key <key>
 
 ## Dream architecture — security groups dédiés
 
-<svg width="1100" height="373" viewBox="0 0 900 305" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
-<style>text{font-family:sans-serif}</style>
+<svg width="1100" height="373" viewBox="0 0 900 305" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" font-family="sans-serif">
 
 <!-- Internet -->
 <rect x="300" y="5" width="300" height="28" rx="7" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
@@ -4093,13 +4086,12 @@ kubeadm join <lb>:6443 --token ... --control-plane --certificate-key <key>
 
 ## NLB Exoscale — filtrage IP (defense in depth)
 
-<svg width="1100" height="376" viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+<svg width="1100" height="376" viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" font-family="sans-serif">
 <defs>
   <marker id="fa" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16a34a"/></marker>
   <marker id="ra" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#dc2626"/></marker>
   <marker id="oa" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#d97706"/></marker>
 </defs>
-<style>text{font-family:sans-serif}</style>
 
 <!-- Source autorisée (VPN) -->
 <rect x="30" y="8" width="155" height="38" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
@@ -4192,13 +4184,12 @@ kubectl get svc mon-app
 
 ## LoadBalancer apps — 3 approches
 
-<svg width="1100" height="376" viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+<svg width="1100" height="376" viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" font-family="sans-serif">
 <defs>
   <marker id="lba" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6b7280"/></marker>
   <marker id="lbg" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16a34a"/></marker>
   <marker id="lbo" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#d97706"/></marker>
 </defs>
-<style>text{font-family:sans-serif}</style>
 
 <!-- Titres colonnes -->
 <text x="127" y="16" text-anchor="middle" fill="#374151" font-weight="bold" font-size="11">① MetalLB (kubeadm)</text>
@@ -4455,8 +4446,7 @@ SKS ne permet pas de joindre des nœuds extérieurs à son control plane :
 
 ## Architecture kube-prometheus-stack
 
-<svg width="1100" height="290" viewBox="0 0 900 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
-<style>text{font-family:sans-serif}</style>
+<svg width="1100" height="290" viewBox="0 0 900 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" font-family="sans-serif">
 
 <!-- Sources de métriques (colonne gauche) -->
 <rect x="10" y="10" width="230" height="220" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5,3"/>
