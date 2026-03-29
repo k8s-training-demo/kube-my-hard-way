@@ -2449,56 +2449,37 @@ pre { font-size: 13px; margin-top: 6px; }
   <marker id="arrgray" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6b7280"/></marker>
   <marker id="arrgreen" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#16a34a"/></marker>
 </defs>
-
-<!-- ── ROW 1 : IPIP ── -->
 <text x="44" y="34" text-anchor="middle" fill="#dc2626" font-size="14" font-weight="bold">❌ IPIP</text>
 <text x="44" y="50" text-anchor="middle" fill="#dc2626" font-size="11">IP proto 4</text>
-
-<!-- Node A -->
 <rect x="84" y="12" width="88" height="64" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="128" y="31" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Node A</text>
 <text x="128" y="47" text-anchor="middle" fill="#1d4ed8" font-size="10">10.0.0.1</text>
 <text x="128" y="62" text-anchor="middle" fill="#0369a1" font-size="10">pod 10.244.0.1</text>
 <line x1="174" y1="44" x2="192" y2="44" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrgray)"/>
-
-<!-- Packet IPIP: 2 couches emboîtées -->
 <rect x="195" y="12" width="500" height="64" rx="6" fill="#fecaca" stroke="#dc2626" stroke-width="2"/>
 <text x="445" y="29" text-anchor="middle" fill="#7f1d1d" font-size="11" font-weight="bold">IP outer — src 10.0.0.1 → dst 10.0.0.2 | protocol: 4 (IP-in-IP)</text>
 <rect x="207" y="34" width="476" height="35" rx="4" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
 <text x="445" y="50" text-anchor="middle" fill="#991b1b" font-size="11" font-weight="bold">IP inner — 10.244.0.1 (pod A) → 10.244.1.1 (pod B)</text>
 <text x="445" y="63" text-anchor="middle" fill="#b91c1c" font-size="10">payload</text>
 <line x1="697" y1="44" x2="715" y2="44" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrgray)"/>
-
-<!-- Firewall IPIP bloquant -->
 <rect x="718" y="12" width="148" height="64" rx="8" fill="#fca5a5" stroke="#dc2626" stroke-width="2.5"/>
 <text x="792" y="32" text-anchor="middle" fill="#7f1d1d" font-size="12" font-weight="bold">🔥 Security</text>
 <text x="792" y="48" text-anchor="middle" fill="#7f1d1d" font-size="12" font-weight="bold">Group</text>
 <text x="792" y="67" text-anchor="middle" fill="#dc2626" font-size="12" font-weight="bold">proto 4 → DROP</text>
 <line x1="868" y1="44" x2="882" y2="44" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5,3"/>
-
-<!-- Node B grisé -->
 <rect x="884" y="12" width="88" height="64" rx="8" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
 <text x="928" y="31" text-anchor="middle" fill="#9ca3af" font-size="13" font-weight="bold">Node B</text>
 <text x="928" y="47" text-anchor="middle" fill="#9ca3af" font-size="10">injoignable</text>
 <text x="928" y="63" text-anchor="middle" fill="#ef4444" font-size="11" font-weight="bold">calico 0/1 ✗</text>
-
 <text x="540" y="93" text-anchor="middle" fill="#dc2626" font-size="11" font-style="italic">Security group bloque IP protocol 4 → tunnel Calico ne s'établit pas → calico-node reste 0/1</text>
-
-<!-- ── SEPARATOR ── -->
 <line x1="20" y1="104" x2="1080" y2="104" stroke="#e5e7eb" stroke-width="1.5" stroke-dasharray="8,4"/>
-
-<!-- ── ROW 2 : VXLAN ── -->
 <text x="44" y="132" text-anchor="middle" fill="#16a34a" font-size="14" font-weight="bold">✅ VXLAN</text>
 <text x="44" y="148" text-anchor="middle" fill="#16a34a" font-size="11">UDP 4789</text>
-
-<!-- Node A -->
 <rect x="84" y="113" width="88" height="98" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="128" y="133" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Node A</text>
 <text x="128" y="150" text-anchor="middle" fill="#1d4ed8" font-size="10">10.0.0.1</text>
 <text x="128" y="166" text-anchor="middle" fill="#0369a1" font-size="10">pod 10.244.0.1</text>
 <line x1="174" y1="162" x2="192" y2="162" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrgray)"/>
-
-<!-- Packet VXLAN: 4 couches emboîtées -->
 <rect x="195" y="113" width="500" height="98" rx="6" fill="#bbf7d0" stroke="#16a34a" stroke-width="2"/>
 <text x="445" y="129" text-anchor="middle" fill="#14532d" font-size="11" font-weight="bold">IP outer — src: 10.0.0.1 → dst: 10.0.0.2</text>
 <rect x="207" y="134" width="476" height="71" rx="4" fill="#d1fae5" stroke="#22c55e" stroke-width="1.5"/>
@@ -2508,21 +2489,16 @@ pre { font-size: 13px; margin-top: 6px; }
 <rect x="231" y="172" width="428" height="22" rx="3" fill="#f0fdf4" stroke="#6ee7b7" stroke-width="1.5"/>
 <text x="445" y="187" text-anchor="middle" fill="#14532d" font-size="11">IP inner — 10.244.0.1 (pod A) → 10.244.1.1 (pod B) + payload</text>
 <line x1="697" y1="162" x2="715" y2="162" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrgray)"/>
-
-<!-- Firewall VXLAN passant -->
 <rect x="718" y="113" width="148" height="98" rx="8" fill="#bbf7d0" stroke="#16a34a" stroke-width="2.5"/>
 <text x="792" y="148" text-anchor="middle" fill="#14532d" font-size="12" font-weight="bold">🔥 Security</text>
 <text x="792" y="165" text-anchor="middle" fill="#14532d" font-size="12" font-weight="bold">Group</text>
 <text x="792" y="194" text-anchor="middle" fill="#16a34a" font-size="12" font-weight="bold">UDP 4789 → ALLOW</text>
 <line x1="868" y1="162" x2="882" y2="162" stroke="#16a34a" stroke-width="2" marker-end="url(#arrgreen)"/>
-
-<!-- Node B vert -->
 <rect x="884" y="113" width="88" height="98" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
 <text x="928" y="133" text-anchor="middle" fill="#14532d" font-size="13" font-weight="bold">Node B</text>
 <text x="928" y="150" text-anchor="middle" fill="#166534" font-size="10">10.0.0.2</text>
 <text x="928" y="166" text-anchor="middle" fill="#0369a1" font-size="10">pod 10.244.1.1</text>
 <text x="928" y="200" text-anchor="middle" fill="#16a34a" font-size="12" font-weight="bold">calico 1/1 ✓</text>
-
 <text x="540" y="226" text-anchor="middle" fill="#16a34a" font-size="11" font-style="italic">UDP est autorisé par défaut → tunnel VXLAN établi → calico-node passe Ready 1/1</text>
 </svg>
 
@@ -3834,43 +3810,31 @@ kubeadm join <lb>:6443 --token ... --control-plane --certificate-key <key>
 ## Architecture sans réseau privé — les risques
 
 <svg width="1100" height="300" viewBox="0 0 880 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" font-family="sans-serif">
-
-<!-- Master node -->
 <rect x="10" y="15" width="260" height="140" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
 <text x="140" y="38" text-anchor="middle" fill="#1e40af" font-size="15" font-weight="bold">Master</text>
 <text x="140" y="57" text-anchor="middle" fill="#dc2626" font-size="12">185.42.17.3 (IP publique)</text>
-<!-- API + etcd côte à côte -->
 <rect x="20" y="68" width="100" height="28" rx="5" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="70" y="87" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">API :6443</text>
 <text x="130" y="88" text-anchor="middle" fill="#16a34a" font-size="18">↔</text>
 <rect x="140" y="68" width="118" height="28" rx="5" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="199" y="87" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">etcd :2379</text>
-<!-- Crochet + label loopback -->
 <line x1="20" y1="100" x2="258" y2="100" stroke="#16a34a" stroke-width="1.5"/>
 <line x1="20" y1="96" x2="20" y2="100" stroke="#16a34a" stroke-width="1.5"/>
 <line x1="258" y1="96" x2="258" y2="100" stroke="#16a34a" stroke-width="1.5"/>
 <text x="139" y="117" text-anchor="middle" fill="#15803d" font-size="12">loopback 127.0.0.1 ✓  —  reste local au master</text>
-
-<!-- Worker 1 -->
 <rect x="305" y="15" width="185" height="115" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
 <text x="397" y="42" text-anchor="middle" fill="#1e40af" font-size="15" font-weight="bold">Worker 1</text>
 <text x="397" y="61" text-anchor="middle" fill="#dc2626" font-size="13">185.42.17.8 (pub)</text>
 <text x="397" y="83" text-anchor="middle" fill="#6b7280" font-size="13">kubelet</text>
 <text x="397" y="103" text-anchor="middle" fill="#6b7280" font-size="13">pods / CNI</text>
-
-<!-- Worker 2 -->
 <rect x="520" y="15" width="185" height="115" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
 <text x="612" y="42" text-anchor="middle" fill="#1e40af" font-size="15" font-weight="bold">Worker 2</text>
 <text x="612" y="61" text-anchor="middle" fill="#dc2626" font-size="13">185.42.17.15 (pub)</text>
 <text x="612" y="83" text-anchor="middle" fill="#6b7280" font-size="13">kubelet</text>
 <text x="612" y="103" text-anchor="middle" fill="#6b7280" font-size="13">pods / CNI</text>
-
-<!-- Lignes de connexion vers le bus -->
 <line x1="140" y1="155" x2="140" y2="175" stroke="#ef4444" stroke-width="2"/>
 <line x1="397" y1="130" x2="397" y2="175" stroke="#ef4444" stroke-width="2"/>
 <line x1="612" y1="130" x2="612" y2="175" stroke="#ef4444" stroke-width="2"/>
-
-<!-- Bus IP publique rouge -->
 <rect x="10" y="175" width="720" height="58" rx="8" fill="#fee2e2" stroke="#ef4444" stroke-width="2.5"/>
 <text x="370" y="199" text-anchor="middle" fill="#dc2626" font-size="14" font-weight="bold">⚠ Bus IP publique — kubelet→API  et  CNI pod-to-pod</text>
 <text x="370" y="220" text-anchor="middle" fill="#b91c1c" font-size="12">trafic inter-nœuds exposé sur internet · ports 6443 + 10250 accessibles</text>
@@ -3885,44 +3849,32 @@ kubeadm join <lb>:6443 --token ... --control-plane --certificate-key <key>
 ## Architecture avec réseau privé — isolation
 
 <svg width="1100" height="300" viewBox="0 0 880 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" font-family="sans-serif">
-
-<!-- Master node -->
 <rect x="10" y="15" width="260" height="140" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
 <text x="140" y="38" text-anchor="middle" fill="#1e40af" font-size="15" font-weight="bold">Master</text>
 <text x="140" y="54" text-anchor="middle" fill="#6b7280" font-size="11">pub: 185.42.17.3</text>
 <text x="140" y="68" text-anchor="middle" fill="#15803d" font-size="11">priv: 10.0.0.1</text>
-<!-- API + etcd côte à côte -->
 <rect x="20" y="78" width="100" height="28" rx="5" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="70" y="97" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">API :6443</text>
 <text x="130" y="98" text-anchor="middle" fill="#16a34a" font-size="18">↔</text>
 <rect x="140" y="78" width="118" height="28" rx="5" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="199" y="97" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">etcd :2379</text>
-<!-- Crochet + label loopback -->
 <line x1="20" y1="110" x2="258" y2="110" stroke="#16a34a" stroke-width="1.5"/>
 <line x1="20" y1="106" x2="20" y2="110" stroke="#16a34a" stroke-width="1.5"/>
 <line x1="258" y1="106" x2="258" y2="110" stroke="#16a34a" stroke-width="1.5"/>
 <text x="139" y="127" text-anchor="middle" fill="#15803d" font-size="12">loopback 127.0.0.1 ✓  —  reste local au master</text>
-
-<!-- Worker 1 -->
 <rect x="305" y="15" width="185" height="115" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
 <text x="397" y="42" text-anchor="middle" fill="#1e40af" font-size="15" font-weight="bold">Worker 1</text>
 <text x="397" y="61" text-anchor="middle" fill="#15803d" font-size="13">priv: 10.0.0.2</text>
 <text x="397" y="83" text-anchor="middle" fill="#6b7280" font-size="13">kubelet</text>
 <text x="397" y="103" text-anchor="middle" fill="#6b7280" font-size="13">pods / CNI</text>
-
-<!-- Worker 2 -->
 <rect x="520" y="15" width="185" height="115" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
 <text x="612" y="42" text-anchor="middle" fill="#1e40af" font-size="15" font-weight="bold">Worker 2</text>
 <text x="612" y="61" text-anchor="middle" fill="#15803d" font-size="13">priv: 10.0.0.3</text>
 <text x="612" y="83" text-anchor="middle" fill="#6b7280" font-size="13">kubelet</text>
 <text x="612" y="103" text-anchor="middle" fill="#6b7280" font-size="13">pods / CNI</text>
-
-<!-- Lignes de connexion vers le bus -->
 <line x1="140" y1="155" x2="140" y2="175" stroke="#16a34a" stroke-width="2"/>
 <line x1="397" y1="130" x2="397" y2="175" stroke="#16a34a" stroke-width="2"/>
 <line x1="612" y1="130" x2="612" y2="175" stroke="#16a34a" stroke-width="2"/>
-
-<!-- Bus réseau privé vert -->
 <rect x="10" y="175" width="720" height="58" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2.5"/>
 <text x="370" y="199" text-anchor="middle" fill="#15803d" font-size="14" font-weight="bold">✓ Bus réseau privé 10.0.0.0/24 — kubelet→API  et  CNI pod-to-pod</text>
 <text x="370" y="220" text-anchor="middle" fill="#166534" font-size="12">non routable depuis internet · IP publique = SSH uniquement</text>
@@ -3949,17 +3901,11 @@ kubeadm join <lb>:6443 --token ... --control-plane --certificate-key <key>
 ## Un LB DIY — ce que ça implique vraiment
 
 <svg width="1100" height="320" viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" font-family="sans-serif">
-
-<!-- VIP flottante (au-dessus de LB-2) -->
 <rect x="340" y="8" width="220" height="36" rx="8" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
 <text x="450" y="31" text-anchor="middle" fill="#92400e" font-size="14" font-weight="bold">VIP  185.42.17.100  (Keepalived)</text>
-
-<!-- Lignes VIP → LB nodes (pas de croisement) -->
 <line x1="400" y1="44" x2="144" y2="65" stroke="#d97706" stroke-width="1.5"/>
 <line x1="450" y1="44" x2="450" y2="65" stroke="#d97706" stroke-width="1.5"/>
 <line x1="500" y1="44" x2="756" y2="65" stroke="#d97706" stroke-width="1.5"/>
-
-<!-- LB-1 MASTER -->
 <rect x="10" y="65" width="268" height="155" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
 <text x="144" y="89" text-anchor="middle" fill="#1e40af" font-size="15" font-weight="bold">Node LB-1</text>
 <text x="144" y="107" text-anchor="middle" fill="#1e40af" font-size="13">MASTER</text>
@@ -3968,8 +3914,6 @@ kubeadm join <lb>:6443 --token ... --control-plane --certificate-key <key>
 <text x="144" y="152" text-anchor="middle" fill="#374151" font-size="13">Keepalived VRRP MASTER</text>
 <text x="144" y="174" text-anchor="middle" fill="#15803d" font-size="13" font-weight="bold">★ détient la VIP</text>
 <text x="144" y="193" text-anchor="middle" fill="#15803d" font-size="12">trafic entrant actif</text>
-
-<!-- LB-2 BACKUP -->
 <rect x="316" y="65" width="268" height="155" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
 <text x="450" y="89" text-anchor="middle" fill="#475569" font-size="15" font-weight="bold">Node LB-2</text>
 <text x="450" y="107" text-anchor="middle" fill="#475569" font-size="13">BACKUP</text>
@@ -3978,8 +3922,6 @@ kubeadm join <lb>:6443 --token ... --control-plane --certificate-key <key>
 <text x="450" y="152" text-anchor="middle" fill="#64748b" font-size="13">Keepalived VRRP BACKUP</text>
 <text x="450" y="174" text-anchor="middle" fill="#6b7280" font-size="12">prêt à reprendre la VIP</text>
 <text x="450" y="193" text-anchor="middle" fill="#6b7280" font-size="12">si LB-1 tombe</text>
-
-<!-- LB-3 BACKUP -->
 <rect x="622" y="65" width="268" height="155" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
 <text x="756" y="89" text-anchor="middle" fill="#475569" font-size="15" font-weight="bold">Node LB-3</text>
 <text x="756" y="107" text-anchor="middle" fill="#475569" font-size="13">BACKUP</text>
@@ -3988,14 +3930,10 @@ kubeadm join <lb>:6443 --token ... --control-plane --certificate-key <key>
 <text x="756" y="152" text-anchor="middle" fill="#64748b" font-size="13">Keepalived VRRP BACKUP</text>
 <text x="756" y="174" text-anchor="middle" fill="#6b7280" font-size="12">prêt à reprendre la VIP</text>
 <text x="756" y="193" text-anchor="middle" fill="#6b7280" font-size="12">si LB-1 tombe</text>
-
-<!-- VRRP heartbeat (dans les gaps entre boîtes) -->
 <line x1="278" y1="148" x2="316" y2="148" stroke="#d97706" stroke-width="2" stroke-dasharray="4,2"/>
 <text x="297" y="141" text-anchor="middle" fill="#d97706" font-size="12">VRRP</text>
 <line x1="584" y1="148" x2="622" y2="148" stroke="#d97706" stroke-width="2" stroke-dasharray="4,2"/>
 <text x="603" y="141" text-anchor="middle" fill="#d97706" font-size="12">VRRP</text>
-
-<!-- Callout bilan -->
 <rect x="10" y="230" width="880" height="26" rx="6" fill="#fff7ed" stroke="#f97316" stroke-width="1.5"/>
 <text x="450" y="247" text-anchor="middle" fill="#c2410c" font-size="12">⚠ 3 VMs supplémentaires · config HAProxy + Keepalived · monitoring VRRP · failover régulièrement testé</text>
 </svg>
@@ -4007,72 +3945,42 @@ kubeadm join <lb>:6443 --token ... --control-plane --certificate-key <key>
 ## Dream architecture — security groups dédiés
 
 <svg width="1100" height="373" viewBox="0 0 900 305" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" font-family="sans-serif">
-
-<!-- Internet -->
 <rect x="300" y="5" width="300" height="28" rx="7" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
 <text x="450" y="24" text-anchor="middle" fill="#475569" font-size="13" font-weight="bold">Internet — kubectl / admin</text>
-
-<!-- Internet → NLB -->
 <line x1="450" y1="33" x2="450" y2="48" stroke="#d97706" stroke-width="2"/>
 <text x="470" y="45" fill="#92400e" font-size="12">HTTPS :6443</text>
-
-<!-- Exoscale NLB -->
 <rect x="235" y="48" width="430" height="42" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
 <text x="450" y="68" text-anchor="middle" fill="#92400e" font-size="14" font-weight="bold">Exoscale NLB</text>
 <text x="450" y="84" text-anchor="middle" fill="#d97706" font-size="12">185.42.17.100  —  seule IP publique</text>
-
-<!-- NLB → sg-masters -->
 <line x1="450" y1="90" x2="450" y2="114" stroke="#d97706" stroke-width="2"/>
 <text x="470" y="108" fill="#92400e" font-size="12">forward :6443</text>
-
-<!-- sg-masters dashed box -->
 <rect x="15" y="114" width="870" height="101" rx="8" fill="#faf5ff" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6,3"/>
 <text x="25" y="130" fill="#7c3aed" font-size="13" font-weight="bold">sg-masters</text>
-
-<!-- Master 1 -->
 <rect x="25" y="135" width="200" height="70" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
 <text x="125" y="157" text-anchor="middle" fill="#1e40af" font-size="14" font-weight="bold">Master 1</text>
 <text x="125" y="175" text-anchor="middle" fill="#1e40af" font-size="13">10.0.0.1</text>
 <text x="125" y="192" text-anchor="middle" fill="#6b7280" font-size="12">API Server + etcd</text>
-
-<!-- etcd :2380 bidirectionnel -->
 <line x1="225" y1="170" x2="285" y2="170" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="3,2"/>
 <text x="255" y="163" text-anchor="middle" fill="#7c3aed" font-size="11">etcd :2380</text>
-
-<!-- Master 2 -->
 <rect x="285" y="135" width="200" height="70" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
 <text x="385" y="157" text-anchor="middle" fill="#1e40af" font-size="14" font-weight="bold">Master 2</text>
 <text x="385" y="175" text-anchor="middle" fill="#1e40af" font-size="13">10.0.0.2</text>
 <text x="385" y="192" text-anchor="middle" fill="#6b7280" font-size="12">API Server + etcd</text>
-
-<!-- sg-masters : règles (côté droit) -->
 <text x="510" y="148" fill="#7c3aed" font-size="12">IN :6443  ←  NLB + sg-workers</text>
 <text x="510" y="168" fill="#7c3aed" font-size="12">IN :2379-2380  ←  sg-masters seul</text>
 <text x="510" y="188" fill="#7c3aed" font-size="12">OUT : tout autorisé</text>
-
-<!-- sg-masters → sg-workers -->
 <line x1="450" y1="215" x2="450" y2="232" stroke="#16a34a" stroke-width="2"/>
 <text x="470" y="228" fill="#166534" font-size="12">kubelet :10250</text>
-
-<!-- sg-workers dashed box -->
 <rect x="15" y="232" width="870" height="68" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2" stroke-dasharray="6,3"/>
 <text x="25" y="248" fill="#166534" font-size="13" font-weight="bold">sg-workers</text>
-
-<!-- Worker 1 -->
 <rect x="25" y="252" width="200" height="42" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="125" y="270" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Worker 1</text>
 <text x="125" y="286" text-anchor="middle" fill="#6b7280" font-size="12">10.0.1.1  (pas d'IP pub)</text>
-
-<!-- CNI intra-zone -->
 <line x1="225" y1="273" x2="285" y2="273" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="3,2"/>
 <text x="255" y="267" text-anchor="middle" fill="#166534" font-size="11">CNI</text>
-
-<!-- Worker 2 -->
 <rect x="285" y="252" width="200" height="42" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="385" y="270" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Worker 2</text>
 <text x="385" y="286" text-anchor="middle" fill="#6b7280" font-size="12">10.0.1.2  (pas d'IP pub)</text>
-
-<!-- sg-workers : règles (côté droit) -->
 <text x="510" y="268" fill="#166534" font-size="12">IN :10250  ←  sg-masters</text>
 <text x="510" y="287" fill="#166534" font-size="12">CNI  ←  sg-workers (intra-zone)</text>
 </svg>
@@ -4092,60 +4000,34 @@ kubeadm join <lb>:6443 --token ... --control-plane --certificate-key <key>
   <marker id="ra" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#dc2626"/></marker>
   <marker id="oa" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#d97706"/></marker>
 </defs>
-
-<!-- Source autorisée (VPN) -->
 <rect x="30" y="8" width="155" height="38" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
 <text x="107" y="24" text-anchor="middle" fill="#166534" font-weight="bold" font-size="10">✓ VPN bureau</text>
 <text x="107" y="38" text-anchor="middle" fill="#166534" font-size="9">203.0.113.0/24</text>
-
-<!-- Source bloquée (internet random) -->
 <rect x="210" y="8" width="155" height="38" rx="6" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
 <text x="287" y="24" text-anchor="middle" fill="#991b1b" font-weight="bold" font-size="10">✗ Internet inconnu</text>
 <text x="287" y="38" text-anchor="middle" fill="#991b1b" font-size="9">45.x.x.x / bots / scanners</text>
-
-<!-- Source bloquée 2 (CI) -->
 <rect x="390" y="8" width="155" height="38" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
 <text x="467" y="24" text-anchor="middle" fill="#166534" font-weight="bold" font-size="10">✓ CI/CD runner</text>
 <text x="467" y="38" text-anchor="middle" fill="#166534" font-size="9">198.51.100.12/32</text>
-
-<!-- Flèches vers NLB -->
 <line x1="107" y1="46" x2="200" y2="68" stroke="#16a34a" stroke-width="1.5" marker-end="url(#fa)"/>
 <line x1="287" y1="46" x2="270" y2="68" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#ra)"/>
 <line x1="467" y1="46" x2="340" y2="68" stroke="#16a34a" stroke-width="1.5" marker-end="url(#fa)"/>
-
-<!-- NLB + ACL CIDR — couche 1 -->
 <rect x="130" y="68" width="370" height="48" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
 <text x="315" y="86" text-anchor="middle" fill="#92400e" font-weight="bold" font-size="12">Exoscale NLB  ·  185.42.17.100</text>
 <text x="315" y="101" text-anchor="middle" fill="#d97706" font-size="10">ACL CIDR : allowed_sources = [203.0.113.0/24, 198.51.100.12/32]</text>
-
-<!-- Croix de blocage sur le trait rouge -->
 <text x="271" y="63" text-anchor="middle" fill="#dc2626" font-size="12" font-weight="bold">✗</text>
-
-<!-- Badge couche -->
 <rect x="505" y="74" width="90" height="18" rx="4" fill="#d97706"/>
 <text x="550" y="87" text-anchor="middle" fill="white" font-size="9" font-weight="bold">Couche 1 : NLB</text>
-
-<!-- Flèche NLB → SG masters -->
 <line x1="315" y1="116" x2="315" y2="136" stroke="#d97706" stroke-width="2" marker-end="url(#oa)"/>
 <text x="395" y="130" fill="#92400e" font-size="9">185.42.17.100 → masters</text>
-
-<!-- SG masters — couche 2 -->
 <rect x="130" y="136" width="370" height="48" rx="8" fill="#faf5ff" stroke="#7c3aed" stroke-width="2" stroke-dasharray="5,3"/>
 <text x="315" y="154" text-anchor="middle" fill="#7c3aed" font-weight="bold" font-size="12">sg-masters</text>
 <text x="315" y="170" text-anchor="middle" fill="#7c3aed" font-size="10">IN :6443 source = 185.42.17.100/32 (IP NLB uniquement)</text>
-
-<!-- Badge couche -->
 <rect x="505" y="142" width="100" height="18" rx="4" fill="#7c3aed"/>
 <text x="555" y="155" text-anchor="middle" fill="white" font-size="9" font-weight="bold">Couche 2 : SG</text>
-
-<!-- Flèche SG → API Server -->
 <line x1="315" y1="184" x2="315" y2="200" stroke="#16a34a" stroke-width="2" marker-end="url(#fa)"/>
-
-<!-- API Server -->
 <rect x="215" y="200" width="200" height="32" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
 <text x="315" y="221" text-anchor="middle" fill="#1e40af" font-weight="bold" font-size="12">API Server (masters)</text>
-
-<!-- Note defense in depth -->
 <rect x="30" y="240" width="700" height="16" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
 <text x="380" y="252" text-anchor="middle" fill="#64748b" font-size="9">Defense in depth : NLB bloque par IP source · SG bloque si paquet arriverait autrement (ex: réseau interne compromis)</text>
 </svg>
@@ -4190,15 +4072,11 @@ kubectl get svc mon-app
   <marker id="lbg" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16a34a"/></marker>
   <marker id="lbo" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#d97706"/></marker>
 </defs>
-
-<!-- Titres colonnes -->
 <text x="127" y="16" text-anchor="middle" fill="#374151" font-weight="bold" font-size="11">① MetalLB (kubeadm)</text>
 <text x="380" y="16" text-anchor="middle" fill="#374151" font-weight="bold" font-size="11">② NLB Exoscale (SKS)</text>
 <text x="633" y="16" text-anchor="middle" fill="#374151" font-weight="bold" font-size="11">③ Ingress Controller</text>
 <line x1="253" y1="8" x2="253" y2="250" stroke="#e5e7eb" stroke-width="1"/>
 <line x1="506" y1="8" x2="506" y2="250" stroke="#e5e7eb" stroke-width="1"/>
-
-<!-- Col 1 : MetalLB -->
 <rect x="70" y="24" width="115" height="22" rx="4" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1"/>
 <text x="127" y="39" text-anchor="middle" fill="#475569" font-size="10">Client</text>
 <line x1="127" y1="46" x2="127" y2="58" stroke="#6b7280" stroke-width="1.5" marker-end="url(#lba)"/>
@@ -4217,8 +4095,6 @@ kubectl get svc mon-app
 <text x="127" y="168" text-anchor="middle" fill="#15803d" font-size="8">✓ kubeadm bare metal</text>
 <text x="127" y="178" text-anchor="middle" fill="#dc2626" font-size="8">✗ SKS (cloud-ccm actif)</text>
 <text x="127" y="190" text-anchor="middle" fill="#6b7280" font-size="8">1 IP par Service</text>
-
-<!-- Col 2 : NLB SKS -->
 <rect x="323" y="24" width="115" height="22" rx="4" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1"/>
 <text x="380" y="39" text-anchor="middle" fill="#475569" font-size="10">Client</text>
 <line x1="380" y1="46" x2="380" y2="58" stroke="#6b7280" stroke-width="1.5" marker-end="url(#lba)"/>
@@ -4237,8 +4113,6 @@ kubectl get svc mon-app
 <text x="380" y="168" text-anchor="middle" fill="#15803d" font-size="8">✓ SKS (automatique)</text>
 <text x="380" y="178" text-anchor="middle" fill="#dc2626" font-size="8">✗ kubeadm (pending)</text>
 <text x="380" y="190" text-anchor="middle" fill="#6b7280" font-size="8">1 NLB par Service = coûteux</text>
-
-<!-- Col 3 : Ingress -->
 <rect x="576" y="24" width="115" height="22" rx="4" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1"/>
 <text x="633" y="39" text-anchor="middle" fill="#475569" font-size="10">Client</text>
 <line x1="633" y1="46" x2="633" y2="58" stroke="#6b7280" stroke-width="1.5" marker-end="url(#lba)"/>
@@ -4260,8 +4134,6 @@ kubectl get svc mon-app
 <text x="633" y="168" text-anchor="middle" fill="#15803d" font-size="8">✓ kubeadm ET SKS</text>
 <text x="633" y="178" text-anchor="middle" fill="#15803d" font-size="8">✓ recommandé en prod</text>
 <text x="633" y="190" text-anchor="middle" fill="#6b7280" font-size="8">1 IP pour N apps (L7)</text>
-
-<!-- Barre résumé -->
 <line x1="8" y1="220" x2="752" y2="220" stroke="#e5e7eb" stroke-width="1"/>
 <text x="127" y="236" text-anchor="middle" fill="#374151" font-size="9" font-weight="bold">L4 · 1 IP / service</text>
 <text x="380" y="236" text-anchor="middle" fill="#374151" font-size="9" font-weight="bold">L4 · 1 NLB / service</text>
@@ -4447,31 +4319,20 @@ SKS ne permet pas de joindre des nœuds extérieurs à son control plane :
 ## Architecture kube-prometheus-stack
 
 <svg width="1100" height="290" viewBox="0 0 900 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" font-family="sans-serif">
-
-<!-- Sources de métriques (colonne gauche) -->
 <rect x="10" y="10" width="230" height="220" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5,3"/>
 <text x="125" y="28" text-anchor="middle" fill="#475569" font-size="13" font-weight="bold">Sources de métriques</text>
-
 <rect x="20" y="35" width="210" height="26" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="125" y="53" text-anchor="middle" fill="#1e40af" font-size="12">node-exporter (DaemonSet)</text>
-
 <rect x="20" y="68" width="210" height="26" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="125" y="86" text-anchor="middle" fill="#1e40af" font-size="12">kube-state-metrics</text>
-
 <rect x="20" y="101" width="210" height="26" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="125" y="119" text-anchor="middle" fill="#1e40af" font-size="12">kubelet /metrics/cadvisor</text>
-
 <rect x="20" y="134" width="210" height="26" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="125" y="152" text-anchor="middle" fill="#1e40af" font-size="12">API server · etcd · scheduler</text>
-
 <rect x="20" y="167" width="210" height="26" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
 <text x="125" y="185" text-anchor="middle" fill="#1e40af" font-size="12">controller-manager</text>
-
-<!-- Arrow → Prometheus -->
 <line x1="240" y1="120" x2="310" y2="120" stroke="#7c3aed" stroke-width="2"/>
 <text x="275" y="113" text-anchor="middle" fill="#7c3aed" font-size="11">scrape</text>
-
-<!-- Prometheus Operator -->
 <rect x="310" y="60" width="200" height="120" rx="8" fill="#faf5ff" stroke="#7c3aed" stroke-width="2"/>
 <text x="410" y="83" text-anchor="middle" fill="#7c3aed" font-size="13" font-weight="bold">Prometheus</text>
 <text x="410" y="102" text-anchor="middle" fill="#7c3aed" font-size="12">stockage TSDB</text>
@@ -4479,28 +4340,18 @@ SKS ne permet pas de joindre des nœuds extérieurs à son control plane :
 <line x1="330" y1="135" x2="490" y2="135" stroke="#c4b5fd" stroke-width="1"/>
 <text x="410" y="152" text-anchor="middle" fill="#7c3aed" font-size="11">Operator + CRDs</text>
 <text x="410" y="168" text-anchor="middle" fill="#7c3aed" font-size="11">ServiceMonitor · PrometheusRule</text>
-
-<!-- Arrows → output -->
 <line x1="510" y1="90" x2="570" y2="70" stroke="#d97706" stroke-width="2"/>
 <line x1="510" y1="120" x2="570" y2="120" stroke="#16a34a" stroke-width="2"/>
 <line x1="510" y1="150" x2="570" y2="165" stroke="#dc2626" stroke-width="2"/>
-
-<!-- Grafana -->
 <rect x="570" y="45" width="160" height="50" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
 <text x="650" y="68" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Grafana</text>
 <text x="650" y="85" text-anchor="middle" fill="#d97706" font-size="12">dashboards</text>
-
-<!-- Alertmanager -->
 <rect x="570" y="105" width="160" height="50" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
 <text x="650" y="128" text-anchor="middle" fill="#15803d" font-size="13" font-weight="bold">Alertmanager</text>
 <text x="650" y="145" text-anchor="middle" fill="#166534" font-size="12">routing alertes</text>
-
-<!-- Prometheus Operator -->
 <rect x="570" y="160" width="160" height="50" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
 <text x="650" y="183" text-anchor="middle" fill="#dc2626" font-size="12" font-weight="bold">Prom. Operator</text>
 <text x="650" y="200" text-anchor="middle" fill="#dc2626" font-size="11">CRD manager</text>
-
-<!-- Namespace label -->
 <text x="450" y="230" text-anchor="middle" fill="#6b7280" font-size="11">namespace : monitoring</text>
 </svg>
 
