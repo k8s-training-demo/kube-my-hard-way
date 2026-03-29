@@ -23,7 +23,14 @@ TOTAL_KEYS=$(etcdctl get / --prefix --keys-only 2>/dev/null | grep -c . || true)
 ENDPOINT=$(echo "$STATUS_JSON"    | python3 -c "import sys,json; d=json.load(sys.stdin)[0]; print(d['Endpoint'])" 2>/dev/null || echo "?")
 DB_SIZE=$(echo "$STATUS_JSON"     | python3 -c "import sys,json; d=json.load(sys.stdin)[0]; s=d['Status']['dbSize']; print(f'{s/1024/1024:.1f} MB')" 2>/dev/null || echo "?")
 REVISION=$(echo "$STATUS_JSON"    | python3 -c "import sys,json; d=json.load(sys.stdin)[0]; print(d['Status']['header']['revision'])" 2>/dev/null || echo "?")
-IS_LEADER=$(echo "$STATUS_JSON"   | python3 -c "import sys,json; d=json.load(sys.stdin)[0]; print('✓ OUI' if d['Status']['leader']==d['Status']['header']['memberId'] else '✗ non')" 2>/dev/null || echo "?")
+IS_LEADER=$(echo "$STATUS_JSON"   | python3 -c "
+import sys,json
+d=json.load(sys.stdin)[0]['Status']
+hdr=d.get('header',{})
+mid=hdr.get('memberId') or hdr.get('member_id')
+ldr=d.get('leader')
+print('OUI' if ldr and str(ldr)==str(mid) else 'non')
+" 2>/dev/null || echo "?")
 ETCD_VER=$(echo "$STATUS_JSON"    | python3 -c "import sys,json; d=json.load(sys.stdin)[0]; print(d['Status']['version'])" 2>/dev/null || echo "?")
 MEMBER_NAME=$(echo "$MEMBER_JSON" | python3 -c "import sys,json; m=json.load(sys.stdin)['members'][0]; print(m['name'])" 2>/dev/null || echo "?")
 NB_MEMBERS=$(echo "$MEMBER_JSON"  | python3 -c "import sys,json; print(len(json.load(sys.stdin)['members']))" 2>/dev/null || echo "?")
@@ -34,13 +41,13 @@ echo "│                  TABLEAU DE BORD ETCD                      │"
 echo "├──────────────────────────┬──────────────────────────────────┤"
 printf "│ %-24s │ %-32s │\n" "Endpoint"    "$ENDPOINT"
 printf "│ %-24s │ %-32s │\n" "Version etcd"  "$ETCD_VER"
-printf "│ %-24s │ %-32s │\n" "Santé"       "$(echo "$HEALTH" | grep -o 'healthy\|unhealthy' | head -1)"
-printf "│ %-24s │ %-32s │\n" "Est leader"  "$IS_LEADER"
-printf "│ %-24s │ %-32s │\n" "Taille DB"   "$DB_SIZE"
-printf "│ %-24s │ %-32s │\n" "Révision"    "$REVISION"
-printf "│ %-24s │ %-32s │\n" "Membres"     "$NB_MEMBERS  (stacked kubeadm = 1)"
+printf "│ %-24s │ %-32s │\n" "Sante"        "$(echo "$HEALTH" | grep -o 'healthy\|unhealthy' | head -1)"
+printf "│ %-24s │ %-32s │\n" "Est leader"   "$IS_LEADER"
+printf "│ %-24s │ %-32s │\n" "Taille DB"    "$DB_SIZE"
+printf "│ %-24s │ %-32s │\n" "Revision"     "$REVISION"
+printf "│ %-24s │ %-32s │\n" "Membres"      "$NB_MEMBERS  (stacked kubeadm = 1)"
 printf "│ %-24s │ %-32s │\n" "Nom du membre" "$MEMBER_NAME"
-printf "│ %-24s │ %-32s │\n" "Clés totales" "$TOTAL_KEYS"
+printf "│ %-24s │ %-32s │\n" "Cles totales"  "$TOTAL_KEYS"
 echo "└──────────────────────────┴──────────────────────────────────┘"
 echo ""
 read -rp "   ↵  Notez taille DB, révision et statut leader. Appuyez sur Entrée..."
