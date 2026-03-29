@@ -2437,12 +2437,12 @@ sudo systemctl start kubelet
 
 ---
 
-## IPIP vs VXLAN — encapsulation et cloud firewalls
-
 <style scoped>
-pre { font-size: 13px; margin-top: 6px; }
 h2 { margin-bottom: 4px; }
+pre { font-size: 13px; margin-top: 6px; }
 </style>
+
+## IPIP vs VXLAN — encapsulation et cloud firewalls
 
 <svg width="1100" height="235" viewBox="0 0 1100 235" xmlns="http://www.w3.org/2000/svg">
 <defs>
