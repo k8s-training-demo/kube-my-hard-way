@@ -2706,7 +2706,7 @@ spec:
 **Script sur le MASTER:**
 ```bash
 cd scripts/partie-05-drain-maintenance
-./01-test-pdb.sh
+./01-drain-with-pdb.sh
 ```
 
 **Démonstration:**
@@ -2741,7 +2741,7 @@ kubectl get pdb app-pdb -o wide
 ### 📝 EXERCICE ÉLÈVE
 **Script sur le MASTER:**
 ```bash
-./02-drain-daemonsets.sh
+./02-drain-with-daemonsets.sh
 ```
 
 Observer l'erreur, puis avec `--ignore-daemonsets`
