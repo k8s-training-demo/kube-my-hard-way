@@ -137,20 +137,21 @@ exo compute sks create tp-k8s --zone de-fra-1 \
 
 | # | Contenu | ⏱️ | |
 |---|---------|---:|---|
-| [0](#8) | 👋 Introduction & Objectifs | 5 min | [→](#8) |
-| [1](#10) | 🔧 Installation cluster kubeadm | 35 min | [→](#10) |
-| [2](#48) | ⚙️ Kubelet & Static Pods | 30 min | [→](#48) |
-| [3](#90) | 🏷️ Taints & Tolerations | 30 min | [→](#90) |
-| [4](#119) | 🌐 Migration CNI | 25 min | [→](#119) |
-| [5](#130) | 🔩 Drain & Maintenance | 20 min | [→](#130) |
-| [6](#145) | 🗄️ etcd & etcdctl | 25 min | [→](#145) |
-| [7](#153) | ⬆️ Upgrade cluster | 25 min | [→](#153) |
-| [8](#162) | 🛡️ RuntimeClass & gVisor | 25 min | [→](#162) |
-| [9](#177) | 📦 cgroups | 20 min | [→](#177) |
-| [10](#187) | 🔀 Réseau public vs privé | 10 min | [→](#187) |
-| [11](#198) | ☁️ SKS Exoscale | 15 min | [→](#198) |
-| [12](#205) | 📊 Observabilité — kube-prometheus-stack | 30 min | [→](#205) |
-| [★](#247) | 🏆 HA Control Plane *(bonus)* | 30 min | [→](#247) |
+| [0](#7) | 👋 Introduction & Objectifs | 5 min | [→](#7) |
+| [1](#9) | 🔧 Installation cluster kubeadm | 35 min | [→](#9) |
+| [2](#44) | ⚙️ Kubelet & Static Pods | 30 min | [→](#44) |
+| [3](#86) | 🏷️ Taints & Tolerations | 30 min | [→](#86) |
+| [4](#115) | 🌐 Migration CNI | 25 min | [→](#115) |
+| [5](#126) | 🔩 Drain & Maintenance | 20 min | [→](#126) |
+| [6](#141) | 🗄️ etcd & etcdctl | 25 min | [→](#141) |
+| [7](#149) | ⬆️ Upgrade cluster | 25 min | [→](#149) |
+| [8](#158) | 🛡️ RuntimeClass & gVisor | 25 min | [→](#158) |
+| [9](#173) | 📦 cgroups | 20 min | [→](#173) |
+| [10](#183) | 🏗️ HA Control Plane — Théorie | 15 min | [→](#183) |
+| [11](#187) | 🔀 Réseau public vs privé | 10 min | [→](#187) |
+| [12](#198) | ☁️ SKS Exoscale | 15 min | [→](#198) |
+| [13](#205) | 📊 Observabilité — kube-prometheus-stack | 30 min | [→](#205) |
+| [★](#247) | 🏆 HA Control Plane *(bonus pratique)* | 30 min | [→](#247) |
 
 ---
 
@@ -627,18 +628,25 @@ sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' \
 
 ---
 
-## SELinux sur CentOS 10 - Production
+## SELinux en production — pourquoi c'est transparent
 
-### SELinux activé (recommandé en production)
+### `container-selinux` — déjà là, automatiquement
+
+- Fournit les **policies SELinux pour les containers** : confine les processus avec le type `container_t`
+- Restreint l'accès aux fichiers host, aux devices et au réseau depuis l'intérieur du container
+- Sur CentOS Stream 10 + repo Docker : **installé automatiquement** comme dépendance de `containerd.io`
+- Depuis **K8s 1.27** : feature gate `SELinuxMount` (GA en 1.30) → labels SELinux appliqués correctement sur les volumes montés, sans hack
+- Résultat : en mode `enforcing`, les containers sont confinés **sans configuration supplémentaire**
 
 ```bash
-# Installer les policies container-selinux
-sudo dnf install -y container-selinux
+# Vérifier que container-selinux est présent
+rpm -q container-selinux
 
-# Kubernetes supporte SELinux enforcing depuis 1.25+
+# Confirmer que les containers tournent bien avec le bon type
+ps -eZ | grep containerd
 ```
 
-**En production:** SELinux en enforcing avec policies appropriées
+> ℹ️ Le mode `permissive` de ce TD n'est là que pour simplifier le troubleshooting — pas une nécessité technique.
 
 ---
 
@@ -780,86 +788,6 @@ curl -k https://<master-ip>:6443
 # Vérifier les certificats
 sudo ls -la /etc/kubernetes/pki/
 ```
-
----
-
-## Aparté — Ajouter un second control plane (HA)
-
-> *On ne le fait pas dans ce TD, mais voici comment ça marche*
-
-**Méthode normale — `--upload-certs` (recommandée)**
-
-À l'init, `--upload-certs` chiffre les certificats PKI et les stocke dans un Secret `kubeadm-certs` (namespace `kube-system`). Ce Secret expire automatiquement après **2 heures**.
-
-```bash
-# Sur master1 — à l'init du cluster
-kubeadm init \
-  --control-plane-endpoint="<lb>:6443" \
-  --upload-certs
-# La sortie affiche --certificate-key <key> — à conserver pour le join
-```
-
-```bash
-# Sur master2 — le flag --control-plane distingue un master d'un worker
-# kubeadm télécharge et déchiffre les certs depuis le Secret automatiquement
-kubeadm join <lb>:6443 \
-  --token <token> \
-  --discovery-token-ca-cert-hash sha256:<hash> \
-  --control-plane \
-  --certificate-key <key>
-```
-
----
-
-## Aparté — Ajouter un second control plane (HA) — fallback
-
-**Méthode de secours — copie manuelle (si `--upload-certs` oublié ou Secret expiré)**
-
-```bash
-# Régénérer la clé sans relancer kubeadm init :
-kubeadm init phase upload-certs --upload-certs
-# → affiche un nouveau --certificate-key valable 2h
-```
-
-Si le cluster est inaccessible ou qu'on préfère éviter le Secret, copie manuelle des 6 fichiers PKI de master1 vers master2 :
-
-```bash
-for f in ca.crt ca.key sa.pub sa.key front-proxy-ca.crt front-proxy-ca.key; do
-  scp /etc/kubernetes/pki/$f root@master2:/etc/kubernetes/pki/
-done
-scp /etc/kubernetes/pki/etcd/ca.{crt,key} root@master2:/etc/kubernetes/pki/etcd/
-# Puis joindre sans --certificate-key (les certs sont déjà en place)
-kubeadm join <lb>:6443 --token <token> \
-  --discovery-token-ca-cert-hash sha256:<hash> --control-plane
-```
-
-**Ce qui se passe dans les deux cas :** kubeadm installe `kube-apiserver`, `kube-scheduler`, `kube-controller-manager` et ajoute ce nœud comme membre etcd supplémentaire.
-
----
-
-## Aparté — Peut-on promouvoir un worker en master ?
-
-> *Question fréquente : "j'ai 1 master + 2 workers, puis-je transformer les workers en masters ?"*
-
-**Non, kubeadm n'a pas de commande de promotion.** Deux blocages fondamentaux :
-
-**1. Le certificat de l'API server est figé à l'init**
-- Sans `--control-plane-endpoint` au `kubeadm init`, le cert ne contient que l'IP du master d'origine
-- Aucun autre nœud ne peut rejoindre en tant que control plane → il faudrait **tout réinitialiser**
-
-**2. Si `--control-plane-endpoint` était présent**, on peut contourner, mais ce n'est pas une promotion :
-```bash
-# Sur le worker à "promouvoir" : reset complet (le nœud quitte le cluster)
-kubectl drain worker1 --ignore-daemonsets --delete-emptydir-data
-kubeadm reset && rm -rf /etc/kubernetes /var/lib/etcd
-
-# Puis rejoindre en tant que control plane (comme un nœud neuf)
-kubeadm join <lb>:6443 --token ... --control-plane --certificate-key <key>
-```
-
-**Conclusion :** la décision HA doit être prise **au moment du `kubeadm init`** avec `--control-plane-endpoint`. Après, c'est un reset, pas une promotion.
-
-Pour un cluster "survie" à 3 nœuds master+worker : les masters peuvent aussi ordonnancer des pods si on retire le taint `node-role.kubernetes.io/control-plane:NoSchedule`.
 
 ---
 
@@ -2499,25 +2427,92 @@ Kubelet sans CNI = nœud `NotReady`, tous les pods perdent leur connectivité
 ./04-install-calico.sh
 ```
 
-⚠️ Le téléchargement peut prendre du temps
+⚠️ Le téléchargement peut prendre du temps — le script configure automatiquement le mode **VXLAN**
 
-### Vérifications
+### Ensuite — redémarrer kubelet sur **chaque nœud**
 ```bash
-kubectl get pods -n kube-system -l k8s-app=calico-node
+sudo systemctl start kubelet
+```
+> ⛔ Ne faire cette étape qu'**après** que Calico soit Ready
+
+---
+
+## IPIP vs VXLAN — pourquoi ça change tout sur Exoscale
+
+<svg width="1100" height="290" viewBox="0 0 1100 290" xmlns="http://www.w3.org/2000/svg">
+<style>text{font-family:sans-serif}</style>
+
+<!-- Titre IPIP -->
+<text x="250" y="24" text-anchor="middle" fill="#dc2626" font-size="16" font-weight="bold">Mode IPIP — ❌ bloqué sur Exoscale</text>
+
+<!-- Paquet IPIP -->
+<rect x="30" y="38" width="440" height="48" rx="6" fill="#fecaca" stroke="#dc2626" stroke-width="2"/>
+<text x="250" y="57" text-anchor="middle" fill="#7f1d1d" font-size="12" font-weight="bold">Outer IP header</text>
+<text x="250" y="76" text-anchor="middle" fill="#991b1b" font-size="11">src: 10.0.0.1 (node A) → dst: 10.0.0.2 (node B)  |  proto: 4 (IPIP)</text>
+
+<rect x="30" y="90" width="440" height="48" rx="6" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
+<text x="250" y="109" text-anchor="middle" fill="#7f1d1d" font-size="12" font-weight="bold">Inner IP + data (pod→pod)</text>
+<text x="250" y="128" text-anchor="middle" fill="#991b1b" font-size="11">src: 10.244.0.1 (pod A) → dst: 10.244.1.1 (pod B)</text>
+
+<!-- Firewall bloquant -->
+<rect x="100" y="155" width="300" height="42" rx="8" fill="#fca5a5" stroke="#dc2626" stroke-width="2.5"/>
+<text x="250" y="172" text-anchor="middle" fill="#7f1d1d" font-size="13" font-weight="bold">🔥 Security Group Exoscale</text>
+<text x="250" y="190" text-anchor="middle" fill="#7f1d1d" font-size="12">IP protocol 4 → DROP ❌</text>
+
+<text x="250" y="225" text-anchor="middle" fill="#dc2626" font-size="12">calico-node reste 0/1 — tunnel ne s'établit pas</text>
+<text x="250" y="245" text-anchor="middle" fill="#9f1239" font-size="11" font-style="italic">proto 4 = encapsulation directe IP dans IP, rare,</text>
+<text x="250" y="262" text-anchor="middle" fill="#9f1239" font-size="11" font-style="italic">bloqué par défaut sur la plupart des clouds</text>
+
+<!-- Séparateur -->
+<line x1="550" y1="30" x2="550" y2="275" stroke="#d1d5db" stroke-width="2" stroke-dasharray="6,4"/>
+
+<!-- Titre VXLAN -->
+<text x="820" y="24" text-anchor="middle" fill="#16a34a" font-size="16" font-weight="bold">Mode VXLAN — ✅ fonctionne partout</text>
+
+<!-- Paquet VXLAN -->
+<rect x="580" y="38" width="480" height="36" rx="6" fill="#bbf7d0" stroke="#16a34a" stroke-width="2"/>
+<text x="820" y="53" text-anchor="middle" fill="#14532d" font-size="12" font-weight="bold">Outer IP header</text>
+<text x="820" y="68" text-anchor="middle" fill="#15803d" font-size="11">src: 10.0.0.1 (node A) → dst: 10.0.0.2 (node B)</text>
+
+<rect x="580" y="78" width="480" height="28" rx="6" fill="#bbf7d0" stroke="#16a34a" stroke-width="1.5"/>
+<text x="820" y="97" text-anchor="middle" fill="#14532d" font-size="12" font-weight="bold">UDP header — port 4789</text>
+
+<rect x="580" y="110" width="480" height="28" rx="6" fill="#d1fae5" stroke="#22c55e" stroke-width="1.5"/>
+<text x="820" y="129" text-anchor="middle" fill="#14532d" font-size="11">VXLAN header (VNI)</text>
+
+<rect x="580" y="142" width="480" height="36" rx="6" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+<text x="820" y="157" text-anchor="middle" fill="#14532d" font-size="12" font-weight="bold">Inner IP + data (pod→pod)</text>
+<text x="820" y="172" text-anchor="middle" fill="#15803d" font-size="11">src: 10.244.0.1 (pod A) → dst: 10.244.1.1 (pod B)</text>
+
+<!-- Firewall laissant passer -->
+<rect x="670" y="195" width="300" height="42" rx="8" fill="#bbf7d0" stroke="#16a34a" stroke-width="2.5"/>
+<text x="820" y="212" text-anchor="middle" fill="#14532d" font-size="13" font-weight="bold">🔥 Security Group Exoscale</text>
+<text x="820" y="230" text-anchor="middle" fill="#14532d" font-size="12">UDP 4789 → ALLOW ✅</text>
+
+<text x="820" y="262" text-anchor="middle" fill="#15803d" font-size="12">UDP est standard — autorisé par défaut</text>
+</svg>
+
+```bash
+# Si calico-node restent 0/1 après installation — patch manuel :
+kubectl patch ippools default-ipv4-ippool --type=merge \
+  -p '{"spec": {"ipipMode": "Never", "vxlanMode": "Always"}}'
+kubectl rollout restart daemonset/calico-node -n kube-system
 ```
 
 ---
 
-## 5.5 - Validation post-migration
+## 5.5 - Uncordon et validation
 
 ### 📝 EXERCICE ÉLÈVE
+**Script sur le MASTER:**
 ```bash
-./05-validate-migration.sh
+./05-uncordon-and-validate.sh
 cd ../../validation && ./validate-partie.sh 4
 ```
 
 ### Tests obligatoires
 
+- Nœuds de nouveau `Ready` et `Schedulable`
 - Connectivité inter-pods
 - DNS fonctionnel
 - Services fonctionnels
@@ -3714,11 +3709,90 @@ resources:          crée le cgroup       /sys/fs/cgroup/
 <!-- _class: lead -->
 
 # Partie 10
+## HA Control Plane — Théorie (15 min)
+
+---
+
+## Multi-master : comment ça marche ?
+
+> *On ne le fait pas dans ce TD — sauf si temps disponible (cf. Partie Bonus)*
+
+**Méthode normale — `--upload-certs` (recommandée)**
+
+À l'init, `--upload-certs` chiffre les certificats PKI et les stocke dans un Secret `kubeadm-certs` (namespace `kube-system`). Ce Secret expire automatiquement après **2 heures**.
+
+```bash
+# Sur master1 — à l'init du cluster
+kubeadm init \
+  --control-plane-endpoint="<lb>:6443" \
+  --upload-certs
+# La sortie affiche --certificate-key <key> — à conserver pour le join
+```
+
+```bash
+# Sur master2 — le flag --control-plane distingue un master d'un worker
+# kubeadm télécharge et déchiffre les certs depuis le Secret automatiquement
+kubeadm join <lb>:6443 \
+  --token <token> \
+  --discovery-token-ca-cert-hash sha256:<hash> \
+  --control-plane \
+  --certificate-key <key>
+```
+
+---
+
+## Multi-master — fallback : copie manuelle des certs
+
+**Si `--upload-certs` oublié ou Secret expiré (2h)**
+
+```bash
+# Régénérer la clé sans relancer kubeadm init :
+kubeadm init phase upload-certs --upload-certs
+# → affiche un nouveau --certificate-key valable 2h
+```
+
+```bash
+# Ou copie manuelle des 6 fichiers PKI master1 → master2
+for f in ca.crt ca.key sa.pub sa.key front-proxy-ca.crt front-proxy-ca.key; do
+  scp /etc/kubernetes/pki/$f root@master2:/etc/kubernetes/pki/
+done
+scp /etc/kubernetes/pki/etcd/ca.{crt,key} root@master2:/etc/kubernetes/pki/etcd/
+kubeadm join <lb>:6443 --token <token> \
+  --discovery-token-ca-cert-hash sha256:<hash> --control-plane
+```
+
+**Dans les deux cas :** kubeadm installe `kube-apiserver`, `kube-scheduler`, `kube-controller-manager` et ajoute ce nœud comme membre etcd.
+
+---
+
+## Peut-on promouvoir un worker en master ?
+
+> *Question fréquente : "j'ai 1 master + 2 workers, puis-je transformer les workers ?"*
+
+**Non, kubeadm n'a pas de commande de promotion.** Deux blocages :
+
+**1. Le certificat API server est figé à l'init**
+- Sans `--control-plane-endpoint`, le cert ne couvre que l'IP du master d'origine → reset obligatoire
+
+**2. Si `--control-plane-endpoint` était présent**, on peut faire un "reset + rejoin" :
+```bash
+kubectl drain worker1 --ignore-daemonsets --delete-emptydir-data
+kubeadm reset && rm -rf /etc/kubernetes /var/lib/etcd
+kubeadm join <lb>:6443 --token ... --control-plane --certificate-key <key>
+```
+
+**La décision HA doit être prise au `kubeadm init`.** Après, c'est un reset, pas une promotion.
+
+---
+
+<!-- _class: lead -->
+
+# Partie 11
 ## Réseau public vs privé (10 min)
 
 ---
 
-## Partie 10 - Timeline suggérée
+## Partie 11 - Timeline suggérée
 
 - Architecture sans réseau privé — risques: **4 min**
 - Architecture avec réseau privé — isolation: **4 min**
@@ -4187,12 +4261,12 @@ kubectl get svc mon-app
 
 <!-- _class: lead -->
 
-# Partie 11
+# Partie 12
 ## SKS Exoscale — Kubernetes managé (15 min)
 
 ---
 
-## Partie 11 - Timeline suggérée
+## Partie 12 - Timeline suggérée
 
 - Présentation SKS vs kubeadm: **4 min**
 - Démo live SKS: **7 min**
@@ -4316,12 +4390,12 @@ SKS ne permet pas de joindre des nœuds extérieurs à son control plane :
 
 <!-- _class: lead -->
 
-# Partie 12
+# Partie 13
 ## Observabilité du cluster — kube-prometheus-stack (30 min)
 
 ---
 
-## Partie 12 - Timeline suggérée
+## Partie 13 - Timeline suggérée
 
 - Architecture de la stack et composants : **5 min**
 - Installation Helm + vérification : **10 min**

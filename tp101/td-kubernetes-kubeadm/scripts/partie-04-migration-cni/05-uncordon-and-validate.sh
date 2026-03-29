@@ -18,6 +18,25 @@ trap cleanup ERR
 echo "=== Uncordon des nœuds et validation ==="
 echo ""
 
+# ─── Étape 0 : vérifier le mode encapsulation Calico ───────────────────────
+echo "0. Vérification du mode encapsulation Calico..."
+IPIP_MODE=$(kubectl get ippools default-ipv4-ippool -o jsonpath='{.spec.ipipMode}' 2>/dev/null || echo "")
+VXLAN_MODE=$(kubectl get ippools default-ipv4-ippool -o jsonpath='{.spec.vxlanMode}' 2>/dev/null || echo "")
+
+if [[ "$IPIP_MODE" == "Always" ]] || [[ "$VXLAN_MODE" != "Always" ]]; then
+    echo "   ⚠️  Calico en mode IPIP (bloqué sur Exoscale/cloud) — passage en VXLAN..."
+    kubectl patch ippools default-ipv4-ippool --type=merge \
+        -p '{"spec": {"ipipMode": "Never", "vxlanMode": "Always"}}'
+    kubectl rollout restart daemonset/calico-node -n kube-system
+    echo "   Attente du redémarrage des calico-node..."
+    kubectl rollout status daemonset/calico-node -n kube-system --timeout=120s
+    echo "   ✓ Mode VXLAN activé"
+else
+    echo "   ✓ Calico déjà en mode VXLAN"
+fi
+echo ""
+# ───────────────────────────────────────────────────────────────────────────
+
 # Vérifier que jq est installé
 if ! command -v jq &> /dev/null; then
     echo "❌ jq est requis mais n'est pas installé. Veuillez installer jq d'abord."
