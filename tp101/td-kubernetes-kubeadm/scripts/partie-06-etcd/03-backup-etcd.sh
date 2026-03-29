@@ -25,8 +25,10 @@ sudo mkdir -p "$BACKUP_DIR"
 echo "   Destination: $SNAPSHOT_FILE"
 echo ""
 
+ETCDCTL=$(command -v etcdctl)
+
 echo "3. Création du snapshot:"
-sudo etcdctl snapshot save "$SNAPSHOT_FILE" \
+sudo "$ETCDCTL" snapshot save "$SNAPSHOT_FILE" \
     --cacert=/etc/kubernetes/pki/etcd/ca.crt \
     --cert=/etc/kubernetes/pki/etcd/server.crt \
     --key=/etc/kubernetes/pki/etcd/server.key \
@@ -34,7 +36,7 @@ sudo etcdctl snapshot save "$SNAPSHOT_FILE" \
 
 echo ""
 echo "4. Vérification de l'intégrité du snapshot:"
-sudo etcdctl snapshot status "$SNAPSHOT_FILE" --write-out=table
+sudo "$ETCDCTL" snapshot status "$SNAPSHOT_FILE" --write-out=table
 
 echo ""
 echo "5. Taille du fichier:"
