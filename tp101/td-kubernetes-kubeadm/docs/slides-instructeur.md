@@ -2444,10 +2444,10 @@ pre { font-size: 13px; margin-top: 6px; }
 
 ## IPIP vs VXLAN — encapsulation et cloud firewalls
 
-<svg width="1100" height="235" viewBox="0 0 1100 235" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+<svg width="1100" height="258" viewBox="0 0 1100 258" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
 <defs>
-  <marker id="arrgray" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6b7280"/></marker>
-  <marker id="arrgreen" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#16a34a"/></marker>
+<marker id="arrgray" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6b7280"/></marker>
+<marker id="arrgreen" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#16a34a"/></marker>
 </defs>
 <text x="44" y="34" text-anchor="middle" fill="#dc2626" font-size="14" font-weight="bold">❌ IPIP</text>
 <text x="44" y="50" text-anchor="middle" fill="#dc2626" font-size="11">IP proto 4</text>
@@ -2463,43 +2463,53 @@ pre { font-size: 13px; margin-top: 6px; }
 <text x="445" y="63" text-anchor="middle" fill="#b91c1c" font-size="10">payload</text>
 <line x1="697" y1="44" x2="715" y2="44" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrgray)"/>
 <rect x="718" y="12" width="148" height="64" rx="8" fill="#fca5a5" stroke="#dc2626" stroke-width="2.5"/>
-<text x="792" y="32" text-anchor="middle" fill="#7f1d1d" font-size="12" font-weight="bold">🔥 Security</text>
-<text x="792" y="48" text-anchor="middle" fill="#7f1d1d" font-size="12" font-weight="bold">Group</text>
-<text x="792" y="67" text-anchor="middle" fill="#dc2626" font-size="12" font-weight="bold">proto 4 → DROP</text>
+<text x="792" y="30" text-anchor="middle" fill="#7f1d1d" font-size="11" font-weight="bold">🔥 Security Group</text>
+<text x="792" y="46" text-anchor="middle" fill="#7f1d1d" font-size="10">règles: TCP · UDP · ICMP</text>
+<text x="792" y="61" text-anchor="middle" fill="#dc2626" font-size="11" font-weight="bold">proto 4 → aucune règle → DROP</text>
 <line x1="868" y1="44" x2="882" y2="44" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5,3"/>
 <rect x="884" y="12" width="88" height="64" rx="8" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
 <text x="928" y="31" text-anchor="middle" fill="#9ca3af" font-size="13" font-weight="bold">Node B</text>
 <text x="928" y="47" text-anchor="middle" fill="#9ca3af" font-size="10">injoignable</text>
 <text x="928" y="63" text-anchor="middle" fill="#ef4444" font-size="11" font-weight="bold">calico 0/1 ✗</text>
-<text x="540" y="93" text-anchor="middle" fill="#dc2626" font-size="11" font-style="italic">Security group bloque IP protocol 4 → tunnel Calico ne s'établit pas → calico-node reste 0/1</text>
-<line x1="20" y1="104" x2="1080" y2="104" stroke="#e5e7eb" stroke-width="1.5" stroke-dasharray="8,4"/>
-<text x="44" y="132" text-anchor="middle" fill="#16a34a" font-size="14" font-weight="bold">✅ VXLAN</text>
-<text x="44" y="148" text-anchor="middle" fill="#16a34a" font-size="11">UDP 4789</text>
-<rect x="84" y="113" width="88" height="98" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-<text x="128" y="133" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Node A</text>
-<text x="128" y="150" text-anchor="middle" fill="#1d4ed8" font-size="10">10.0.0.1</text>
-<text x="128" y="166" text-anchor="middle" fill="#0369a1" font-size="10">pod 10.244.0.1</text>
-<line x1="174" y1="162" x2="192" y2="162" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrgray)"/>
-<rect x="195" y="113" width="500" height="98" rx="6" fill="#bbf7d0" stroke="#16a34a" stroke-width="2"/>
-<text x="445" y="129" text-anchor="middle" fill="#14532d" font-size="11" font-weight="bold">IP outer — src: 10.0.0.1 → dst: 10.0.0.2</text>
-<rect x="207" y="134" width="476" height="71" rx="4" fill="#d1fae5" stroke="#22c55e" stroke-width="1.5"/>
-<text x="445" y="149" text-anchor="middle" fill="#166534" font-size="11" font-weight="bold">UDP header — port: 4789</text>
-<rect x="219" y="154" width="452" height="45" rx="4" fill="#ecfdf5" stroke="#34d399" stroke-width="1.5"/>
-<text x="445" y="168" text-anchor="middle" fill="#166534" font-size="11">VXLAN header (VNI)</text>
-<rect x="231" y="172" width="428" height="22" rx="3" fill="#f0fdf4" stroke="#6ee7b7" stroke-width="1.5"/>
-<text x="445" y="187" text-anchor="middle" fill="#14532d" font-size="11">IP inner — 10.244.0.1 (pod A) → 10.244.1.1 (pod B) + payload</text>
-<line x1="697" y1="162" x2="715" y2="162" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrgray)"/>
-<rect x="718" y="113" width="148" height="98" rx="8" fill="#bbf7d0" stroke="#16a34a" stroke-width="2.5"/>
-<text x="792" y="148" text-anchor="middle" fill="#14532d" font-size="12" font-weight="bold">🔥 Security</text>
-<text x="792" y="165" text-anchor="middle" fill="#14532d" font-size="12" font-weight="bold">Group</text>
-<text x="792" y="194" text-anchor="middle" fill="#16a34a" font-size="12" font-weight="bold">UDP 4789 → ALLOW</text>
-<line x1="868" y1="162" x2="882" y2="162" stroke="#16a34a" stroke-width="2" marker-end="url(#arrgreen)"/>
-<rect x="884" y="113" width="88" height="98" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
-<text x="928" y="133" text-anchor="middle" fill="#14532d" font-size="13" font-weight="bold">Node B</text>
-<text x="928" y="150" text-anchor="middle" fill="#166534" font-size="10">10.0.0.2</text>
-<text x="928" y="166" text-anchor="middle" fill="#0369a1" font-size="10">pod 10.244.1.1</text>
-<text x="928" y="200" text-anchor="middle" fill="#16a34a" font-size="12" font-weight="bold">calico 1/1 ✓</text>
-<text x="540" y="226" text-anchor="middle" fill="#16a34a" font-size="11" font-style="italic">UDP est autorisé par défaut → tunnel VXLAN établi → calico-node passe Ready 1/1</text>
+<rect x="84" y="82" width="292" height="38" rx="5" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5"/>
+<text x="230" y="96" text-anchor="middle" fill="#7f1d1d" font-size="10" font-weight="bold">① protocol 4 ≠ TCP/UDP/ICMP</text>
+<text x="230" y="111" text-anchor="middle" fill="#991b1b" font-size="10">SG: aucune règle → DROP silencieux</text>
+<text x="386" y="104" text-anchor="middle" fill="#dc2626" font-size="15">→</text>
+<rect x="396" y="82" width="292" height="38" rx="5" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5"/>
+<text x="542" y="96" text-anchor="middle" fill="#7f1d1d" font-size="10" font-weight="bold">② tunl0 existe sur Node A</text>
+<text x="542" y="111" text-anchor="middle" fill="#991b1b" font-size="10">paquets droppés → pods inter-nœuds injoignables</text>
+<text x="698" y="104" text-anchor="middle" fill="#dc2626" font-size="15">→</text>
+<rect x="708" y="82" width="292" height="38" rx="5" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5"/>
+<text x="854" y="96" text-anchor="middle" fill="#7f1d1d" font-size="10" font-weight="bold">③ Felix détecte routes KO</text>
+<text x="854" y="111" text-anchor="middle" fill="#991b1b" font-size="10">probe -felix-ready échoue → calico-node 0/1</text>
+<line x1="20" y1="127" x2="1080" y2="127" stroke="#e5e7eb" stroke-width="1.5" stroke-dasharray="8,4"/>
+<text x="44" y="155" text-anchor="middle" fill="#16a34a" font-size="14" font-weight="bold">✅ VXLAN</text>
+<text x="44" y="171" text-anchor="middle" fill="#16a34a" font-size="11">UDP 4789</text>
+<rect x="84" y="135" width="88" height="98" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="128" y="155" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Node A</text>
+<text x="128" y="172" text-anchor="middle" fill="#1d4ed8" font-size="10">10.0.0.1</text>
+<text x="128" y="188" text-anchor="middle" fill="#0369a1" font-size="10">pod 10.244.0.1</text>
+<line x1="174" y1="184" x2="192" y2="184" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrgray)"/>
+<rect x="195" y="135" width="500" height="98" rx="6" fill="#bbf7d0" stroke="#16a34a" stroke-width="2"/>
+<text x="445" y="151" text-anchor="middle" fill="#14532d" font-size="11" font-weight="bold">IP outer — src: 10.0.0.1 → dst: 10.0.0.2</text>
+<rect x="207" y="156" width="476" height="71" rx="4" fill="#d1fae5" stroke="#22c55e" stroke-width="1.5"/>
+<text x="445" y="171" text-anchor="middle" fill="#166534" font-size="11" font-weight="bold">UDP header — port: 4789</text>
+<rect x="219" y="176" width="452" height="45" rx="4" fill="#ecfdf5" stroke="#34d399" stroke-width="1.5"/>
+<text x="445" y="190" text-anchor="middle" fill="#166534" font-size="11">VXLAN header (VNI)</text>
+<rect x="231" y="194" width="428" height="22" rx="3" fill="#f0fdf4" stroke="#6ee7b7" stroke-width="1.5"/>
+<text x="445" y="209" text-anchor="middle" fill="#14532d" font-size="11">IP inner — 10.244.0.1 (pod A) → 10.244.1.1 (pod B) + payload</text>
+<line x1="697" y1="184" x2="715" y2="184" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrgray)"/>
+<rect x="718" y="135" width="148" height="98" rx="8" fill="#bbf7d0" stroke="#16a34a" stroke-width="2.5"/>
+<text x="792" y="166" text-anchor="middle" fill="#14532d" font-size="11" font-weight="bold">🔥 Security Group</text>
+<text x="792" y="181" text-anchor="middle" fill="#14532d" font-size="10">règle UDP intra-groupe</text>
+<text x="792" y="218" text-anchor="middle" fill="#16a34a" font-size="11" font-weight="bold">UDP 4789 → ALLOW</text>
+<line x1="868" y1="184" x2="882" y2="184" stroke="#16a34a" stroke-width="2" marker-end="url(#arrgreen)"/>
+<rect x="884" y="135" width="88" height="98" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+<text x="928" y="155" text-anchor="middle" fill="#14532d" font-size="13" font-weight="bold">Node B</text>
+<text x="928" y="172" text-anchor="middle" fill="#166534" font-size="10">10.0.0.2</text>
+<text x="928" y="188" text-anchor="middle" fill="#0369a1" font-size="10">pod 10.244.1.1</text>
+<text x="928" y="222" text-anchor="middle" fill="#16a34a" font-size="12" font-weight="bold">calico 1/1 ✓</text>
+<text x="540" y="248" text-anchor="middle" fill="#16a34a" font-size="11" font-style="italic">UDP autorisé par la règle intra-groupe → tunnel établi → Felix OK → calico-node Ready 1/1</text>
 </svg>
 
 ```bash
