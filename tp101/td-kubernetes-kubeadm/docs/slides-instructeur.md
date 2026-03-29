@@ -2403,19 +2403,19 @@ kubectl drain <node> --force --delete-emptydir-data
 ## 5.3 - Retrait de Flannel ⚠️ ordre impératif
 
 ### 📝 EXERCICE ÉLÈVE
-**Script sur le MASTER puis sur chaque NŒUD:**
+**Script sur le MASTER, puis sur chaque WORKER (pas le master) :**
 ```bash
-./03-remove-flannel.sh master   # depuis le master
-sudo ./03-remove-flannel.sh node  # sur chaque nœud
+./03-remove-flannel.sh master          # depuis le master
+sudo ./03-remove-flannel.sh node       # sur worker1, worker2… (⚠️ pas le master)
 ```
 
 ### Pourquoi en deux temps ?
 
 - **`master`** : supprime les ressources Kubernetes (DaemonSet, ConfigMap…)
-- **`node`** : nettoie les interfaces réseau (`flannel.1`) et les règles iptables locales
+- **`node`** : sur les **workers uniquement** — nettoie `flannel.1`, `cni0`, iptables, `/etc/cni/net.d/`
 
-### ⛔ Ne PAS redémarrer kubelet avant d'avoir installé Calico
-Kubelet sans CNI = nœud `NotReady`, tous les pods perdent leur connectivité
+### ⛔ Ne PAS lancer `node` sur le master
+Le master doit garder kubelet actif — `04-install-calico.sh` attend que calico-node soit Ready dessus
 
 ---
 

@@ -29,12 +29,20 @@ if [ "$1" == "master" ]; then
     echo "  sudo $0 node"
 
 elif [ "$1" == "node" ]; then
-    echo "ÉTAPE 2 - Sur un NŒUD (master ou worker)"
-    echo "----------------------------------------"
+    echo "ÉTAPE 2 - Sur un NŒUD WORKER uniquement (pas le master)"
+    echo "--------------------------------------------------------"
 
     if [ "$EUID" -ne 0 ]; then
         echo "❌ Ce script doit être exécuté avec sudo sur les nœuds"
         false  # Arrête le script avec set -e sans exit
+    fi
+
+    # Refuser d'être lancé sur le master
+    if [[ "$(hostname)" == *"master"* ]] || [[ "$(hostname)" == *"control"* ]]; then
+        echo "❌ Ce script ne doit PAS être lancé sur le master !"
+        echo "   Le master doit garder kubelet actif pour que 04-install-calico.sh fonctionne."
+        echo "   Lancez ce script uniquement sur les workers."
+        false
     fi
 
     echo "1. Arrêt de kubelet:"

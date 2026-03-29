@@ -23,7 +23,7 @@ cd validation && ./validate-all.sh
 Scripts in `scripts/partie-04-migration-cni/03-remove-flannel.sh` take a positional argument:
 ```bash
 ./03-remove-flannel.sh master   # run on control plane
-sudo ./03-remove-flannel.sh node  # run on each node (requires root)
+sudo ./03-remove-flannel.sh node  # run on each WORKER node only — NOT the master (requires root)
 ```
 
 ## Architecture
@@ -46,7 +46,7 @@ The Flannel→Calico migration is the most complex part. The correct order is:
 1. `01-backup-cluster-state.sh` — backup on master
 2. `02-drain-nodes.sh` — drain workers on master
 3. `03-remove-flannel.sh master` — remove Flannel resources from cluster
-4. `03-remove-flannel.sh node` — clean network interfaces on **each node** (do NOT restart kubelet yet)
+4. `03-remove-flannel.sh node` — clean network interfaces on **each WORKER node** (NOT the master — master kubelet must stay running for step 5)
 5. `04-install-calico.sh` — install Calico on master (waits for pods ready)
 6. `sudo systemctl start kubelet` — restart kubelet on each node only after step 5 completes
 7. `05-uncordon-and-validate.sh` — uncordon workers and validate connectivity
