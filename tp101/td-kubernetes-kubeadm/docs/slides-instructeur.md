@@ -155,18 +155,19 @@ exo compute sks create tp-k8s --zone de-fra-1 \
 | Partie | Contenu | Slide |
 |--------|---------|-------|
 | [Partie 0](#8) | Introduction & Objectifs | [→ Aller](#8) |
-| Partie 1 | **Nouveautés K8s 1.30-1.35** (en fin de présentation) | — |
 | [Partie 2](#10) | Installation cluster kubeadm | [→ Aller](#10) |
-| [Partie 3](#45) | Kubelet & Static Pods | [→ Aller](#45) |
-| [Partie 4](#87) | Taints & Tolerations | [→ Aller](#87) |
-| [Partie 5](#116) | Migration CNI | [→ Aller](#116) |
-| [Partie 6](#127) | Drain & Maintenance | [→ Aller](#127) |
-| [Partie 7](#142) | Upgrade cluster | [→ Aller](#142) |
-| [Partie 8](#159) | RuntimeClass & gVisor | [→ Aller](#159) |
-| [Partie 9](#174) | cgroups — le moteur des containers | [→ Aller](#174) |
-| [Partie 10](#184) | Réseau public vs privé | [→ Aller](#184) |
-| [Partie 11](#195) | SKS Exoscale — Kubernetes managé | [→ Aller](#195) |
-| [Partie 12](#202) | Observabilité — kube-prometheus-stack | [→ Aller](#202) |
+| [Partie 3](#48) | Kubelet & Static Pods | [→ Aller](#48) |
+| [Partie 4](#90) | Taints & Tolerations | [→ Aller](#90) |
+| [Partie 5](#119) | Migration CNI | [→ Aller](#119) |
+| [Partie 6](#130) | Drain & Maintenance | [→ Aller](#130) |
+| [Partie 7](#145) | Upgrade cluster | [→ Aller](#145) |
+| [Partie 8](#162) | RuntimeClass & gVisor | [→ Aller](#162) |
+| [Partie 9](#177) | cgroups — le moteur des containers | [→ Aller](#177) |
+| [Partie 10](#187) | Réseau public vs privé | [→ Aller](#187) |
+| [Partie 11](#198) | SKS Exoscale — Kubernetes managé | [→ Aller](#198) |
+| [Partie 12](#205) | Observabilité — kube-prometheus-stack | [→ Aller](#205) |
+| [Partie 1](#248) | Nouveautés K8s 1.30-1.35 | [→ Aller](#248) |
+| [Partie Bonus](#344) | **HA Control Plane — 3 nœuds maîtres** (avant suppression cluster) | [→ Aller](#344) |
 
 ---
 
@@ -788,6 +789,86 @@ curl -k https://<master-ip>:6443
 # Vérifier les certificats
 sudo ls -la /etc/kubernetes/pki/
 ```
+
+---
+
+## Aparté — Ajouter un second control plane (HA)
+
+> *On ne le fait pas dans ce TD, mais voici comment ça marche*
+
+**Méthode normale — `--upload-certs` (recommandée)**
+
+À l'init, `--upload-certs` chiffre les certificats PKI et les stocke dans un Secret `kubeadm-certs` (namespace `kube-system`). Ce Secret expire automatiquement après **2 heures**.
+
+```bash
+# Sur master1 — à l'init du cluster
+kubeadm init \
+  --control-plane-endpoint="<lb>:6443" \
+  --upload-certs
+# La sortie affiche --certificate-key <key> — à conserver pour le join
+```
+
+```bash
+# Sur master2 — le flag --control-plane distingue un master d'un worker
+# kubeadm télécharge et déchiffre les certs depuis le Secret automatiquement
+kubeadm join <lb>:6443 \
+  --token <token> \
+  --discovery-token-ca-cert-hash sha256:<hash> \
+  --control-plane \
+  --certificate-key <key>
+```
+
+---
+
+## Aparté — Ajouter un second control plane (HA) — fallback
+
+**Méthode de secours — copie manuelle (si `--upload-certs` oublié ou Secret expiré)**
+
+```bash
+# Régénérer la clé sans relancer kubeadm init :
+kubeadm init phase upload-certs --upload-certs
+# → affiche un nouveau --certificate-key valable 2h
+```
+
+Si le cluster est inaccessible ou qu'on préfère éviter le Secret, copie manuelle des 6 fichiers PKI de master1 vers master2 :
+
+```bash
+for f in ca.crt ca.key sa.pub sa.key front-proxy-ca.crt front-proxy-ca.key; do
+  scp /etc/kubernetes/pki/$f root@master2:/etc/kubernetes/pki/
+done
+scp /etc/kubernetes/pki/etcd/ca.{crt,key} root@master2:/etc/kubernetes/pki/etcd/
+# Puis joindre sans --certificate-key (les certs sont déjà en place)
+kubeadm join <lb>:6443 --token <token> \
+  --discovery-token-ca-cert-hash sha256:<hash> --control-plane
+```
+
+**Ce qui se passe dans les deux cas :** kubeadm installe `kube-apiserver`, `kube-scheduler`, `kube-controller-manager` et ajoute ce nœud comme membre etcd supplémentaire.
+
+---
+
+## Aparté — Peut-on promouvoir un worker en master ?
+
+> *Question fréquente : "j'ai 1 master + 2 workers, puis-je transformer les workers en masters ?"*
+
+**Non, kubeadm n'a pas de commande de promotion.** Deux blocages fondamentaux :
+
+**1. Le certificat de l'API server est figé à l'init**
+- Sans `--control-plane-endpoint` au `kubeadm init`, le cert ne contient que l'IP du master d'origine
+- Aucun autre nœud ne peut rejoindre en tant que control plane → il faudrait **tout réinitialiser**
+
+**2. Si `--control-plane-endpoint` était présent**, on peut contourner, mais ce n'est pas une promotion :
+```bash
+# Sur le worker à "promouvoir" : reset complet (le nœud quitte le cluster)
+kubectl drain worker1 --ignore-daemonsets --delete-emptydir-data
+kubeadm reset && rm -rf /etc/kubernetes /var/lib/etcd
+
+# Puis rejoindre en tant que control plane (comme un nœud neuf)
+kubeadm join <lb>:6443 --token ... --control-plane --certificate-key <key>
+```
+
+**Conclusion :** la décision HA doit être prise **au moment du `kubeadm init`** avec `--control-plane-endpoint`. Après, c'est un reset, pas une promotion.
+
+Pour un cluster "survie" à 3 nœuds master+worker : les masters peuvent aussi ordonnancer des pods si on retire le taint `node-role.kubernetes.io/control-plane:NoSchedule`.
 
 ---
 
@@ -6749,4 +6830,119 @@ R: Environnement de dev isolé, feature gates activées, ne JAMAIS en production
 # Merci !
 
 
+------
+
+<!-- _class: lead -->
+
+# Partie Bonus
+## HA Control Plane — 3 nœuds maîtres
+
 ---
+
+## Bonus HA — Contexte et objectif
+
+> *Dernier exercice avant suppression du cluster — pas une pratique de prod*
+
+**Situation de départ :** 1 master + 2 workers, initialisé **sans** `--control-plane-endpoint`
+
+**Ce qu'on va faire :**
+- Réinitialiser le master **avec** `--control-plane-endpoint` et `--upload-certs`
+- Réinitialiser chaque worker et le rejoindre en tant que **control plane**
+- Retirer les taints `NoSchedule` pour que chaque nœud cumule les deux rôles
+
+**Pourquoi ce n'est pas de la prod :**
+- L'endpoint pointe sur l'IP du master → ce nœud reste un SPOF
+- En prod : LB devant les 3 API servers, etcd séparé sur disques rapides
+- Ici : on démontre le mécanisme, pas l'architecture cible
+
+**Ce qu'on apprend :**
+- La décision HA doit être prise **au `kubeadm init`** — pas rétroactivement
+- kubeadm ne "promeut" pas — il reset + rejoint
+- etcd passe de 1 à 3 membres → quorum réel
+
+---
+
+## Bonus HA — Séquence d'exécution
+
+| Étape | Script | Nœud |
+|-------|--------|------|
+| 1 | `00-reinit-master.sh` | **master** |
+| 2 | `scp /tmp/ha-join-info.sh root@<worker-ip>:/tmp/` | master → workers |
+| 3 | `01-promote-worker.sh` | **worker1** |
+| 4 | `01-promote-worker.sh` | **worker2** |
+| 5 | `02-allow-scheduling.sh` | **master** |
+| 6 | `03-validate-ha.sh` | **master** |
+
+**⚠️ Ordre impératif** : le master doit être réinitialisé avant les workers. Le `ha-join-info.sh` doit être copié **avant** de reset les workers (le scp utilise l'ancien réseau).
+
+---
+
+## Bonus HA — Script 00 : réinitialisation master
+
+**`./00-reinit-master.sh`** — sur le master
+
+Ce que fait le script :
+1. Draine les workers (`kubectl drain`)
+2. `kubeadm reset -f` + nettoyage iptables
+3. `kubeadm init --control-plane-endpoint=<master-ip>:6443 --upload-certs`
+4. Réinstalle Calico (VXLAN)
+5. Génère `/tmp/ha-join-info.sh` avec token, hash et certificate-key
+
+```bash
+# Contenu de /tmp/ha-join-info.sh généré automatiquement
+MASTER_IP="10.0.0.10"
+JOIN_TOKEN="abcdef.0123456789abcdef"
+DISCOVERY_HASH="sha256:abc123..."
+CERTIFICATE_KEY="def456..."
+```
+
+**Point instructeur :** le `--certificate-key` expire après **2h**. Si les workers rejoignent après ce délai, relancer `kubeadm init phase upload-certs --upload-certs` sur le master.
+
+---
+
+## Bonus HA — Script 01 : promotion des workers
+
+**`./01-promote-worker.sh`** — sur chaque worker (après copie de `ha-join-info.sh`)
+
+```bash
+# Sur le master : copier le fichier vers chaque worker
+scp /tmp/ha-join-info.sh root@<worker1-ip>:/tmp/
+scp /tmp/ha-join-info.sh root@<worker2-ip>:/tmp/
+```
+
+Ce que fait le script sur chaque worker :
+1. `kubeadm reset -f` + nettoyage
+2. `kubeadm join --control-plane --certificate-key` (lit `ha-join-info.sh`)
+3. Configure `~/.kube/config` → kubectl disponible sur le worker devenu master
+
+**Ce qui se passe dans etcd :**
+
+```
+Avant  : 1 membre  → leader unique, pas de tolérance aux pannes
+Après  : 3 membres → quorum à 2, tolère la perte d'1 nœud
+```
+
+---
+
+## Bonus HA — Scripts 02 et 03
+
+**`./02-allow-scheduling.sh`** — retire le taint `NoSchedule` des control planes
+
+```bash
+# Équivalent manuel
+kubectl taint node master  node-role.kubernetes.io/control-plane:NoSchedule-
+kubectl taint node worker1 node-role.kubernetes.io/control-plane:NoSchedule-
+kubectl taint node worker2 node-role.kubernetes.io/control-plane:NoSchedule-
+```
+
+Sans ce retrait, les pods applicatifs ne s'y scheduleraient pas — seuls les pods système (DaemonSets avec toleration) y tournent.
+
+---
+
+**`./03-validate-ha.sh`** — validation complète
+
+- Tous les nœuds `Ready` + rôle `control-plane`
+- `etcdctl member list` → 3 membres started
+- DaemonSet de test schedulé sur les 3 nœuds
+- Nettoyage automatique du pod de test
+
