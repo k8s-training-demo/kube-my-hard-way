@@ -6,6 +6,8 @@
 
 set -e
 
+export PATH="/usr/local/bin:$PATH"
+
 SNAPSHOT_FILE="$1"
 
 if [ -z "$SNAPSHOT_FILE" ]; then
