@@ -104,6 +104,18 @@ etcdctl \
 kubectl get nodes
 
 echo ""
+echo "8. Vérification : les objets créés après le backup ont disparu :"
+echo ""
+echo "   Namespaces présents (etcd-demo-* doit être ABSENT) :"
+kubectl get namespaces | grep -v "etcd-demo-" || true
+echo ""
+if kubectl get namespaces | grep -q "etcd-demo-"; then
+    echo "   ⚠️  Des namespaces etcd-demo-* sont encore visibles — attendez quelques secondes et relancez"
+else
+    echo "   ✓ Aucun namespace etcd-demo-* — l'état pré-backup est restauré"
+fi
+
+echo ""
 echo "✓ Restauration terminée"
 echo ""
 echo "⚠️  APRÈS RESTAURATION:"
