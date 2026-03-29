@@ -47,7 +47,8 @@ fi
 
 echo ""
 echo "1. Vérification de l'intégrité du snapshot:"
-etcdctl snapshot status "$SNAPSHOT_FILE" --write-out=table
+# etcd 3.6 : snapshot status et restore sont dans etcdutl (pas etcdctl)
+etcdutl snapshot status "$SNAPSHOT_FILE" --write-out=table
 echo ""
 
 echo "2. Arrêt de l'API Server et d'etcd (déplacement des manifests statiques):"
@@ -58,7 +59,7 @@ echo "   ✓ Pods statiques arrêtés"
 
 echo ""
 echo "3. Restauration du snapshot:"
-etcdctl snapshot restore "$SNAPSHOT_FILE" \
+etcdutl snapshot restore "$SNAPSHOT_FILE" \
     --data-dir="$RESTORE_DIR" \
     --name="$MASTER_NAME" \
     --initial-cluster="${MASTER_NAME}=https://${MASTER_IP}:2380" \

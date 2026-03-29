@@ -29,10 +29,11 @@ if ! command -v etcdctl &>/dev/null; then
     curl -fsSL "$URL" -o "/tmp/${ARCHIVE}"
     tar xzf "/tmp/${ARCHIVE}" --strip-components=1 \
         -C /usr/local/bin \
-        "etcd-v${ETCD_VERSION}-linux-amd64/etcdctl"
+        "etcd-v${ETCD_VERSION}-linux-amd64/etcdctl" \
+        "etcd-v${ETCD_VERSION}-linux-amd64/etcdutl"
     rm -f "/tmp/${ARCHIVE}"
-    chmod +x /usr/local/bin/etcdctl
-    echo "   ✓ etcdctl installé dans /usr/local/bin/etcdctl"
+    chmod +x /usr/local/bin/etcdctl /usr/local/bin/etcdutl
+    echo "   ✓ etcdctl + etcdutl installés dans /usr/local/bin/"
 else
     echo "   ✓ etcdctl déjà présent : $(which etcdctl)"
 fi

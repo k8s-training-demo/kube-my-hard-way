@@ -36,7 +36,8 @@ sudo "$ETCDCTL" snapshot save "$SNAPSHOT_FILE" \
 
 echo ""
 echo "4. Vérification de l'intégrité du snapshot:"
-sudo "$ETCDCTL" snapshot status "$SNAPSHOT_FILE" --write-out=table
+# etcd 3.6 : snapshot status/restore sont dans etcdutl, pas etcdctl
+sudo /usr/local/bin/etcdutl snapshot status "$SNAPSHOT_FILE" --write-out=table
 
 echo ""
 echo "5. Taille du fichier:"
