@@ -17,12 +17,20 @@ echo "1. Installation d'etcdctl:"
 # etcdctl est fourni dans le package etcd-client sur certaines distros,
 # mais sur CentOS/RHEL la façon la plus fiable est de l'extraire depuis l'image etcd du cluster.
 if ! command -v etcdctl &>/dev/null; then
-    echo "   etcdctl absent — installation depuis l'image etcd du cluster..."
-    ETCD_VERSION=$(kubectl -n kube-system get pod -l component=etcd -o jsonpath='{.items[0].spec.containers[0].image}' | cut -d: -f2)
-    echo "   Version etcd du cluster : $ETCD_VERSION"
-    # Extraire etcdctl depuis le conteneur etcd en cours d'exécution
-    ETCD_POD=$(kubectl -n kube-system get pod -l component=etcd -o jsonpath='{.items[0].metadata.name}')
-    kubectl -n kube-system cp "${ETCD_POD}:/usr/local/bin/etcdctl" /usr/local/bin/etcdctl
+    echo "   etcdctl absent — téléchargement depuis les releases GitHub etcd..."
+    # Extraire la version depuis l'image etcd du cluster (ex: 3.6.5-0 → 3.6.5)
+    RAW_VERSION=$(kubectl -n kube-system get pod -l component=etcd \
+        -o jsonpath='{.items[0].spec.containers[0].image}' | cut -d: -f2)
+    ETCD_VERSION="${RAW_VERSION%-*}"   # supprime le suffixe -0 de Kubernetes
+    echo "   Version etcd du cluster : v${ETCD_VERSION}"
+    ARCHIVE="etcd-v${ETCD_VERSION}-linux-amd64.tar.gz"
+    URL="https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/${ARCHIVE}"
+    echo "   Téléchargement : $URL"
+    curl -fsSL "$URL" -o "/tmp/${ARCHIVE}"
+    tar xzf "/tmp/${ARCHIVE}" --strip-components=1 \
+        -C /usr/local/bin \
+        "etcd-v${ETCD_VERSION}-linux-amd64/etcdctl"
+    rm -f "/tmp/${ARCHIVE}"
     chmod +x /usr/local/bin/etcdctl
     echo "   ✓ etcdctl installé dans /usr/local/bin/etcdctl"
 else
