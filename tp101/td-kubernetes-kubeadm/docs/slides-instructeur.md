@@ -160,12 +160,13 @@ exo compute sks create tp-k8s --zone de-fra-1 \
 | [Partie 4](#90) | Taints & Tolerations | [→ Aller](#90) |
 | [Partie 5](#119) | Migration CNI | [→ Aller](#119) |
 | [Partie 6](#130) | Drain & Maintenance | [→ Aller](#130) |
-| [Partie 7](#145) | Upgrade cluster | [→ Aller](#145) |
-| [Partie 8](#162) | RuntimeClass & gVisor | [→ Aller](#162) |
-| [Partie 9](#177) | cgroups — le moteur des containers | [→ Aller](#177) |
-| [Partie 10](#187) | Réseau public vs privé | [→ Aller](#187) |
-| [Partie 11](#198) | SKS Exoscale — Kubernetes managé | [→ Aller](#198) |
-| [Partie 12](#205) | Observabilité — kube-prometheus-stack | [→ Aller](#205) |
+| [Partie 7](#145) | etcd & etcdctl | [→ Aller](#145) |
+| [Partie 8](#153) | Upgrade cluster | [→ Aller](#153) |
+| [Partie 9](#162) | RuntimeClass & gVisor | [→ Aller](#162) |
+| [Partie 10](#177) | cgroups — le moteur des containers | [→ Aller](#177) |
+| [Partie 11](#187) | Réseau public vs privé | [→ Aller](#187) |
+| [Partie 12](#198) | SKS Exoscale — Kubernetes managé | [→ Aller](#198) |
+| [Partie 13](#205) | Observabilité — kube-prometheus-stack | [→ Aller](#205) |
 | [Partie 1](#248) | Nouveautés K8s 1.30-1.35 | [→ Aller](#248) |
 | [Partie Bonus](#344) | **HA Control Plane — 3 nœuds maîtres** (avant suppression cluster) | [→ Aller](#344) |
 
@@ -2870,135 +2871,7 @@ cd ../../validation && ./validate-partie.sh 5
 <!-- _class: lead -->
 
 # Partie 7
-## Upgrade du Cluster (25 min)
-
----
-
-## Partie 6 - Timeline suggérée
-
-- Check versions: **3 min**
-- Upgrade control plane: **7 min**
-- Upgrade master kubelet: **5 min**
-- Upgrade workers: **8 min** (4 min × 2)
-- Validation: **2 min**
-
----
-
-## Concepts de version Kubernetes
-
-### Structure: `v1.28.3`
-
-- **Major:** Changements majeurs (rare)
-- **Minor:** Features, API changes (~4 mois)
-- **Patch:** Bugfixes, security patches
-
-### Politique de support
-**N, N-1, N-2**
-
----
-
-## 6.1 - Check versions
-
-### 📝 EXERCICE ÉLÈVE
-**Script sur le MASTER:**
-```bash
-cd scripts/partie6-upgrade
-./01-check-versions.sh
-```
-
----
-
-## Ordre d'upgrade obligatoire
-
-1. **etcd** (si externe)
-2. **Control plane**
-3. **Workers**
-4. **Addons** (CNI, etc.)
-
-⚠️ Ordre crucial pour la compatibilité !
-
----
-
-## 6.2 - Upgrade control plane
-
-### 📝 EXERCICE ÉLÈVE
-**Script sur le MASTER:**
-```bash
-./02-upgrade-control-plane.sh
-```
-
-### Point critique
-`kubeadm upgrade plan`
-
-**Insistez pour que les étudiants lisent attentivement le plan !**
-
-### Informations dans le plan
-
-- Versions actuelles
-- Versions disponibles
-- Composants à upgrader
-- Commande exacte à exécuter
-
----
-
-## 6.3 - Upgrade kubelet master
-
-### 📝 EXERCICE ÉLÈVE
-**Script sur le MASTER:**
-```bash
-./03-upgrade-master-kubelet.sh
-```
-
-### Point pédagogique
-**Pourquoi kubelet séparément ?**
-
-- Kubelet tourne sur **chaque nœud**
-- Nécessite un **redémarrage local**
-- **Drain requis** pour éviter les interruptions
-
----
-
-## 6.4 - Upgrade workers
-
-### 📝 EXERCICE ÉLÈVE
-**Script sur chaque WORKER:**
-```bash
-./04-upgrade-worker.sh
-```
-
-### Procédure par worker
-**Drain → Upgrade → Uncordon**
-
-### Ordre recommandé
-
-- Un worker à la fois
-- Valider entre chaque worker
-
-**Si temps limité:** Upgrader un seul worker en démo
-
----
-
-## 6.5 - Validation post-upgrade
-
-### 📝 EXERCICE ÉLÈVE
-```bash
-./05-verify-upgrade.sh
-cd ../../validation && ./validate-partie.sh 6
-```
-
-### Checklist
-
-- Nœuds Ready + Versions cohérentes
-- Pods système Running
-- Nouveau déploiement OK
-- DNS + Services fonctionnels
-
----
-
-<!-- _class: lead -->
-
-# etcd & etcdctl
-## La source de vérité du cluster
+## etcd & etcdctl — La source de vérité du cluster
 
 ---
 
@@ -3187,11 +3060,139 @@ sudo mv /tmp/etcd.yaml /etc/kubernetes/manifests/
 <!-- _class: lead -->
 
 # Partie 8
-## RuntimeClass & gVisor (25 min)
+## Upgrade du Cluster (25 min)
 
 ---
 
 ## Partie 8 - Timeline suggérée
+
+- Check versions: **3 min**
+- Upgrade control plane: **7 min**
+- Upgrade master kubelet: **5 min**
+- Upgrade workers: **8 min** (4 min × 2)
+- Validation: **2 min**
+
+---
+
+## Concepts de version Kubernetes
+
+### Structure: `v1.28.3`
+
+- **Major:** Changements majeurs (rare)
+- **Minor:** Features, API changes (~4 mois)
+- **Patch:** Bugfixes, security patches
+
+### Politique de support
+**N, N-1, N-2**
+
+---
+
+## 6.1 - Check versions
+
+### 📝 EXERCICE ÉLÈVE
+**Script sur le MASTER:**
+```bash
+cd scripts/partie6-upgrade
+./01-check-versions.sh
+```
+
+---
+
+## Ordre d'upgrade obligatoire
+
+1. **etcd** (si externe)
+2. **Control plane**
+3. **Workers**
+4. **Addons** (CNI, etc.)
+
+⚠️ Ordre crucial pour la compatibilité !
+
+---
+
+## 6.2 - Upgrade control plane
+
+### 📝 EXERCICE ÉLÈVE
+**Script sur le MASTER:**
+```bash
+./02-upgrade-control-plane.sh
+```
+
+### Point critique
+`kubeadm upgrade plan`
+
+**Insistez pour que les étudiants lisent attentivement le plan !**
+
+### Informations dans le plan
+
+- Versions actuelles
+- Versions disponibles
+- Composants à upgrader
+- Commande exacte à exécuter
+
+---
+
+## 6.3 - Upgrade kubelet master
+
+### 📝 EXERCICE ÉLÈVE
+**Script sur le MASTER:**
+```bash
+./03-upgrade-master-kubelet.sh
+```
+
+### Point pédagogique
+**Pourquoi kubelet séparément ?**
+
+- Kubelet tourne sur **chaque nœud**
+- Nécessite un **redémarrage local**
+- **Drain requis** pour éviter les interruptions
+
+---
+
+## 6.4 - Upgrade workers
+
+### 📝 EXERCICE ÉLÈVE
+**Script sur chaque WORKER:**
+```bash
+./04-upgrade-worker.sh
+```
+
+### Procédure par worker
+**Drain → Upgrade → Uncordon**
+
+### Ordre recommandé
+
+- Un worker à la fois
+- Valider entre chaque worker
+
+**Si temps limité:** Upgrader un seul worker en démo
+
+---
+
+## 6.5 - Validation post-upgrade
+
+### 📝 EXERCICE ÉLÈVE
+```bash
+./05-verify-upgrade.sh
+cd ../../validation && ./validate-partie.sh 6
+```
+
+### Checklist
+
+- Nœuds Ready + Versions cohérentes
+- Pods système Running
+- Nouveau déploiement OK
+- DNS + Services fonctionnels
+
+---
+
+<!-- _class: lead -->
+
+# Partie 9
+## RuntimeClass & gVisor (25 min)
+
+---
+
+## Partie 9 - Timeline suggérée
 
 - Install gVisor sur les nœuds: **7 min**
 - Création RuntimeClass: **3 min**
@@ -3510,12 +3511,12 @@ spec:
 
 <!-- _class: lead -->
 
-# Partie 9
+# Partie 10
 ## cgroups — le moteur des containers (20 min)
 
 ---
 
-## Partie 9 - Timeline suggérée
+## Partie 10 - Timeline suggérée
 
 - Qu'est-ce qu'un cgroup : **5 min**
 - Démo nerdctl + Docker : **5 min**
@@ -3722,12 +3723,12 @@ resources:          crée le cgroup       /sys/fs/cgroup/
 
 <!-- _class: lead -->
 
-# Partie 10
+# Partie 11
 ## Réseau public vs privé (10 min)
 
 ---
 
-## Partie 10 - Timeline suggérée
+## Partie 11 - Timeline suggérée
 
 - Architecture sans réseau privé — risques: **4 min**
 - Architecture avec réseau privé — isolation: **4 min**
@@ -4196,12 +4197,12 @@ kubectl get svc mon-app
 
 <!-- _class: lead -->
 
-# Partie 11
+# Partie 12
 ## SKS Exoscale — Kubernetes managé (15 min)
 
 ---
 
-## Partie 11 - Timeline suggérée
+## Partie 12 - Timeline suggérée
 
 - Présentation SKS vs kubeadm: **4 min**
 - Démo live SKS: **7 min**
@@ -4325,12 +4326,12 @@ SKS ne permet pas de joindre des nœuds extérieurs à son control plane :
 
 <!-- _class: lead -->
 
-# Partie 12
+# Partie 13
 ## Observabilité du cluster — kube-prometheus-stack (30 min)
 
 ---
 
-## Partie 12 - Timeline suggérée
+## Partie 13 - Timeline suggérée
 
 - Architecture de la stack et composants : **5 min**
 - Installation Helm + vérification : **10 min**
