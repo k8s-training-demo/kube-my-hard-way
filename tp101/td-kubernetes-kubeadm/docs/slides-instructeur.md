@@ -2734,9 +2734,11 @@ kubectl get pdb app-pdb -o wide
 
 ---
 
-## 5.2 - DaemonSets
+![bg fit](diagrams/node-drain-process.png)
 
-![bg right:40% fit](diagrams/node-drain-process.png)
+---
+
+## 5.2 - DaemonSets
 
 ### 📝 EXERCICE ÉLÈVE
 **Script sur le MASTER:**
