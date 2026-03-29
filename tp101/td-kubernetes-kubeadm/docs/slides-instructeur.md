@@ -154,17 +154,19 @@ exo compute sks create tp-k8s --zone de-fra-1 \
 
 | Partie | Contenu | Slide |
 |--------|---------|-------|
-| [Partie 0](#69) | Introduction & Objectifs | [→ Aller](#69) |
+| [Partie 0](#8) | Introduction & Objectifs | [→ Aller](#8) |
 | Partie 1 | **Nouveautés K8s 1.30-1.35** (en fin de présentation) | — |
-| [Partie 2](#71) | Installation cluster kubeadm | [→ Aller](#71) |
-| [Partie 3](#80) | Kubelet & Static Pods | [→ Aller](#80) |
-| [Partie 4](#89) | Taints & Tolerations | [→ Aller](#89) |
-| [Partie 5](#105) | Migration CNI | [→ Aller](#105) |
-| [Partie 6](#113) | Drain & Maintenance | [→ Aller](#113) |
-| [Partie 7](#125) | Upgrade cluster | [→ Aller](#125) |
-| [Partie 8](#140) | RuntimeClass & gVisor | [→ Aller](#140) |
-| [Partie 9](#155) | Réseau public vs privé | [→ Aller](#155) |
-| [Partie 10](#160) | SKS Exoscale — Kubernetes managé | [→ Aller](#160) |
+| [Partie 2](#10) | Installation cluster kubeadm | [→ Aller](#10) |
+| [Partie 3](#45) | Kubelet & Static Pods | [→ Aller](#45) |
+| [Partie 4](#87) | Taints & Tolerations | [→ Aller](#87) |
+| [Partie 5](#116) | Migration CNI | [→ Aller](#116) |
+| [Partie 6](#127) | Drain & Maintenance | [→ Aller](#127) |
+| [Partie 7](#142) | Upgrade cluster | [→ Aller](#142) |
+| [Partie 8](#159) | RuntimeClass & gVisor | [→ Aller](#159) |
+| [Partie 9](#174) | cgroups — le moteur des containers | [→ Aller](#174) |
+| [Partie 10](#184) | Réseau public vs privé | [→ Aller](#184) |
+| [Partie 11](#195) | SKS Exoscale — Kubernetes managé | [→ Aller](#195) |
+| [Partie 12](#202) | Observabilité — kube-prometheus-stack | [→ Aller](#202) |
 
 ---
 

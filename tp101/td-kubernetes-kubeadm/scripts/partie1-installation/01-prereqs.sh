@@ -104,15 +104,24 @@ gpgkey=https://pkgs.k8s.io/core:/stable:/v1.34/rpm/repodata/repomd.xml.key
 exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
 EOF
 
-echo "Installation de kubeadm, kubelet, kubectl..."
-sudo dnf install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+if [[ "$1" == "master" ]] || [[ "$(hostname)" == *"master"* ]] || [[ "$(hostname)" == *"control"* ]]; then
+    echo "Installation de kubeadm, kubelet, kubectl (control plane)..."
+    sudo dnf install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+else
+    echo "Installation de kubeadm, kubelet (worker — kubectl non requis)..."
+    sudo dnf install -y kubelet kubeadm --disableexcludes=kubernetes
+fi
 
 # Verrouiller les versions pour éviter les mises à jour accidentelles
 # POURQUOI: Une mise à jour non planifiée de kubelet peut casser le cluster.
 #           L'upgrade doit être fait de manière contrôlée via kubeadm upgrade.
 echo "Verrouillage des versions..."
 sudo dnf install -y 'dnf-command(versionlock)' 2>/dev/null || true
-sudo dnf versionlock add kubelet kubeadm kubectl 2>/dev/null || echo "Note: versionlock non disponible, pensez à surveiller les mises à jour"
+if [[ "$1" == "master" ]] || [[ "$(hostname)" == *"master"* ]] || [[ "$(hostname)" == *"control"* ]]; then
+    sudo dnf versionlock add kubelet kubeadm kubectl 2>/dev/null || echo "Note: versionlock non disponible, pensez à surveiller les mises à jour"
+else
+    sudo dnf versionlock add kubelet kubeadm 2>/dev/null || echo "Note: versionlock non disponible, pensez à surveiller les mises à jour"
+fi
 
 # Activer kubelet
 sudo systemctl enable kubelet
@@ -128,4 +137,6 @@ echo ""
 echo "✓ Pré-requis installés avec succès!"
 echo "Version kubeadm: $(kubeadm version -o short)"
 echo "Version kubelet: $(kubelet --version)"
-echo "Version kubectl: $(kubectl version --client -o yaml | grep gitVersion)"
+if command -v kubectl &>/dev/null; then
+    echo "Version kubectl: $(kubectl version --client -o yaml | grep gitVersion)"
+fi
