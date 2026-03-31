@@ -143,7 +143,7 @@ NODEPORT=$(kubectl get svc kube-prom-grafana -n monitoring \
 
 # --- 6. Test rapide ---
 echo "5. Test de connexion :"
-HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:80 || echo "000")
+HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:80 || echo "000")
 if [ "$HTTP_CODE" = "302" ] || [ "$HTTP_CODE" = "200" ]; then
     echo "   ✓ Port 80 répond (HTTP $HTTP_CODE)"
 else
