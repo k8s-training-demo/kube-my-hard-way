@@ -135,28 +135,36 @@ kubectl rollout status deployment/grafana-lb -n monitoring --timeout=60s
 echo "   ✓ Pod prêt"
 echo ""
 
-# --- 5. Récupération de l'IP et affichage ---
+# --- 5. Récupération de l'IP et du NodePort ---
 MASTER_IP=$(kubectl get nodes -l node-role.kubernetes.io/control-plane \
     -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
-
-echo "=== Accès Grafana ==="
-echo ""
-echo "  Option A — LoadBalancer (reverse proxy) :"
-echo "    URL  : http://${MASTER_IP}"
-echo ""
-echo "  Option B — NodePort direct :"
-echo "    URL  : http://${MASTER_IP}:30812"
-echo ""
-echo "  Credentials : admin / admin"
-echo ""
-echo "Les deux routes mènent au même Grafana — comparer les approches !"
-echo ""
+NODEPORT=$(kubectl get svc kube-prom-grafana -n monitoring \
+    -o jsonpath='{.spec.ports[0].nodePort}')
 
 # --- 6. Test rapide ---
-echo "6. Test de connexion :"
+echo "5. Test de connexion :"
 HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:80 || echo "000")
 if [ "$HTTP_CODE" = "302" ] || [ "$HTTP_CODE" = "200" ]; then
     echo "   ✓ Port 80 répond (HTTP $HTTP_CODE)"
 else
     echo "   ⚠ Port 80 retourne HTTP $HTTP_CODE — vérifier le pod grafana-lb"
 fi
+echo ""
+
+echo "========================================"
+echo "  ACCÈS GRAFANA"
+echo "========================================"
+echo ""
+echo "  Credentials : admin / admin"
+echo ""
+echo "  1. Reverse proxy (port 80) :"
+echo "     http://${MASTER_IP}"
+echo "     http://grafana.${MASTER_IP}.nip.io"
+echo ""
+echo "  2. NodePort (accès direct sans proxy) :"
+echo "     http://${MASTER_IP}:${NODEPORT}"
+echo "     http://grafana.${MASTER_IP}.nip.io:${NODEPORT}"
+echo ""
+echo "  Les deux routes pointent vers le même Grafana."
+echo "  nip.io resout automatiquement vers ${MASTER_IP} — aucun DNS à configurer."
+echo "========================================"

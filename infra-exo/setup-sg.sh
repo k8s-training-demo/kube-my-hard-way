@@ -5,6 +5,7 @@
 #   - SSH (TCP 22) depuis partout
 #   - TCP all-ports intra-groupe (trafic Kubernetes inter-nœuds)
 #   - UDP all-ports intra-groupe (Flannel/Calico VXLAN UDP 8472, etc.)
+#   - HTTP (TCP 80) depuis partout (hostPort reverse proxy)
 #   - NodePorts (TCP 30000-32767) depuis partout (accès services exposés)
 #   - Kubernetes API (TCP 6443) depuis partout
 
@@ -124,7 +125,28 @@ else
     echo "ajoutée."
 fi
 
-# 5. NodePorts (TCP 30000-32767) depuis partout — accès aux services exposés (Grafana, etc.)
+# 5. HTTP/HTTPS (TCP 80/443) depuis partout — accès aux services exposés en hostPort
+echo -n "  → HTTP (TCP 80) depuis 0.0.0.0/0… "
+if exo compute security-group show "$SG_NAME" --output-format json 2>/dev/null | \
+   python3 -c "
+import sys, json
+rules = json.load(sys.stdin).get('ingress_rules', [])
+for r in rules:
+    if r.get('protocol') == 'tcp' and r.get('start_port') == 80 and r.get('end_port') == 80 \
+       and r.get('network') in ('0.0.0.0/0', '::/0'):
+        sys.exit(0)
+sys.exit(1)
+" 2>/dev/null; then
+    echo "déjà présent."
+else
+    exo compute security-group rule add "$SG_NAME" \
+        --protocol tcp \
+        --port 80 \
+        --network 0.0.0.0/0 > /dev/null
+    echo "ajoutée."
+fi
+
+# 6. NodePorts (TCP 30000-32767) depuis partout — accès aux services exposés (Grafana, etc.)
 echo -n "  → NodePorts (TCP 30000-32767) depuis 0.0.0.0/0… "
 if exo compute security-group show "$SG_NAME" --output-format json 2>/dev/null | \
    python3 -c "
@@ -145,7 +167,7 @@ else
     echo "ajoutée."
 fi
 
-# 6. Kubernetes API (TCP 6443) depuis partout — accès kubectl externe pour TP
+# 7. Kubernetes API (TCP 6443) depuis partout — accès kubectl externe pour TP
 echo -n "  → Kubernetes API (TCP 6443) depuis 0.0.0.0/0… "
 if exo compute security-group show "$SG_NAME" --output-format json 2>/dev/null | \
    python3 -c "
