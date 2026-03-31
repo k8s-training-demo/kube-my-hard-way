@@ -29,10 +29,20 @@ SC=$(kubectl get storageclass -o jsonpath='{.items[0].metadata.name}' 2>/dev/nul
 if [ -z "$SC" ]; then
     echo "   ⚠ Aucun StorageClass trouvé — Prometheus tournera sans persistance"
     echo "     (acceptable pour le TD, déconseillé en production)"
-    STORAGE_OPTS="--set prometheus.prometheusSpec.storageSpec={} \
-                  --set alertmanager.alertmanagerSpec.storage={}"
+    # --set ne peut pas exprimer un objet vide {} — on passe par un fichier values temporaire
+    STORAGE_VALUES=$(mktemp /tmp/prometheus-storage-XXXXXX.yaml)
+    cat > "$STORAGE_VALUES" <<'EOF'
+prometheus:
+  prometheusSpec:
+    storageSpec: {}
+alertmanager:
+  alertmanagerSpec:
+    storage: {}
+EOF
+    STORAGE_OPTS="--values $STORAGE_VALUES"
 else
     echo "   ✓ StorageClass : $SC"
+    STORAGE_VALUES=""
     STORAGE_OPTS=""
 fi
 echo ""
@@ -63,6 +73,8 @@ helm upgrade --install kube-prom \
     $STORAGE_OPTS \
     --wait \
     --timeout 10m
+
+[ -n "$STORAGE_VALUES" ] && rm -f "$STORAGE_VALUES"
 
 echo ""
 echo "=== Installation terminée ==="
