@@ -17,7 +17,7 @@ echo ""
 
 echo "3. Versions des composants du control plane:"
 echo "   a) API Server:"
-kubectl version --short | grep Server
+kubectl version | grep Server
 
 echo ""
 echo "   b) Pods système et leurs images:"

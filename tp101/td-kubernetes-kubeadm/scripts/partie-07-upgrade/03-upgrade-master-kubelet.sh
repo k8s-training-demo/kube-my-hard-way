@@ -68,7 +68,7 @@ kubectl get node $MASTER_NODE -o wide
 echo ""
 echo "   b) Versions des composants:"
 echo "      kubelet: $(kubelet --version)"
-echo "      kubectl: $(kubectl version --client --short 2>/dev/null || kubectl version --client)"
+echo "      kubectl: $(kubectl version --client)"
 
 echo ""
 echo "✓ Master kubelet et kubectl upgradés avec succès!"
