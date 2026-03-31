@@ -4,7 +4,9 @@
 # Règles créées :
 #   - SSH (TCP 22) depuis partout
 #   - TCP all-ports intra-groupe (trafic Kubernetes inter-nœuds)
-#   - UDP all-ports intra-groupe (Flannel VXLAN UDP 8472, etc.)
+#   - UDP all-ports intra-groupe (Flannel/Calico VXLAN UDP 8472, etc.)
+#   - NodePorts (TCP 30000-32767) depuis partout (accès services exposés)
+#   - Kubernetes API (TCP 6443) depuis partout
 
 set -e
 
@@ -122,7 +124,28 @@ else
     echo "ajoutée."
 fi
 
-# 5. Kubernetes API (TCP 6443) depuis partout — accès kubectl externe pour TP
+# 5. NodePorts (TCP 30000-32767) depuis partout — accès aux services exposés (Grafana, etc.)
+echo -n "  → NodePorts (TCP 30000-32767) depuis 0.0.0.0/0… "
+if exo compute security-group show "$SG_NAME" --output-format json 2>/dev/null | \
+   python3 -c "
+import sys, json
+rules = json.load(sys.stdin).get('ingress_rules', [])
+for r in rules:
+    if r.get('protocol') == 'tcp' and r.get('start_port') == 30000 and r.get('end_port') == 32767 \
+       and r.get('network') in ('0.0.0.0/0', '::/0'):
+        sys.exit(0)
+sys.exit(1)
+" 2>/dev/null; then
+    echo "déjà présent."
+else
+    exo compute security-group rule add "$SG_NAME" \
+        --protocol tcp \
+        --port 30000-32767 \
+        --network 0.0.0.0/0 > /dev/null
+    echo "ajoutée."
+fi
+
+# 6. Kubernetes API (TCP 6443) depuis partout — accès kubectl externe pour TP
 echo -n "  → Kubernetes API (TCP 6443) depuis 0.0.0.0/0… "
 if exo compute security-group show "$SG_NAME" --output-format json 2>/dev/null | \
    python3 -c "
