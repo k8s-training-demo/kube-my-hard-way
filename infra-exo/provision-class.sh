@@ -433,14 +433,13 @@ if [ "$WITH_CCM" = "true" ]; then
     if [ ! -x "$CCM_SCRIPT" ]; then
         echo -e "${RED}❌ setup-ccm-token.sh introuvable ou non exécutable${RESET}"
     else
-        OUTPUT_DIR="$(dirname "$(realpath "$OUTPUT")")"
-        "$CCM_SCRIPT" \
+        CCM_OUT=$("$CCM_SCRIPT" \
             --prefix "$PREFIX" \
             --count "$STUDENTS" \
             --zone "$ZONE" \
-            --output "tokens-ccm-${PREFIX}.md" \
-            --output-dir "$OUTPUT_DIR" > /dev/null 2>&1 && \
-            echo -e "${GREEN}✅ OK${RESET}" || \
+            --output "tokens-ccm-${PREFIX}.md" 2>&1) && \
+            CCM_DIR=$(echo "$CCM_OUT" | grep "Répertoire" | awk '{print $NF}')
+            echo -e "${GREEN}✅ OK${RESET} → ${BOLD}${CCM_DIR}${RESET}" || \
             echo -e "${YELLOW}⚠ Erreur lors de la génération des tokens CCM${RESET}"
 
         # Ajouter section CCM dans le Markdown principal
@@ -478,7 +477,7 @@ echo -e "${GREEN}${BOLD}🎉 Provisioning terminé !${RESET}"
 echo -e "   VMs créées : ${BOLD}$TOTAL${RESET}"
 echo -e "   Fichier    : ${BOLD}$OUTPUT${RESET}"
 [ "$WITH_CCM" = "true" ] && \
-    echo -e "   Tokens CCM : ${BOLD}tokens-ccm-${PREFIX}.md${RESET} + ccm-secret-${PREFIX}-*.yaml"
+    echo -e "   Secrets CCM: ${BOLD}${CCM_DIR:-/tmp/ccm-secrets-*}${RESET} (hors git)"
 echo -e "${BOLD}══════════════════════════════════════════${RESET}"
 echo ""
 echo -e "💡 Pour supprimer toutes les VMs :"

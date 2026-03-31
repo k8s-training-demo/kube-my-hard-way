@@ -32,6 +32,11 @@ Thumbs.db
 *.swo
 *~
 
+# ── Secrets CCM / credentials (générés par setup-ccm-token.sh) ───────────────
+ccm-secret-*.yaml
+tokens-ccm*.md
+*-credentials.json
+
 # ── Fichiers temporaires ───────────────────────────────────────────────────────
 *.tmp
 *.log

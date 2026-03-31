@@ -10,7 +10,7 @@
 
 set -e
 
-CCM_VERSION="v0.29.0"
+CCM_VERSION="0.34.0"
 ZONE="${1:-de-fra-1}"
 
 echo "=== Installation du Cloud Controller Manager Exoscale ==="
@@ -98,7 +98,7 @@ spec:
         node-role.kubernetes.io/control-plane: ""
       containers:
       - name: exoscale-cloud-controller-manager
-        image: ghcr.io/exoscale/exoscale-cloud-controller-manager:${CCM_VERSION}
+        image: exoscale/cloud-controller-manager:${CCM_VERSION}
         args:
         - --cloud-provider=exoscale
         - --leader-elect=false
@@ -108,24 +108,17 @@ spec:
           valueFrom:
             secretKeyRef:
               name: exoscale-ccm-credentials
-              key: api-credentials.json
-              optional: false
+              key: api-key
         - name: EXOSCALE_API_SECRET
           valueFrom:
             secretKeyRef:
               name: exoscale-ccm-credentials
-              key: api-credentials.json
-              optional: false
+              key: api-secret
         - name: EXOSCALE_API_ZONE
-          value: "${ZONE}"
-        volumeMounts:
-        - name: exoscale-credentials
-          mountPath: /etc/exoscale
-          readOnly: true
-      volumes:
-      - name: exoscale-credentials
-        secret:
-          secretName: exoscale-ccm-credentials
+          valueFrom:
+            secretKeyRef:
+              name: exoscale-ccm-credentials
+              key: zone
 EOF
 echo "   ✓ CCM déployé"
 echo ""
