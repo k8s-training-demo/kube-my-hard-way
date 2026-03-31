@@ -69,14 +69,21 @@ export EXOSCALE_API_SECRET=...
 
 ## 2. Security Group (`tp-k8s`)
 
-Le script [`infra-exo/setup-sg.sh`](infra-exo/setup-sg.sh) crée un security group avec :
+Le script [`infra-exo/setup-sg.sh`](infra-exo/setup-sg.sh) crée un security group avec les règles suivantes :
 
-- SSH entrant depuis n'importe quelle IP
-- Tout le trafic TCP/UDP **intra-groupe** (communication inter-nœuds Kubernetes)
-- firewalld **désactivé** sur les nœuds — les règles Exoscale font office de pare-feu
+| Protocole | Port(s) | Source | Usage |
+|-----------|---------|--------|-------|
+| TCP | 22 | `0.0.0.0/0` | SSH depuis l'instructeur/étudiants |
+| TCP | 80 | `0.0.0.0/0` | Grafana via reverse proxy hostPort |
+| TCP | 6443 | `0.0.0.0/0` | API Kubernetes — accès `kubectl` externe, `get-kubeconfig.sh` |
+| TCP | 30000-32767 | `0.0.0.0/0` | NodePorts (Grafana, services exposés) |
+| TCP | 1-65535 | intra-groupe | Trafic inter-nœuds Kubernetes |
+| UDP | 1-65535 | intra-groupe | Calico VXLAN (UDP 4789), CoreDNS |
+
+firewalld est **désactivé** sur les nœuds — les security groups Exoscale font office de pare-feu.
 
 ```bash
-# Création du security group
+# Création du security group (une seule fois par compte/zone)
 ./infra-exo/setup-sg.sh
 
 # Référencer le SG dans la config

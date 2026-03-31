@@ -32,6 +32,11 @@ Thumbs.db
 *.swo
 *~
 
+# ── Kubeconfigs récupérés depuis les clusters (get-kubeconfig.sh) ────────────
+kubeconfigs/
+kubeconfig-*.yaml
+**/kubeconfig-*.yaml
+
 # ── Secrets CCM / credentials (générés par setup-ccm-token.sh) ───────────────
 ccm-secret-*.yaml
 tokens-ccm*.md

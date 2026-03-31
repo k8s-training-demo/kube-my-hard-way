@@ -57,13 +57,56 @@ metadata:
   namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:cloud-controller-manager
+rules:
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["get", "create", "update"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch", "update"]
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["*"]
+- apiGroups: [""]
+  resources: ["nodes/status"]
+  verbs: ["patch"]
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["list", "patch", "update", "watch"]
+- apiGroups: [""]
+  resources: ["services/status"]
+  verbs: ["list", "patch", "update", "watch"]
+- apiGroups: [""]
+  resources: ["serviceaccounts"]
+  verbs: ["create"]
+- apiGroups: [""]
+  resources: ["endpoints"]
+  verbs: ["create", "get", "list", "watch", "update"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["certificates.k8s.io"]
+  resources: ["certificatesigningrequests"]
+  verbs: ["list", "watch"]
+- apiGroups: ["certificates.k8s.io"]
+  resources: ["certificatesigningrequests/approval"]
+  verbs: ["update"]
+- apiGroups: ["certificates.k8s.io"]
+  resources: ["signers"]
+  resourceNames: ["kubernetes.io/kubelet-serving"]
+  verbs: ["approve"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: system:cloud-controller-manager
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: cluster-admin
+  name: system:cloud-controller-manager
 subjects:
 - kind: ServiceAccount
   name: cloud-controller-manager
@@ -93,18 +136,21 @@ spec:
       - key: node-role.kubernetes.io/control-plane
         operator: Exists
         effect: NoSchedule
-      - key: node.cloudprovider.kubernetes.io/uninitialized
+      - key: node-role.kubernetes.io/master
         operator: Exists
         effect: NoSchedule
+      - key: node.cloudprovider.kubernetes.io/uninitialized
+        value: "true"
+        effect: NoSchedule
+      - key: CriticalAddonsOnly
+        operator: Exists
       nodeSelector:
         node-role.kubernetes.io/control-plane: ""
       containers:
       - name: exoscale-cloud-controller-manager
         image: exoscale/cloud-controller-manager:${CCM_VERSION}
         args:
-        - --cloud-provider=exoscale
         - --leader-elect=false
-        - --use-service-account-credentials=true
         - --allow-untagged-cloud
         env:
         - name: EXOSCALE_API_KEY
