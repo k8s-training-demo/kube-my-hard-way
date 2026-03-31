@@ -60,21 +60,51 @@ EOF
 echo "   ✓ Gateway créé"
 echo ""
 
-# --- 5. Patch du service généré en NodePort ---
-echo "5. Passage du service Gateway en NodePort :"
-# POURQUOI: NGF crée un Service LoadBalancer par Gateway (monitoring-gateway-nginx).
-#           Sur Exoscale sans CCM, l'EXTERNAL-IP reste <pending>.
-#           On le patche en NodePort pour un accès direct via l'IP du nœud.
-echo "   Attente du service monitoring-gateway-nginx..."
-for i in $(seq 1 20); do
-    kubectl get svc monitoring-gateway-nginx -n monitoring &>/dev/null && break
+# --- 5. Configuration NodePort via NginxProxy ---
+echo "5. Configuration du service Gateway en NodePort (via NginxProxy) :"
+# POURQUOI: NGF v2 crée un Service LoadBalancer par Gateway et le reconcilie en continu.
+#           Patcher le service directement ne tient pas — NGF le réécrase.
+#           La seule façon correcte est de passer par la CR NginxProxy référencée par le Gateway.
+kubectl apply -f - <<EOF
+apiVersion: gateway.nginx.org/v1alpha2
+kind: NginxProxy
+metadata:
+  name: monitoring-proxy-config
+  namespace: monitoring
+spec:
+  kubernetes:
+    service:
+      type: NodePort
+EOF
+echo "   ✓ NginxProxy créé"
+echo ""
+
+# Mettre à jour le Gateway pour référencer le NginxProxy
+echo "   Attachement du NginxProxy au Gateway :"
+kubectl patch gateway monitoring-gateway -n monitoring --type='merge' -p '{
+  "spec": {
+    "infrastructure": {
+      "parametersRef": {
+        "group": "gateway.nginx.org",
+        "kind": "NginxProxy",
+        "name": "monitoring-proxy-config"
+      }
+    }
+  }
+}'
+echo "   ✓ Gateway mis à jour"
+echo ""
+
+echo "   Attente de la recréation du service en NodePort (30s max)..."
+for i in $(seq 1 10); do
+    SVC_TYPE=$(kubectl get svc monitoring-gateway-nginx -n monitoring \
+        -o jsonpath='{.spec.type}' 2>/dev/null || echo "")
+    if [ "$SVC_TYPE" = "NodePort" ]; then
+        echo "   ✓ Service en NodePort"
+        break
+    fi
     sleep 3
 done
-
-kubectl patch svc monitoring-gateway-nginx -n monitoring \
-    --type='json' \
-    -p '[{"op":"replace","path":"/spec/type","value":"NodePort"}]'
-echo "   ✓ Service patché en NodePort"
 echo ""
 
 # --- 6. HTTPRoute Grafana ---
