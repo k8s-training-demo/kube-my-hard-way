@@ -4260,6 +4260,109 @@ kubectl get svc mon-app
 
 ---
 
+## CCM Exoscale sur kubeadm — démonstration en live
+
+### Ce que les étudiants voient sur leur cluster
+
+```bash
+# Le CCM tourne, s'authentifie correctement...
+kubectl logs -n kube-system -l app=exoscale-cloud-controller-manager --tail=5
+# exoscale-ccm: using Exoscale actual API credentials (key + secret)
+# Ensuring load balancer for service monitoring/kube-prom-grafana
+# failed to ensure load balancer: couldn't infer any Instance Pool
+#                                 from cluster Nodes
+```
+
+```bash
+# Le service reste en pending indéfiniment
+kubectl get svc kube-prom-grafana -n monitoring
+# NAME               TYPE           EXTERNAL-IP   PORT
+# kube-prom-grafana  LoadBalancer   <pending>     80/TCP
+```
+
+**Le CCM est opérationnel — c'est l'infrastructure qui manque**
+
+---
+
+## Pourquoi ? — Instance Pool obligatoire
+
+<svg width="1100" height="260" viewBox="0 0 760 180" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+<defs>
+  <marker id="arr-ok" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#16a34a"/></marker>
+  <marker id="arr-err" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#dc2626"/></marker>
+  <marker id="arr-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6b7280"/></marker>
+</defs>
+
+<!-- Titre gauche / droite -->
+<text x="190" y="14" text-anchor="middle" fill="#dc2626" font-weight="bold" font-size="11">kubeadm — VMs standalone</text>
+<text x="570" y="14" text-anchor="middle" fill="#16a34a" font-weight="bold" font-size="11">SKS — Instance Pools natifs</text>
+<line x1="380" y1="0" x2="380" y2="180" stroke="#e5e7eb" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+<!-- Gauche : kubeadm -->
+<rect x="20" y="28" width="100" height="22" rx="4" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+<text x="70" y="43" text-anchor="middle" fill="#1e40af" font-size="9">Service LB</text>
+<line x1="120" y1="39" x2="145" y2="39" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr-gray)"/>
+<rect x="145" y="28" width="90" height="22" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+<text x="190" y="43" text-anchor="middle" fill="#166534" font-size="9">CCM Exoscale</text>
+<line x1="235" y1="39" x2="260" y2="39" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr-gray)"/>
+<rect x="260" y="28" width="100" height="22" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+<text x="310" y="43" text-anchor="middle" fill="#dc2626" font-size="9">API NLB Exoscale</text>
+
+<rect x="70" y="72" width="80" height="18" rx="3" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1"/>
+<text x="110" y="84" text-anchor="middle" fill="#475569" font-size="8">vm-etudiant-01-master</text>
+<rect x="165" y="72" width="80" height="18" rx="3" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1"/>
+<text x="205" y="84" text-anchor="middle" fill="#475569" font-size="8">vm-etudiant-01-worker1</text>
+<rect x="260" y="72" width="80" height="18" rx="3" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1"/>
+<text x="300" y="84" text-anchor="middle" fill="#475569" font-size="8">vm-etudiant-01-worker2</text>
+
+<text x="190" y="112" text-anchor="middle" fill="#dc2626" font-size="10" font-weight="bold">✗ VMs standalone = pas de backend NLB</text>
+<text x="190" y="126" text-anchor="middle" fill="#6b7280" font-size="9">"couldn't infer any Instance Pool from cluster Nodes"</text>
+
+<!-- Droite : SKS -->
+<rect x="400" y="28" width="100" height="22" rx="4" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+<text x="450" y="43" text-anchor="middle" fill="#1e40af" font-size="9">Service LB</text>
+<line x1="500" y1="39" x2="525" y2="39" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arr-ok)"/>
+<rect x="525" y="28" width="90" height="22" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+<text x="570" y="43" text-anchor="middle" fill="#166534" font-size="9">CCM Exoscale</text>
+<line x1="615" y1="39" x2="640" y2="39" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arr-ok)"/>
+<rect x="640" y="28" width="100" height="22" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+<text x="690" y="43" text-anchor="middle" fill="#166534" font-size="9">API NLB Exoscale</text>
+
+<rect x="490" y="72" width="160" height="28" rx="5" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+<text x="570" y="83" text-anchor="middle" fill="#166534" font-weight="bold" font-size="9">Instance Pool</text>
+<text x="570" y="95" text-anchor="middle" fill="#16a34a" font-size="8">pool-workers (2 nœuds)</text>
+
+<line x1="570" y1="50" x2="570" y2="72" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="3,2"/>
+
+<text x="570" y="120" text-anchor="middle" fill="#16a34a" font-size="10" font-weight="bold">✓ NLB créé automatiquement</text>
+<text x="570" y="134" text-anchor="middle" fill="#6b7280" font-size="9">EXTERNAL-IP assignée en &lt;60s</text>
+</svg>
+
+Le NLB Exoscale n'accepte que des **Instance Pools** comme backends — pas des VMs individuelles.
+
+---
+
+## La limite kubeadm — ce qu'on a appris
+
+Bilan du TP kubeadm face à l'intégration cloud native :
+
+| Ce qu'on maîtrise | Ce qui manque |
+|-------------------|---------------|
+| ✓ Bootstrap du cluster | ✗ Service `type:LoadBalancer` |
+| ✓ CNI, RBAC, Upgrades | ✗ Provisioning automatique NLB |
+| ✓ Static pods, kubelet | ✗ Node lifecycle cloud (Instance Pool) |
+| ✓ CCM installé et authentifié | ✗ Backend cloud compatible |
+
+**Ce n'est pas un bug — c'est une frontière architecturale.**
+
+kubeadm est fait pour contrôler chaque composant.
+Les clouds managés sont faits pour abstraire cette complexité.
+
+> Vous avez maintenant la compréhension interne pour **opérer SKS intelligemment**
+> — et pour savoir exactement ce qu'il fait à votre place.
+
+---
+
 <!-- _class: lead -->
 
 # Partie 12

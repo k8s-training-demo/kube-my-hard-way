@@ -179,48 +179,19 @@ kubectl rollout status deployment/exoscale-cloud-controller-manager \
 echo "   ✓ CCM opérationnel"
 echo ""
 
-# --- 5. Patch de Grafana en LoadBalancer ---
-echo "5. Patch du service Grafana en type LoadBalancer :"
-# POURQUOI: Le CCM surveille les Service type:LoadBalancer.
-#           En passant Grafana en LoadBalancer, Exoscale crée automatiquement un NLB.
-kubectl patch svc kube-prom-grafana -n monitoring \
-    --type='json' \
-    -p '[{"op":"replace","path":"/spec/type","value":"LoadBalancer"}]'
-echo "   ✓ Service Grafana patché en LoadBalancer"
-echo ""
-
-# --- 6. Attente de l'EXTERNAL-IP ---
-echo "6. Attente de l'EXTERNAL-IP (NLB en cours de création, 3 min max) :"
 MASTER_IP=$(kubectl get nodes -l node-role.kubernetes.io/control-plane \
     -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
 
-for i in $(seq 1 36); do
-    EXTERNAL_IP=$(kubectl get svc kube-prom-grafana -n monitoring \
-        -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
-    if [ -n "$EXTERNAL_IP" ] && [ "$EXTERNAL_IP" != "<pending>" ]; then
-        echo ""
-        echo "   ✓ NLB Exoscale créé !"
-        break
-    fi
-    printf "\r   Attente du NLB... (%ds)" $((i * 5))
-    sleep 5
-done
-
-EXTERNAL_IP=$(kubectl get svc kube-prom-grafana -n monitoring \
-    -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
-
 echo ""
-echo "=== Accès Grafana ==="
+echo "=== CCM Exoscale installé ==="
 echo ""
-if [ -n "$EXTERNAL_IP" ]; then
-    echo "  Option A — NLB Exoscale (Service LoadBalancer) :"
-    echo "    URL  : http://${EXTERNAL_IP}"
-    echo ""
-fi
-echo "  Option B — NodePort direct :"
+echo "  ⚠️  Note : le NLB automatique (Service type:LoadBalancer) requiert un"
+echo "      Instance Pool Exoscale comme backend. Sur des VMs kubeadm standalone,"
+echo "      le CCM démarre mais ne peut pas créer de NLB."
+echo ""
+echo "  → Pour exposer Grafana, utiliser le reverse proxy hostPort (port 80) :"
+echo "     ./04-expose-grafana-hostport.sh"
+echo ""
+echo "  Accès Grafana (NodePort) :"
 echo "    URL  : http://${MASTER_IP}:30812"
-echo ""
-echo "  Credentials : admin / admin"
-echo ""
-echo "kubectl get svc kube-prom-grafana -n monitoring"
-kubectl get svc kube-prom-grafana -n monitoring
+echo "    Credentials : admin / admin"

@@ -4,8 +4,7 @@
 >
 > Nous tenons à remercier chaleureusement Exoscale pour leur soutien à la formation des jeunes ingénieures et ingénieurs. Leur plateforme, leur CLI et leur infrastructure cloud rendent possible un apprentissage concret et professionnel de Kubernetes dans des conditions proches du monde réel.
 
-Ce document recense tout ce qui est spécifique à l'environnement Exoscale dans cette formation.  
-Il est destiné aux équipes Exoscale pour visualiser l'intégration de leur plateforme.
+Ce document recense tout ce qui est spécifique à l'environnement Exoscale dans cette formation.
 
 ---
 
@@ -273,7 +272,7 @@ exo compute load-balancer service add tp-k8s-nlb \
   --protocol tcp
 ```
 
-> **Contrainte Exoscale** : les backends d'un NLB doivent appartenir à un **Instance Pool** — les VMs standalone ne peuvent pas être cibles directes d'un NLB. Pour des clusters kubeadm avec VMs individuelles, le CCM (section 7) est la voie recommandée.
+> **Contrainte Exoscale** : les backends d'un NLB doivent appartenir à un **Instance Pool**. Les VMs standalone (kubeadm) ne sont pas supportées comme backends NLB — le CCM démarre mais retourne `couldn't infer any Instance Pool from cluster Nodes`. Cette intégration fonctionne uniquement avec **SKS** (qui crée des Instance Pools automatiquement). Sur kubeadm, utiliser le reverse proxy hostPort (`04-expose-grafana-hostport.sh`) pour exposer Grafana sur le port 80.
 
 ---
 
