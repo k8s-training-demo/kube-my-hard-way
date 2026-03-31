@@ -5,7 +5,9 @@
 # nip.io : service DNS wildcard — grafana.<IP>.nip.io résout vers <IP>
 # Aucune configuration DNS requise.
 #
-# Implémentation : Nginx Gateway Fabric (référence nginx/sig-network)
+# Implémentation : Nginx Gateway Fabric (nginx/sig-network)
+# Note NGF : chaque Gateway génère son propre Service nginx dans le même namespace.
+#            Ce service est LoadBalancer par défaut — on le patche en NodePort.
 
 set -e
 
@@ -20,34 +22,23 @@ echo ""
 
 # --- 2. Nginx Gateway Fabric ---
 echo "2. Installation de Nginx Gateway Fabric :"
+# POURQUOI: NGF est l'implémentation officielle nginx du standard Gateway API.
+#           Le chart installe le controller ; chaque Gateway crée son propre pod+service nginx.
 helm upgrade --install ngf \
     oci://ghcr.io/nginx/charts/nginx-gateway-fabric \
     --namespace nginx-gateway \
     --create-namespace \
-    --set service.type=NodePort \
     --wait --timeout 3m
 echo "   ✓ Nginx Gateway Fabric prêt"
 echo ""
 
-# --- 3. Récupération de l'IP publique du master et du NodePort HTTP ---
-echo "3. Récupération des paramètres réseau :"
-
+# --- 3. IP publique du master ---
+echo "3. Récupération de l'IP du master :"
 MASTER_IP=$(kubectl get nodes -l node-role.kubernetes.io/control-plane \
-    -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}' 2>/dev/null)
-# Fallback sur InternalIP si pas d'ExternalIP
-if [ -z "$MASTER_IP" ]; then
-    MASTER_IP=$(kubectl get nodes -l node-role.kubernetes.io/control-plane \
-        -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
-fi
-
-HTTP_NODEPORT=$(kubectl get svc ngf-nginx-gateway-fabric -n nginx-gateway \
-    -o jsonpath='{.spec.ports[?(@.port==80)].nodePort}')
-
+    -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
 GRAFANA_HOST="grafana.${MASTER_IP}.nip.io"
-
-echo "   IP master      : $MASTER_IP"
-echo "   NodePort HTTP  : $HTTP_NODEPORT"
-echo "   Hostname       : $GRAFANA_HOST"
+echo "   IP master  : $MASTER_IP"
+echo "   Hostname   : $GRAFANA_HOST"
 echo ""
 
 # --- 4. Gateway ---
@@ -69,8 +60,25 @@ EOF
 echo "   ✓ Gateway créé"
 echo ""
 
-# --- 5. HTTPRoute Grafana ---
-echo "5. Création de l'HTTPRoute pour Grafana :"
+# --- 5. Patch du service généré en NodePort ---
+echo "5. Passage du service Gateway en NodePort :"
+# POURQUOI: NGF crée un Service LoadBalancer par Gateway (monitoring-gateway-nginx).
+#           Sur Exoscale sans CCM, l'EXTERNAL-IP reste <pending>.
+#           On le patche en NodePort pour un accès direct via l'IP du nœud.
+echo "   Attente du service monitoring-gateway-nginx..."
+for i in $(seq 1 20); do
+    kubectl get svc monitoring-gateway-nginx -n monitoring &>/dev/null && break
+    sleep 3
+done
+
+kubectl patch svc monitoring-gateway-nginx -n monitoring \
+    --type='json' \
+    -p '[{"op":"replace","path":"/spec/type","value":"NodePort"}]'
+echo "   ✓ Service patché en NodePort"
+echo ""
+
+# --- 6. HTTPRoute Grafana ---
+echo "6. Création de l'HTTPRoute pour Grafana :"
 kubectl apply -f - <<EOF
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -91,8 +99,8 @@ EOF
 echo "   ✓ HTTPRoute créé"
 echo ""
 
-# --- 6. Attente de la Gateway ---
-echo "6. Attente de la Gateway (30s max) :"
+# --- 7. Attente que la Gateway soit programmée ---
+echo "7. Attente de la Gateway (30s max) :"
 for i in $(seq 1 15); do
     STATUS=$(kubectl get gateway monitoring-gateway -n monitoring \
         -o jsonpath='{.status.conditions[?(@.type=="Programmed")].status}' 2>/dev/null || echo "")
@@ -105,7 +113,11 @@ for i in $(seq 1 15); do
 done
 echo ""
 
-# --- 7. Résumé ---
+# --- 8. Récupération du NodePort final ---
+HTTP_NODEPORT=$(kubectl get svc monitoring-gateway-nginx -n monitoring \
+    -o jsonpath='{.spec.ports[?(@.port==80)].nodePort}')
+
+# --- 9. Résumé ---
 echo "=== Accès Grafana ==="
 echo ""
 echo "  URL  : http://${GRAFANA_HOST}:${HTTP_NODEPORT}"
@@ -117,3 +129,5 @@ echo "       Aucune entrée DNS à créer."
 echo ""
 echo "Vérification des ressources Gateway API :"
 kubectl get gateway,httproute -n monitoring
+echo ""
+kubectl get svc monitoring-gateway-nginx -n monitoring
