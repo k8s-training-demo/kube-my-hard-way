@@ -28,7 +28,11 @@ echo "4. Santé du cluster:"
 kubectl get --raw='/readyz?verbose' | head -20
 echo ""
 
-echo "5. État de tous les nœuds (doivent être Ready):"
+echo "5. Uncordon de tous les nœuds (au cas où ils seraient encore cordonnés):"
+kubectl get nodes --no-headers | awk '{print $1}' | xargs kubectl uncordon 2>/dev/null || true
+echo ""
+
+echo "6. État de tous les nœuds (doivent être Ready):"
 kubectl get nodes
 NOTREADY=$(kubectl get nodes --no-headers | grep -v " Ready " | wc -l)
 if [ "$NOTREADY" -gt 0 ]; then
@@ -38,7 +42,7 @@ else
 fi
 echo ""
 
-echo "6. État des pods système (doivent être Running):"
+echo "7. État des pods système (doivent être Running):"
 kubectl get pods -n kube-system
 NOTRUNNING=$(kubectl get pods -n kube-system --no-headers | grep -v " Running " | grep -v " Completed " | wc -l)
 if [ "$NOTRUNNING" -gt 0 ]; then
@@ -48,24 +52,24 @@ else
 fi
 echo ""
 
-echo "7. Test de déploiement d'une application:"
+echo "8. Test de déploiement d'une application:"
 kubectl create deployment test-upgrade --image=nginx:alpine --replicas=3
 echo "   Attente du déploiement..."
 kubectl wait --for=condition=available deployment/test-upgrade --timeout=60s
 
 echo ""
-echo "8. Vérification du déploiement:"
+echo "9. Vérification du déploiement:"
 kubectl get deployment test-upgrade
 kubectl get pods -l app=test-upgrade -o wide
 
 echo ""
-echo "9. Test de connectivité réseau:"
+echo "10. Test de connectivité réseau:"
 POD_NAME=$(kubectl get pods -l app=test-upgrade -o jsonpath='{.items[0].metadata.name}')
 echo "   Test DNS depuis le pod $POD_NAME:"
 kubectl exec $POD_NAME -- nslookup kubernetes.default
 
 echo ""
-echo "10. Exposition et test du service:"
+echo "11. Exposition et test du service:"
 kubectl expose deployment test-upgrade --port=80 --type=ClusterIP
 SERVICE_IP=$(kubectl get service test-upgrade -o jsonpath='{.spec.clusterIP}')
 echo "   IP du service: $SERVICE_IP"
