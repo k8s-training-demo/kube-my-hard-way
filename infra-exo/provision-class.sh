@@ -44,6 +44,8 @@ ${BOLD}Options de suppression:${RESET}
   --all              Supprimer toutes les VMs de la classe (label préfixe)
 
 ${BOLD}Autres:${RESET}
+  --with-ccm         Générer aussi les tokens CCM Exoscale (IAM role + API key par étudiant)
+                     Produit : ccm-secret-{prefix}-{N}.yaml + tokens-ccm-{prefix}.md
   -h, --help         Afficher cette aide
 
 ${BOLD}Exemples:${RESET}
@@ -90,6 +92,7 @@ DELETE_MODE=false
 DELETE_STUDENT=""   # numéro d'un étudiant précis à supprimer
 DELETE_ALL=false
 INTERACTIVE=true
+WITH_CCM=false
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -100,6 +103,7 @@ while [[ "$#" -gt 0 ]]; do
         --delete)     DELETE_MODE=true ;;
         --student)    DELETE_STUDENT="$2";  shift ;;
         --all)        DELETE_ALL=true ;;
+        --with-ccm)   WITH_CCM=true ;;
         -h|--help)    usage ;;
         *) echo -e "${RED}❌ Option inconnue: $1${RESET}"; echo ""; usage ;;
     esac
@@ -421,12 +425,60 @@ rm -rf "$TMPDIR_DATA"
 
 echo -e "${GREEN}✅ OK${RESET}"
 
+# ── Génération des tokens CCM (optionnel) ────────────────────────────────────
+if [ "$WITH_CCM" = "true" ]; then
+    echo ""
+    echo -ne "🔑 Génération des tokens CCM Exoscale… "
+    CCM_SCRIPT="$(dirname "$0")/setup-ccm-token.sh"
+    if [ ! -x "$CCM_SCRIPT" ]; then
+        echo -e "${RED}❌ setup-ccm-token.sh introuvable ou non exécutable${RESET}"
+    else
+        OUTPUT_DIR="$(dirname "$(realpath "$OUTPUT")")"
+        "$CCM_SCRIPT" \
+            --prefix "$PREFIX" \
+            --count "$STUDENTS" \
+            --zone "$ZONE" \
+            --output "tokens-ccm-${PREFIX}.md" \
+            --output-dir "$OUTPUT_DIR" > /dev/null 2>&1 && \
+            echo -e "${GREEN}✅ OK${RESET}" || \
+            echo -e "${YELLOW}⚠ Erreur lors de la génération des tokens CCM${RESET}"
+
+        # Ajouter section CCM dans le Markdown principal
+        cat >> "$OUTPUT" << CCM_SECTION
+
+---
+
+## Tokens CCM Exoscale (Cloud Controller Manager)
+
+Fichiers secrets à distribuer **individuellement** à chaque étudiant.
+Voir le détail dans \`tokens-ccm-${PREFIX}.md\`.
+
+| Étudiant | Fichier secret |
+|----------|----------------|
+CCM_SECTION
+        for n in $(seq -w 1 "$STUDENTS"); do
+            echo "| \`${PREFIX}-${n}\` | \`$(dirname "$OUTPUT")/ccm-secret-${PREFIX}-${n}.yaml\` |" >> "$OUTPUT"
+        done
+
+        cat >> "$OUTPUT" << CCM_FOOTER
+
+\`\`\`bash
+# Sur le cluster de l'étudiant (après réception du fichier secret) :
+kubectl apply -f ccm-secret-${PREFIX}-XX.yaml
+cd scripts/partie-13-prometheus && ./05-install-ccm.sh
+\`\`\`
+CCM_FOOTER
+    fi
+fi
+
 # ── Résumé final ──────────────────────────────────────────────────────────────
 echo ""
 echo -e "${BOLD}══════════════════════════════════════════${RESET}"
 echo -e "${GREEN}${BOLD}🎉 Provisioning terminé !${RESET}"
 echo -e "   VMs créées : ${BOLD}$TOTAL${RESET}"
 echo -e "   Fichier    : ${BOLD}$OUTPUT${RESET}"
+[ "$WITH_CCM" = "true" ] && \
+    echo -e "   Tokens CCM : ${BOLD}tokens-ccm-${PREFIX}.md${RESET} + ccm-secret-${PREFIX}-*.yaml"
 echo -e "${BOLD}══════════════════════════════════════════${RESET}"
 echo ""
 echo -e "💡 Pour supprimer toutes les VMs :"
