@@ -66,7 +66,7 @@ echo ""
 echo "10. Test de connectivité réseau:"
 POD_NAME=$(kubectl get pods -l app=test-upgrade -o jsonpath='{.items[0].metadata.name}')
 echo "   Test DNS depuis le pod $POD_NAME:"
-kubectl exec $POD_NAME -- nslookup kubernetes.default
+kubectl exec $POD_NAME -- nslookup kubernetes.default.svc.cluster.local
 
 echo ""
 echo "11. Exposition et test du service:"
