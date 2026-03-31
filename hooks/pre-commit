@@ -1,0 +1,110 @@
+#!/bin/bash
+# pre-commit hook — bloque les commits accidentels de secrets
+# Pour bypasser consciemment : git commit --no-verify
+
+ERRORS=0
+
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# Fichiers staged (ajoutés, copiés ou modifiés)
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [ -z "$STAGED" ]; then
+    exit 0
+fi
+
+# ── A. Blocage par nom de fichier ─────────────────────────────────────────────
+
+FORBIDDEN_PATTERNS=(
+    "ccm-secret-.*.yaml"
+    "tokens-ccm.*\.md"
+    ".*-credentials\.json"
+    "api-credentials\.json"
+    "^\.env$"
+    ".*\.env$"
+    "vm_key$"
+    "vm_key\.pub$"
+    "kubeconfig$"
+    "admin\.conf$"
+)
+
+for file in $STAGED; do
+    for pattern in "${FORBIDDEN_PATTERNS[@]}"; do
+        if echo "$file" | grep -qE "$pattern"; then
+            echo -e "${RED}[SECRETS] Fichier interdit détecté :${NC} $file"
+            echo -e "         Pattern correspondant : ${YELLOW}${pattern}${NC}"
+            ERRORS=$((ERRORS + 1))
+            break
+        fi
+    done
+done
+
+# ── B. Blocage par contenu ────────────────────────────────────────────────────
+
+# Récupérer le diff staged (contenu uniquement, lignes ajoutées)
+DIFF=$(git diff --cached --unified=0)
+
+# Clé API Exoscale (format EXOxxxxxxxxxx)
+if echo "$DIFF" | grep -qE '^\+.*EXO[a-zA-Z0-9]{16,}'; then
+    MATCH=$(echo "$DIFF" | grep -E '^\+.*EXO[a-zA-Z0-9]{16,}' | head -3)
+    echo -e "${RED}[SECRETS] Clé API Exoscale détectée dans le diff :${NC}"
+    echo "$MATCH" | sed 's/^/         /'
+    ERRORS=$((ERRORS + 1))
+fi
+
+# api_secret avec une valeur réelle (exclut placeholders : ${VAR}, ..., xxx, "")
+if echo "$DIFF" | grep -E '^\+.*(api_secret|api-secret)\s*[:=]\s*\S+' | \
+   grep -vE '(\$\{|\$[A-Z_]+|\.\.\.+|x{3,}|changeme|example|placeholder|""|# )' | \
+   grep -qE '\S'; then
+    MATCH=$(echo "$DIFF" | grep -E '^\+.*(api_secret|api-secret)\s*[:=]\s*\S+' | \
+            grep -vE '(\$\{|\$[A-Z_]+|\.\.\.+|x{3,}|changeme|example|placeholder|""|# )' | head -3)
+    echo -e "${RED}[SECRETS] api_secret détecté dans le diff :${NC}"
+    echo "$MATCH" | sed 's/^/         /'
+    ERRORS=$((ERRORS + 1))
+fi
+
+# EXOSCALE_API_KEY= ou EXOSCALE_API_SECRET= avec une valeur réelle (exclut grep, =..., =${VAR})
+if echo "$DIFF" | grep -E '^\+.*EXOSCALE_API_(KEY|SECRET)\s*=\s*\S+' | \
+   grep -vE '(grep|=\.\.\.|=\$\{|\$[A-Z_]+|"if |# |\\+\s*)' | \
+   grep -qE '\S'; then
+    MATCH=$(echo "$DIFF" | grep -E '^\+.*EXOSCALE_API_(KEY|SECRET)\s*=\s*\S+' | \
+            grep -vE '(grep|=\.\.\.|=\$\{|\$[A-Z_]+|"if |# |\\+\s*)' | head -3)
+    echo -e "${RED}[SECRETS] Variable d'environnement Exoscale détectée :${NC}"
+    echo "$MATCH" | sed 's/^/         /'
+    ERRORS=$((ERRORS + 1))
+fi
+
+# Clé privée SSH/TLS
+if echo "$DIFF" | grep -qE '^\+.*-----BEGIN .*(PRIVATE|RSA|EC|DSA) KEY-----'; then
+    echo -e "${RED}[SECRETS] Clé privée détectée dans le diff${NC}"
+    ERRORS=$((ERRORS + 1))
+fi
+
+# kind: Secret + stringData dans le même fichier staged
+for file in $STAGED; do
+    if echo "$file" | grep -qE '\.ya?ml$'; then
+        CONTENT=$(git show ":$file" 2>/dev/null)
+        if echo "$CONTENT" | grep -q 'kind: Secret' && echo "$CONTENT" | grep -q 'stringData:'; then
+            echo -e "${RED}[SECRETS] Kubernetes Secret avec stringData détecté :${NC} $file"
+            ERRORS=$((ERRORS + 1))
+        fi
+    fi
+done
+
+# ── Résultat ──────────────────────────────────────────────────────────────────
+
+if [ $ERRORS -gt 0 ]; then
+    echo ""
+    echo -e "${RED}╔══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${RED}║  COMMIT BLOQUÉ — $ERRORS problème(s) de sécurité détecté(s)$([ $ERRORS -eq 1 ] && echo " " || echo "")          ║${NC}"
+    echo -e "${RED}║                                                              ║${NC}"
+    echo -e "${RED}║  Vérifier les fichiers listés ci-dessus.                     ║${NC}"
+    echo -e "${RED}║  Pour bypasser (si intentionnel) :                           ║${NC}"
+    echo -e "${RED}║    git commit --no-verify                                    ║${NC}"
+    echo -e "${RED}╚══════════════════════════════════════════════════════════════╝${NC}"
+    exit 1
+fi
+
+exit 0
