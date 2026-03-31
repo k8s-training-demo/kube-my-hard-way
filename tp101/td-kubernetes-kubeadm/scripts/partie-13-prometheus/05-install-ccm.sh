@@ -86,6 +86,8 @@ spec:
       labels:
         app: exoscale-cloud-controller-manager
     spec:
+      dnsPolicy: Default
+      hostNetwork: true
       serviceAccountName: cloud-controller-manager
       tolerations:
       - key: node-role.kubernetes.io/control-plane
