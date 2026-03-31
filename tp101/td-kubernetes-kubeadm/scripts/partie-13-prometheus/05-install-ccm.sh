@@ -103,6 +103,7 @@ spec:
         - --cloud-provider=exoscale
         - --leader-elect=false
         - --use-service-account-credentials=true
+        - --allow-untagged-cloud
         env:
         - name: EXOSCALE_API_KEY
           valueFrom:
