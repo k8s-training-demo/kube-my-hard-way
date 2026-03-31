@@ -41,6 +41,11 @@ metadata:
     app: grafana-lb
 spec:
   replicas: 1
+  # POURQUOI Recreate: hostPort ne peut être tenu que par un seul pod à la fois.
+  # RollingUpdate essaierait de démarrer le nouveau pod avant de tuer l'ancien,
+  # ce qui causerait un conflit de port. Recreate tue d'abord, puis recrée.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: grafana-lb
@@ -72,7 +77,7 @@ spec:
           httpGet:
             path: /
             port: 80
-          initialDelaySeconds: 5
+          initialDelaySeconds: 10
           periodSeconds: 10
         resources:
           requests:
@@ -104,7 +109,12 @@ data:
         server_name _;
 
         location / {
-            proxy_pass http://kube-prom-grafana.monitoring.svc.cluster.local:80;
+            # POURQUOI resolver + variable: nginx résout les hostnames au démarrage.
+            # Sans resolver configuré, il échoue si le DNS n'est pas encore prêt.
+            # Avec resolver + variable, la résolution est différée à chaque requête.
+            resolver 10.96.0.10 valid=30s;
+            set \$grafana kube-prom-grafana.monitoring.svc.cluster.local;
+            proxy_pass http://\$grafana:80;
             proxy_set_header Host \$host;
             proxy_set_header X-Real-IP \$remote_addr;
             proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
