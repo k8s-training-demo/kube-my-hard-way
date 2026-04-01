@@ -1,6 +1,10 @@
 #!/bin/bash
-# Partie 7 - Déploiement d'une application avec RuntimeClass
-# Démontre l'usage en Deployment et par namespace
+# Partie 8 - Déploiement d'une application avec RuntimeClass
+# Démontre :
+#   1. runtimeClassName dans un Deployment (tous les pods utilisent gVisor)
+#   2. Organisation par namespace : namespace dédié aux workloads sandboxés
+#      (le namespace n'impose PAS gVisor automatiquement — runtimeClassName
+#       doit toujours être spécifié dans chaque podSpec)
 # À exécuter sur le MASTER
 
 set -e
@@ -9,8 +13,9 @@ echo "=== Déploiement d'applications avec RuntimeClass ==="
 echo ""
 
 echo "1. Deployment avec runtimeClassName..."
-# POURQUOI: runtimeClassName se spécifie dans le podSpec.
-# Il s'applique à tous les pods du Deployment.
+# POURQUOI: runtimeClassName se place dans le podSpec (.spec.template.spec).
+# Tous les pods créés par ce Deployment utiliseront runsc (gVisor).
+# Sans ce champ, le runtime par défaut (runc) serait utilisé.
 kubectl apply -f - << 'EOF'
 apiVersion: apps/v1
 kind: Deployment
@@ -60,12 +65,23 @@ done
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "4. Namespace dédié avec RuntimeClass par défaut"
+echo "4. Namespace dédié pour les workloads sandboxés"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-# POURQUOI: On peut forcer gVisor sur un namespace entier via
-# RuntimeClass + RuntimeClassInPodDefaults (feature gate, K8s 1.29+)
-# Ici on démontre simplement la cohabitation dans un namespace isolé.
+# POURQUOI un namespace dédié:
+#   Un namespace "secure-ns" n'impose PAS gVisor automatiquement —
+#   runtimeClassName doit toujours être spécifié dans chaque podSpec.
+#
+#   L'intérêt est organisationnel :
+#     - RBAC restreint : seuls certains utilisateurs peuvent créer des pods ici
+#     - NetworkPolicy : isolation réseau des workloads sensibles
+#     - ResourceQuota : limiter les ressources allouées aux workloads sandbox
+#     - Visibilité : "tout ce qui est dans secure-ns tourne sous gVisor" par convention
+#
+#   Pour imposer gVisor sans runtimeClassName dans le podSpec (enforcement réel),
+#   il faut activer le feature gate RuntimeClassInPodDefaults (beta K8s 1.31)
+#   et annoter la RuntimeClass avec "pod.kubernetes.io/default-runtimeclass".
+#   Ce n'est pas ce qu'on démontre ici — voir les slides pour l'explication.
 kubectl create namespace secure-ns 2>/dev/null || true
 
 kubectl apply -n secure-ns -f - << 'EOF'

@@ -32,6 +32,11 @@ backups/
 test-output/
 debug/
 
+# Generated presentation exports
+docs/slides-instructeur.pdf
+docs/slides-instructeur.html
+docs/slides-instructeur.pptx
+
 # Personal notes
 NOTES.md
 notes.txt

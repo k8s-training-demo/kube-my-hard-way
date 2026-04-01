@@ -129,31 +129,31 @@ case "$ACTION" in
     export-pdf)
         echo "📄 Export des slides en PDF..."
         if docker compose version &> /dev/null; then
-            docker compose run --rm marp-server marp ../slides-instructeur.md --pdf --output ../slides-instructeur.pdf
+            docker compose run --rm marp-server marp slides-instructeur.md --pdf --allow-local-files --output slides-instructeur.pdf
         else
-            docker-compose run --rm marp-server marp ../slides-instructeur.md --pdf --output ../slides-instructeur.pdf
+            docker-compose run --rm marp-server marp slides-instructeur.md --pdf --allow-local-files --output slides-instructeur.pdf
         fi
-        echo "✅ PDF généré: docs/slides-instructeur.pdf"
+        echo "✅ PDF généré: $SCRIPT_DIR/../slides-instructeur.pdf"
         ;;
 
     export-html)
         echo "📄 Export des slides en HTML..."
         if docker compose version &> /dev/null; then
-            docker compose run --rm marp-server marp ../slides-instructeur.md --html --output ../slides-instructeur.html
+            docker compose run --rm marp-server marp slides-instructeur.md --html --allow-local-files --output slides-instructeur.html
         else
-            docker-compose run --rm marp-server marp ../slides-instructeur.md --html --output ../slides-instructeur.html
+            docker-compose run --rm marp-server marp slides-instructeur.md --html --allow-local-files --output slides-instructeur.html
         fi
-        echo "✅ HTML généré: docs/slides-instructeur.html"
+        echo "✅ HTML généré: $SCRIPT_DIR/../slides-instructeur.html"
         ;;
 
     export-pptx)
         echo "📄 Export des slides en PPTX..."
         if docker compose version &> /dev/null; then
-            docker compose run --rm marp-server marp ../slides-instructeur.md --pptx --output ../slides-instructeur.pptx
+            docker compose run --rm marp-server marp slides-instructeur.md --pptx --allow-local-files --output slides-instructeur.pptx
         else
-            docker-compose run --rm marp-server marp ../slides-instructeur.md --pptx --output ../slides-instructeur.pptx
+            docker-compose run --rm marp-server marp slides-instructeur.md --pptx --allow-local-files --output slides-instructeur.pptx
         fi
-        echo "✅ PPTX généré: docs/slides-instructeur.pptx"
+        echo "✅ PPTX généré: $SCRIPT_DIR/../slides-instructeur.pptx"
         ;;
 
     help|--help|-h)

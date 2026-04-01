@@ -3537,26 +3537,100 @@ Comparaison `runc` vs `gVisor` depuis un container:
 
 ---
 
-## Utilisation dans un Deployment
+## runtimeClassName dans un Deployment
 
-Ajouter `runtimeClassName` dans le podSpec:
+`runtimeClassName` se place dans le **podSpec** — tous les pods du Deployment héritent du même runtime:
 
 ```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: app-securisee
-  namespace: sandbox
 spec:
   template:
     spec:
-      runtimeClassName: gvisor
+      runtimeClassName: gvisor   # ← dans .spec.template.spec
       containers:
       - name: app
         image: nginx:alpine
 ```
 
-**Bonne pratique:** namespace dédié pour workloads sensibles (CI/CD, multi-tenant)
+Sans ce champ → runtime par défaut (`runc`). Avec → kubelet demande `runsc` à containerd pour chaque pod.
+
+---
+
+## Namespace dédié — organisation, pas enforcement
+
+Un namespace `secure-ns` n'impose **pas** gVisor automatiquement.  
+`runtimeClassName` doit toujours être spécifié dans chaque podSpec.
+
+L'intérêt est **organisationnel** :
+
+| Mécanisme | Ce que ça apporte |
+|-----------|-------------------|
+| RBAC restreint | Seuls certains utilisateurs créent des pods ici |
+| NetworkPolicy | Isolation réseau des workloads sensibles |
+| ResourceQuota | Limiter les ressources allouées au sandbox |
+| Convention | "tout dans `secure-ns` tourne sous gVisor" lisible dans les audits |
+
+Pour un **enforcement réel** (gVisor imposé sans runtimeClassName dans le pod), deux approches existent — slides suivants.
+
+---
+
+## Injection automatique — `RuntimeClassInPodDefaults`
+
+Feature gate (beta K8s 1.31) qui impose un runtime **par défaut sur tout le cluster**.  
+Tout pod sans `runtimeClassName` reçoit la RuntimeClass marquée comme défaut.
+
+```yaml
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: gvisor
+handler: runsc
+scheduling:
+  nodeSelector:
+    kubernetes.io/arch: amd64
+# Champ ajouté par RuntimeClassInPodDefaults :
+defaultRuntimeClassName: true   # ← ce RuntimeClass devient le défaut cluster-wide
+```
+
+Activer dans kubeadm (`/etc/kubernetes/manifests/kube-apiserver.yaml`) :
+```
+--feature-gates=RuntimeClassInPodDefaults=true
+```
+
+**Limite : c'est global** — tous les namespaces sont affectés.  
+Pour cibler un namespace précis → Kyverno (slide suivant).
+
+---
+
+## Injection par namespace — Kyverno
+
+Pour enforcer gVisor **uniquement dans certains namespaces**, on utilise un **mutating admission webhook**. Kyverno est l'outil le plus simple :
+
+```bash
+kubectl label namespace secure-ns runtime-class=gvisor
+```
+
+```yaml
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: inject-gvisor-by-namespace
+spec:
+  rules:
+  - name: inject-runtimeclass
+    match:
+      any:
+      - resources:
+          kinds: [Pod]
+          namespaceSelector:
+            matchLabels:
+              runtime-class: gvisor
+    mutate:
+      patchStrategicMerge:
+        spec:
+          runtimeClassName: gvisor
+```
+
+Tout pod créé dans `secure-ns` reçoit `runtimeClassName: gvisor` automatiquement — même sans que le développeur le spécifie. **Ce TP n'installe pas Kyverno** — runtimeClassName est toujours explicite.
 
 ---
 
@@ -3564,10 +3638,11 @@ spec:
 
 ### 📝 EXERCICE ÉLÈVE
 
-**8.4 — Déploiement avec RuntimeClass:**
+**8.4 — Deployment + namespace dédié:**
 ```bash
 ./04-deploy-with-runtimeclass.sh
 ```
+Observer : `uname -r` retourne `4.4.0` (Sentry) sur les 3 pods du Deployment.
 
 **8.5 — Comparaison de performance:**
 ```bash

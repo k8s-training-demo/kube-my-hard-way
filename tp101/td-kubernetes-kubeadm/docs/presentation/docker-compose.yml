@@ -7,7 +7,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ../:/slides:ro
+      - ../:/slides
     restart: unless-stopped
     environment:
       - NODE_ENV=production
