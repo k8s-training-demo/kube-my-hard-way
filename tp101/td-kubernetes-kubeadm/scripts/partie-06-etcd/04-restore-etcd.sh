@@ -29,6 +29,7 @@ fi
 MASTER_NAME=$(hostname)
 MASTER_IP=$(kubectl get node "$MASTER_NAME" -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null || hostname -I | awk '{print $1}')
 RESTORE_DIR="/var/lib/etcd-restored"
+ETCD_DATA_DIR="/var/lib/etcd"
 
 echo "=== Restauration etcd depuis snapshot ==="
 echo ""
@@ -68,11 +69,13 @@ etcdutl snapshot restore "$SNAPSHOT_FILE" \
 echo "   ✓ Snapshot restauré dans $RESTORE_DIR"
 
 echo ""
-echo "4. Mise à jour du data-dir dans le manifest etcd:"
-sed -i "s|path: /var/lib/etcd|path: $RESTORE_DIR|g" /tmp/etcd.yaml.bak
-# Mettre à jour aussi la volumeMount
-sed -i "s|mountPath: /var/lib/etcd|mountPath: $RESTORE_DIR|g" /tmp/etcd.yaml.bak
-echo "   ✓ Manifest mis à jour"
+echo "4. Remplacement du data-dir etcd par les données restaurées:"
+# POURQUOI: on déplace les données restaurées vers le chemin original (/var/lib/etcd)
+# plutôt que de patcher le manifest. Patcher path:/mountPath ne suffit pas —
+# l'arg --data-dir dans la commande etcd pointe toujours vers /var/lib/etcd.
+mv "$ETCD_DATA_DIR" "${ETCD_DATA_DIR}.bak"
+mv "$RESTORE_DIR" "$ETCD_DATA_DIR"
+echo "   ✓ ${ETCD_DATA_DIR}.bak (ancienne) | $ETCD_DATA_DIR (restaurée)"
 
 echo ""
 echo "5. Remise en place des manifests (etcd puis API Server):"
